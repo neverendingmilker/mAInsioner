@@ -32,12 +32,12 @@ src/
         setnumber.js
         reset.js
     boosterlinks/
-      index.js       (defines /boosterlink link, unlink, list, toggle)
+      index.js       (defines /boosterlink link, unlink, list, exempt add/remove/list)
       handlers/
         link.js
         unlink.js
         list.js
-        toggle.js
+        exempt.js
     rolelinks/
       index.js       (defines /rolelink link, unlink, list, toggle)
       handlers/
@@ -46,12 +46,14 @@ src/
         list.js
         toggle.js
     starboard/
-      index.js       (defines /starboard create, edit, remove, list + autocomplete)
+      index.js       (defines /starboard create, edit, remove, list, lookback + autocomplete)
       handlers/
         create.js
         edit.js
         remove.js
         list.js
+        lookback.js            (shows the channel picker/"run now" button)
+        lookbackInteractions.js (handles the picker's follow-up interactions, runs the scan)
   features/         <- "Business logic" layer: one folder per feature
     birthday/
       birthdayManager.js     (validation and rules)
@@ -76,8 +78,9 @@ src/
       roleLinkManager.js     (validation + cascading removal logic, incl. "viceversa")
       roleLinkRepository.js  (SQL queries)
     starboard/
-      starboardManager.js     (validation, emoji parsing, reaction counting, embed/post building)
+      starboardManager.js     (validation, emoji parsing, reaction counting, embed/post building, lookback)
       starboardRepository.js  (SQL queries: per-guild boards + tracked posts)
+      lookbackSessions.js     (in-memory state between the lookback channel picker and its follow-up)
   database/
     db.js           <- Turso database connection, schema for all features
   events/           <- Discord events (clientReady, interactionCreate...)
@@ -163,7 +166,9 @@ Tracks custom perk roles manually given to server boosters, so they get auto-rem
 - `/boosterlink list [user]` — lists tracked links, optionally filtered to one user.
 - `/boosterlink toggle enabled:<true/false>` — enables or disables auto-removal for the whole server with a single command. Existing links are kept while disabled; nothing is removed until it's turned back on.
 
-Listens on Discord's `guildMemberUpdate` event: whenever a member who had the server's Booster role no longer has it (boost expired, manually removed, etc.), every custom role linked to them is removed and the link is deleted. Requires the bot's own role to sit above the linked role in the role list. Members with role `1090658915810820156` are always exempt from this auto-removal, even if they have linked roles and lose the Booster role.
+Listens on Discord's `guildMemberUpdate` event: whenever a member who had the server's Booster role no longer has it (boost expired, manually removed, etc.), every custom role linked to them is removed and the link is deleted. Requires the bot's own role to sit above the linked role in the role list.
+
+Exempt roles: `/boosterlink exempt add role:<role>` / `remove` / `list` manage a per-server list of roles that skip the auto-removal entirely — a member only needs **one** of the configured exempt roles (not all of them at once) to be skipped, even if they have linked custom roles and lose the Booster role.
 
 ## Available commands (Role link feature)
 
@@ -178,26 +183,22 @@ Also listens on `guildMemberUpdate`, same mechanism as the booster-link feature 
 
 ## Available commands (Starboard feature)
 
-Collects popular messages (by vote count) and reposts them to a dedicated channel. A server can have several starboards, each with its own watch channel, post channel, threshold, emoji, content-type filter, and voting method — e.g. one board watching `#general` and posting to `#starboard`, and a separate one watching `#memes` and posting only images to `#best-memes` using vote buttons instead of reactions. All subcommands require the **Manage Server** permission.
+Collects popular messages (by reaction count) and reposts them to a dedicated channel. A server can have several starboards, each with its own watch channel, post channel, threshold, emoji and content-type filter — e.g. one board watching `#general` and posting to `#starboard`, and a separate one watching `#memes` and posting only images to `#best-memes`. All subcommands require the **Manage Server** permission.
 
-- `/starboard create name:<...> watch_channel:<#channel> post_channel:<#channel> threshold:<1-1000> emojis:<...> [content_type] [voting_method]` — creates a new starboard. `emojis` accepts one or more emojis (unicode or custom server emojis) for **Reactions** mode, separated by spaces or commas, e.g. `⭐` or `⭐ 🔥` — or the special value `any`, which counts a reaction with *any* emoji instead of specific ones (can't be combined with actual emojis). **Buttons** mode only accepts exactly one specific emoji (it's shown on the button); `any` isn't valid there. `watch_channel` and `post_channel` must be different channels. `content_type` and `voting_method` are optional (see below), defaulting to "Any message" / "Reactions".
-- `/starboard edit name:<...> [watch_channel] [post_channel] [threshold] [emojis] [content_type] [voting_method]` — updates any combination of an existing starboard's settings. The `name` option has autocomplete. Providing `emojis` replaces the whole list, it doesn't add to it (also accepts `any`, same rules as above).
-- `/starboard remove name:<...>` — deletes a starboard's configuration. Already-posted messages/buttons are left alone but stop being tracked/updated.
-- `/starboard list` — shows every starboard configured in the server, with its watch/post channels, threshold, emojis, content-type filter and voting method.
-- `/starboard lookback name:<...> [limit:1-1000, default 200] [since_year_start:true|false] [since_date:DD/MM/YY] [until_date:DD/MM/YY] [content_type] [emojis] [threshold]` — scans messages of the starboard's watch channel for ones that already qualify. By default it scans the most recent `limit` messages. `since_year_start:true` instead scans everything back to **midnight, January 1st of the current year** (in the bot's configured timezone). `since_date:<DD/MM/YY or DD/MM/YYYY>` scans back to midnight of a **specific date** instead — e.g. `since_date:15/03/25`; `since_year_start` and `since_date` can't be combined. `until_date:<DD/MM/YY or DD/MM/YYYY>` stops the scan at the end of a specific date, so combined with `since_date` you get a **precise timeframe** — e.g. `since_date:01/06/25 until_date:30/06/25` scans only that month; `until_date` must be after the start of the range. Whenever a date-based start (`since_year_start`/`since_date`) is used, `limit` is ignored (capped internally at 20,000 messages as a safety ceiling); `until_date` on its own (no start given) instead bounds the normal `limit`-based scan to end at that date, e.g. "the last 500 messages before this date". Messages are processed oldest-first, so vote buttons and starboard posts appear in the same order the messages were actually sent. The optional `content_type`, `emojis` and `threshold` let you check something different than what the starboard is normally configured for, just for this one scan, without touching its saved settings: `content_type` picks a different kind of message (e.g. `Images only`); `emojis` counts different emoji(s) (same format as in `create`/`edit`, including `any`); `threshold` uses a different minimum vote count. `emojis` and `threshold` only apply to **Reactions**-mode starboards (Buttons mode doesn't count reactions, so overriding what counts doesn't apply there). Useful right after creating a starboard (to backfill already-popular older messages) or to catch up on messages sent while the bot was offline. In **Reactions** mode it re-runs the normal counting/sync logic against each message's current reactions (so it can also *remove* a post if a message no longer qualifies). In **Buttons** mode it just adds a vote button to any matching message that doesn't already have one — it never invents past votes, since buttons only count clicks made from here on. This can take a little while on a busy channel (fetching message history and, in Reactions mode, the users behind each reaction — a long lookback can take several minutes), so the bot replies once scanning finishes rather than instantly. If checking an individual message fails (a transient Discord/database hiccup), that one message is skipped and the scan keeps going instead of stopping partway through — the final summary reports how many messages, if any, couldn't be checked, and running the same command again safely retries just those.
+- `/starboard create name:<...> watch_channel:<#channel> post_channel:<#channel> threshold:<1-1000> emojis:<...> [content_type]` — creates a new starboard. `emojis` accepts one or more emojis (unicode or custom server emojis), separated by spaces or commas, e.g. `⭐` or `⭐ 🔥` — or the special value `any`, which counts a reaction with *any* emoji instead of specific ones (can't be combined with actual emojis). `watch_channel` and `post_channel` must be different channels. `content_type` is optional (see below), defaulting to "Any message".
+- `/starboard edit name:<...> [watch_channel] [post_channel] [threshold] [emojis] [content_type]` — updates any combination of an existing starboard's settings. The `name` option has autocomplete. Providing `emojis` replaces the whole list, it doesn't add to it (also accepts `any`, same rules as above).
+- `/starboard remove name:<...>` — deletes a starboard's configuration. Already-posted messages are left alone but stop being tracked/updated.
+- `/starboard list` — shows every starboard configured in the server, with its watch/post channels, threshold, emojis and content-type filter.
+- `/starboard lookback name:<...> [limit:1-1000, default 200] [since_year_start:true|false] [since_date:DD/MM/YY] [until_date:DD/MM/YY] [content_type] [emojis] [threshold]` — scans messages of the starboard's watch channel for ones that already qualify. By default it scans the most recent `limit` messages. `since_year_start:true` instead scans everything back to **midnight, January 1st of the current year** (in the bot's configured timezone). `since_date:<DD/MM/YY or DD/MM/YYYY>` scans back to midnight of a **specific date** instead — e.g. `since_date:15/03/25`; `since_year_start` and `since_date` can't be combined. `until_date:<DD/MM/YY or DD/MM/YYYY>` stops the scan at the end of a specific date, so combined with `since_date` you get a **precise timeframe** — e.g. `since_date:01/06/25 until_date:30/06/25` scans only that month; `until_date` must be after the start of the range. Whenever a date-based start (`since_year_start`/`since_date`) is used, `limit` is ignored (capped internally at 20,000 messages as a safety ceiling); `until_date` on its own (no start given) instead bounds the normal `limit`-based scan to end at that date, e.g. "the last 500 messages before this date". Messages are processed oldest-first, so starboard posts appear in the same order the messages were actually sent. The optional `content_type`, `emojis` and `threshold` let you check something different than what the starboard is normally configured for, just for this one scan, without touching its saved settings. After running the command, the bot shows a **channel picker** (a native Discord select menu listing every channel in the server) so you can optionally add up to 4 extra channels to the same scan, plus a "Run now" button to scan just the starboard's own watch channel. This is useful right after creating a starboard (to backfill already-popular older messages) or to catch up on messages sent while the bot was offline. Internally it re-runs the normal counting/sync logic against each message's current reactions (so it can also *remove* a post if a message no longer qualifies). This can take a little while on a busy channel (fetching message history and the users behind each reaction — a long lookback can take several minutes), so the bot edits its message once scanning finishes rather than instantly. If checking an individual message fails (a transient Discord/database hiccup), that one message is skipped and the scan keeps going instead of stopping partway through — the final summary reports how many messages, if any, couldn't be checked, and running the same command again safely retries just those.
 
-**Content-type filter** (`content_type` option) — restricts which messages are even eligible for a given starboard, regardless of votes:
+**Content-type filter** (`content_type` option) — restricts which messages are even eligible for a given starboard, regardless of reactions:
 - `Any message` (default) — no restriction.
 - `Text only` — must have text and no image/GIF/video.
 - `Images only` / `GIFs only` / `Videos only` — must include that specific kind of attachment or link embed (a GIF is never counted as a plain image, and vice versa).
 - `Any media` — image, GIF, or video, regardless of caption text.
 - `Text + media` — needs both a text caption and an attachment.
 
-**Voting method** (`voting_method` option):
-- `Reactions` (default) — people react on the message itself with one of the configured emojis. Reacting with more than one of them only counts once per person, and the message's own author reacting to their own message never counts.
-- `Buttons` — the bot posts a reply with a single vote button under every new message in the watch channel that matches the content-type filter. Clicking the button casts your vote; clicking it again removes it (a toggle). You can't vote for your own message. The button's label always shows the live vote count, and it turns green once the threshold is reached.
-
-Either way, a message qualifies for a starboard once **enough distinct people** have voted for it. The starboard post's count stays live as votes are added or removed — and if it drops back below the threshold, the post is **removed** from the starboard (a starboard reflects what's currently popular). If the original message is deleted, its starboard post (and, in Buttons mode, its vote button) is deleted too. The bot needs "View Channel" + "Read Message History" in the watch channel, and "View Channel" + "Send Messages" in the post channel.
+A message qualifies for a starboard once **enough distinct people** have reacted to it with **at least one** of that board's configured emojis (reacting with more than one counted emoji only counts once per person; the message's own author reacting to their own message never counts). Once a message is reposted, the bot auto-reacts with ⭐ on its own copy in the starboard channel — further ⭐ reactions there (from anyone but the bot) add to the count too, so people can keep starring a message right from the starboard. The starboard post's count stays live as reactions are added or removed (on either the original message or the starboard's own copy) — and if it drops back below the threshold, the post is **removed** from the starboard (a starboard reflects what's currently popular). If the original message is deleted, the corresponding starboard post is deleted too. The bot needs "View Channel" + "Read Message History" in the watch channel, and "View Channel" + "Send Messages" in the post channel.
 
 ## Hosting
 

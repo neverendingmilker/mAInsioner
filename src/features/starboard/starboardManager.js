@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const repo = require('./starboardRepository');
 const config = require('../../config/config');
 const { startOfCurrentYear, zonedTimeToUtc } = require('../../utils/timezoneDate');
@@ -23,19 +23,14 @@ const CONTENT_TYPES = {
 };
 const DEFAULT_CONTENT_TYPE = 'any';
 
-// How people cast their vote on a message: react with an emoji, or click a button the
-// bot posts under every new (matching) message in the watch channel.
-const VOTING_METHODS = {
-  reactions: 'Reactions',
-  buttons: 'Buttons',
-};
-const DEFAULT_VOTING_METHOD = 'reactions';
-
 // Special sentinel accepted in the "emojis" field: counts a reaction with ANY emoji,
-// instead of requiring one of a specific set. Only valid for Reactions-mode boards —
-// Buttons mode needs one concrete emoji to actually show on the button.
+// instead of requiring one of a specific set.
 const ANY_EMOJI = 'any';
 const ANY_EMOJI_DISPLAY_FALLBACK = '⭐'; // shown on the starboard post's top line when in "any" mode
+
+// The emoji the bot auto-reacts with on its own starboard repost, so people can keep
+// starring a message right from the starboard channel itself.
+const REPOST_AUTO_STAR_EMOJI = '⭐';
 
 async function isEnabled(guildId) {
   return repo.isEnabled(guildId);
@@ -47,13 +42,12 @@ async function setEnabled(guildId, enabled) {
 
 // --- Emoji parsing ---
 // Accepts unicode emojis and Discord custom emoji (<:name:id> / <a:name:id>), separated
-// by whitespace and/or commas, e.g. "⭐ 🔥, <:hype:123456789012345678>".
-// Stored as-is (the raw tokens the admin typed), so the list/edit commands can show
-// them back exactly as entered. Matching against real reactions happens via emojiKey().
+// by whitespace and/or commas, e.g. "⭐ 🔥, <:hype:123456789012345678>", or the special
+// value "any" (used alone) to count a reaction with any emoji at all.
 function parseEmojis(input) {
   const trimmedInput = input.trim();
   if (trimmedInput.toLowerCase() === ANY_EMOJI) {
-    return [ANY_EMOJI]; // sentinel: match any emoji reaction, whichever it is
+    return [ANY_EMOJI];
   }
 
   const tokens = trimmedInput
@@ -110,6 +104,132 @@ function formatEmojisForDisplay(tokens) {
   return tokens.join(' ');
 }
 
+// --- Validation helpers ---
+
+function assertValidThreshold(threshold) {
+  if (!Number.isInteger(threshold) || threshold < MIN_THRESHOLD || threshold > MAX_THRESHOLD) {
+    throw new ValidationError(`Threshold must be a whole number between ${MIN_THRESHOLD} and ${MAX_THRESHOLD}.`);
+  }
+}
+
+function assertValidContentType(contentType) {
+  if (!Object.prototype.hasOwnProperty.call(CONTENT_TYPES, contentType)) {
+    throw new ValidationError(`Unknown content type "${contentType}".`);
+  }
+}
+
+function assertCanPostInChannel(guild, channel) {
+  const botMember = guild.members.me;
+  const perms = channel.permissionsFor(botMember);
+  if (!perms?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])) {
+    throw new ValidationError(
+      `I need "View Channel" and "Send Messages" permissions in ${channel} to post starboard messages there.`
+    );
+  }
+}
+
+function assertCanReadChannel(guild, channel) {
+  const botMember = guild.members.me;
+  const perms = channel.permissionsFor(botMember);
+  if (!perms?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory])) {
+    throw new ValidationError(`I need "View Channel" and "Read Message History" permissions in ${channel} to watch reactions there.`);
+  }
+}
+
+// --- CRUD used by the /starboard command handlers ---
+
+async function create(guild, name, watchChannel, postChannel, threshold, emojisInput, contentType, createdBy) {
+  const trimmedName = name.trim();
+  if (!trimmedName) {
+    throw new ValidationError('Give this starboard a name.');
+  }
+  if (watchChannel.id === postChannel.id) {
+    throw new ValidationError("The watch channel and the post channel can't be the same channel.");
+  }
+
+  assertValidThreshold(threshold);
+  const resolvedContentType = contentType ?? DEFAULT_CONTENT_TYPE;
+  assertValidContentType(resolvedContentType);
+  const emojis = parseEmojis(emojisInput);
+  assertCanReadChannel(guild, watchChannel);
+  assertCanPostInChannel(guild, postChannel);
+
+  const existing = await repo.getByName(guild.id, trimmedName);
+  if (existing) {
+    throw new ValidationError(`A starboard named "${trimmedName}" already exists in this server. Use \`/starboard edit\` to change it.`);
+  }
+
+  await repo.createStarboard(
+    guild.id,
+    trimmedName,
+    watchChannel.id,
+    postChannel.id,
+    threshold,
+    JSON.stringify(emojis),
+    resolvedContentType,
+    createdBy
+  );
+
+  return { name: trimmedName, emojis, contentType: resolvedContentType };
+}
+
+async function edit(guild, name, updates) {
+  const board = await repo.getByName(guild.id, name);
+  if (!board) {
+    throw new ValidationError(`No starboard named "${name}" found in this server.`);
+  }
+
+  const fields = {};
+
+  if (updates.watchChannel) {
+    assertCanReadChannel(guild, updates.watchChannel);
+    fields.watch_channel_id = updates.watchChannel.id;
+  }
+  if (updates.postChannel) {
+    assertCanPostInChannel(guild, updates.postChannel);
+    fields.post_channel_id = updates.postChannel.id;
+  }
+  const finalWatchId = fields.watch_channel_id ?? board.watch_channel_id;
+  const finalPostId = fields.post_channel_id ?? board.post_channel_id;
+  if (finalWatchId === finalPostId) {
+    throw new ValidationError("The watch channel and the post channel can't be the same channel.");
+  }
+
+  if (updates.threshold !== undefined) {
+    assertValidThreshold(updates.threshold);
+    fields.threshold = updates.threshold;
+  }
+  if (updates.contentType !== undefined) {
+    assertValidContentType(updates.contentType);
+    fields.content_type = updates.contentType;
+  }
+  let emojis;
+  if (updates.emojisInput) {
+    emojis = parseEmojis(updates.emojisInput);
+    fields.emojis = JSON.stringify(emojis);
+  }
+
+  if (Object.keys(fields).length === 0) {
+    throw new ValidationError('Provide at least one field to change.');
+  }
+
+  await repo.updateStarboard(guild.id, name, fields);
+  return { ...board, ...fields, emojis: emojis ?? JSON.parse(board.emojis) };
+}
+
+async function remove(guildId, name) {
+  return repo.removeStarboard(guildId, name);
+}
+
+async function listAll(guildId) {
+  return repo.getAllInGuild(guildId);
+}
+
+async function getNamesList(guildId) {
+  const boards = await repo.getAllInGuild(guildId);
+  return boards.map((b) => b.name);
+}
+
 // --- Content-type classification ---
 // Looks at attachments (uploaded files) and embeds (link previews, e.g. a pasted
 // Tenor/YouTube link) to figure out what kind of content a message carries.
@@ -160,160 +280,6 @@ function matchesContentType(message, contentType) {
   }
 }
 
-// --- Validation helpers ---
-
-function assertValidThreshold(threshold) {
-  if (!Number.isInteger(threshold) || threshold < MIN_THRESHOLD || threshold > MAX_THRESHOLD) {
-    throw new ValidationError(`Threshold must be a whole number between ${MIN_THRESHOLD} and ${MAX_THRESHOLD}.`);
-  }
-}
-
-function assertValidContentType(contentType) {
-  if (!Object.prototype.hasOwnProperty.call(CONTENT_TYPES, contentType)) {
-    throw new ValidationError(`Unknown content type "${contentType}".`);
-  }
-}
-
-function assertValidVotingMethod(votingMethod) {
-  if (!Object.prototype.hasOwnProperty.call(VOTING_METHODS, votingMethod)) {
-    throw new ValidationError(`Unknown voting method "${votingMethod}".`);
-  }
-}
-
-function assertEmojisCompatibleWithVotingMethod(emojis, votingMethod) {
-  if (votingMethod !== 'buttons') return;
-  if (emojis.length > 1) {
-    throw new ValidationError('Button voting only uses one emoji (shown on the button) — give just one.');
-  }
-  if (emojis[0] === ANY_EMOJI) {
-    throw new ValidationError('Button voting needs one specific emoji to show on the button — "any" only works with Reactions mode.');
-  }
-}
-
-function assertCanPostInChannel(guild, channel) {
-  const botMember = guild.members.me;
-  const perms = channel.permissionsFor(botMember);
-  if (!perms?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])) {
-    throw new ValidationError(
-      `I need "View Channel" and "Send Messages" permissions in ${channel} to post starboard messages there.`
-    );
-  }
-}
-
-function assertCanReadChannel(guild, channel) {
-  const botMember = guild.members.me;
-  const perms = channel.permissionsFor(botMember);
-  if (!perms?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory])) {
-    throw new ValidationError(`I need "View Channel" and "Read Message History" permissions in ${channel} to watch reactions there.`);
-  }
-}
-
-// --- CRUD used by the /starboard command handlers ---
-
-async function create(guild, name, watchChannel, postChannel, threshold, emojisInput, contentType, votingMethod, createdBy) {
-  const trimmedName = name.trim();
-  if (!trimmedName) {
-    throw new ValidationError('Give this starboard a name.');
-  }
-  if (watchChannel.id === postChannel.id) {
-    throw new ValidationError("The watch channel and the post channel can't be the same channel.");
-  }
-
-  assertValidThreshold(threshold);
-  const resolvedContentType = contentType ?? DEFAULT_CONTENT_TYPE;
-  assertValidContentType(resolvedContentType);
-  const resolvedVotingMethod = votingMethod ?? DEFAULT_VOTING_METHOD;
-  assertValidVotingMethod(resolvedVotingMethod);
-  const emojis = parseEmojis(emojisInput);
-  assertEmojisCompatibleWithVotingMethod(emojis, resolvedVotingMethod);
-  assertCanReadChannel(guild, watchChannel);
-  assertCanPostInChannel(guild, postChannel);
-
-  const existing = await repo.getByName(guild.id, trimmedName);
-  if (existing) {
-    throw new ValidationError(`A starboard named "${trimmedName}" already exists in this server. Use \`/starboard edit\` to change it.`);
-  }
-
-  await repo.createStarboard(
-    guild.id,
-    trimmedName,
-    watchChannel.id,
-    postChannel.id,
-    threshold,
-    JSON.stringify(emojis),
-    resolvedContentType,
-    resolvedVotingMethod,
-    createdBy
-  );
-
-  return { name: trimmedName, emojis, contentType: resolvedContentType, votingMethod: resolvedVotingMethod };
-}
-
-async function edit(guild, name, updates) {
-  const board = await repo.getByName(guild.id, name);
-  if (!board) {
-    throw new ValidationError(`No starboard named "${name}" found in this server.`);
-  }
-
-  const fields = {};
-
-  if (updates.watchChannel) {
-    assertCanReadChannel(guild, updates.watchChannel);
-    fields.watch_channel_id = updates.watchChannel.id;
-  }
-  if (updates.postChannel) {
-    assertCanPostInChannel(guild, updates.postChannel);
-    fields.post_channel_id = updates.postChannel.id;
-  }
-  const finalWatchId = fields.watch_channel_id ?? board.watch_channel_id;
-  const finalPostId = fields.post_channel_id ?? board.post_channel_id;
-  if (finalWatchId === finalPostId) {
-    throw new ValidationError("The watch channel and the post channel can't be the same channel.");
-  }
-
-  if (updates.threshold !== undefined) {
-    assertValidThreshold(updates.threshold);
-    fields.threshold = updates.threshold;
-  }
-  if (updates.contentType !== undefined) {
-    assertValidContentType(updates.contentType);
-    fields.content_type = updates.contentType;
-  }
-  if (updates.votingMethod !== undefined) {
-    assertValidVotingMethod(updates.votingMethod);
-    fields.voting_method = updates.votingMethod;
-  }
-  let emojis;
-  if (updates.emojisInput) {
-    emojis = parseEmojis(updates.emojisInput);
-    fields.emojis = JSON.stringify(emojis);
-  }
-
-  const finalVotingMethod = fields.voting_method ?? board.voting_method;
-  const finalEmojis = emojis ?? JSON.parse(board.emojis);
-  assertEmojisCompatibleWithVotingMethod(finalEmojis, finalVotingMethod);
-
-  if (Object.keys(fields).length === 0) {
-    throw new ValidationError('Provide at least one field to change.');
-  }
-
-  await repo.updateStarboard(guild.id, name, fields);
-  return { ...board, ...fields, emojis: finalEmojis };
-}
-
-async function remove(guildId, name) {
-  return repo.removeStarboard(guildId, name);
-}
-
-async function listAll(guildId) {
-  return repo.getAllInGuild(guildId);
-}
-
-async function getNamesList(guildId) {
-  const boards = await repo.getAllInGuild(guildId);
-  return boards.map((b) => b.name);
-}
-
 // --- Embed / message formatting ---
 
 function buildStarboardEmbed(message, count) {
@@ -346,11 +312,12 @@ function formatStarLine(board, count) {
   return `${displayEmoji} **${count}**`;
 }
 
-// Recomputes the count for one board on one message and creates/updates/removes the
-// corresponding starboard post accordingly. Falling back below the threshold removes
-// the post — a starboard reflects what's currently popular, not what once was.
-// Returns 'created' | 'updated' | 'removed' | 'unchanged' | 'failed', so callers (like
-// the lookback scan) can track outcomes without a second round-trip to re-check state.
+// --- Reaction tracking (called from the messageReactionAdd/Remove events) ---
+
+// Creates/updates/removes the starboard post for one board/message pair, given the
+// already-computed total vote count. Returns 'created' | 'updated' | 'removed' |
+// 'unchanged' | 'failed', so callers (like the lookback scan) can track outcomes
+// without a second round-trip to re-check state.
 async function syncStarboardPost(guild, board, message, count) {
   const post = await repo.getPost(board.id, message.id);
 
@@ -390,6 +357,12 @@ async function syncStarboardPost(guild, board, message, count) {
       content: formatStarLine(board, count),
       embeds: [buildStarboardEmbed(message, count)],
     });
+    // Auto-react with a star on the bot's own repost, so people can keep starring the
+    // message right from the starboard channel — further reactions on THIS message
+    // boost the count too (see handleStarboardPostReactionChange below).
+    await sent.react(REPOST_AUTO_STAR_EMOJI).catch((err) => {
+      console.warn(`[starboard] Could not auto-react to the starboard post for board "${board.name}":`, err.message);
+    });
     await repo.upsertPost(guild.id, board.id, message.id, message.channelId, sent.id, count);
     return 'created';
   } catch (err) {
@@ -398,17 +371,10 @@ async function syncStarboardPost(guild, board, message, count) {
   }
 }
 
-// Counts distinct (non-bot, non-author) users who reacted with any of the board's
-// configured emojis, then syncs the starboard post for that board/message pair.
-// Messages that don't match the board's content-type filter are treated as a 0 count
-// (which — via syncStarboardPost — also cleans up a stale post if the filter changed).
-// Counts distinct (non-bot, non-author) users who reacted with any of the board's
-// configured emojis, then syncs the starboard post for that board/message pair.
-// Returns the same status string as syncStarboardPost.
-async function countAndSync(guild, board, message) {
-  if (!matchesContentType(message, board.content_type)) {
-    return syncStarboardPost(guild, board, message, 0);
-  }
+// Counts distinct (non-bot, non-author) users who reacted to the ORIGINAL message with
+// any of the board's configured emojis. Doesn't touch the starboard post — just a count.
+async function countOriginalReactions(board, message) {
+  if (!matchesContentType(message, board.content_type)) return 0;
 
   const emojiTokens = JSON.parse(board.emojis);
   const matchingReactions =
@@ -429,7 +395,46 @@ async function countAndSync(guild, board, message) {
     }
   }
 
-  return syncStarboardPost(guild, board, message, userIds.size);
+  return userIds.size;
+}
+
+// Counts distinct non-bot users who reacted with the star emoji on the starboard's OWN
+// repost of a message — this is the "keep starring it from the starboard channel"
+// boost. Excluding bots naturally excludes the bot's own seed reaction, without relying
+// on a fragile "-1" assumption.
+async function countRepostBoost(repostMessage) {
+  const starReaction = repostMessage.reactions.cache.find(
+    (r) => emojiKeyFromReactionEmoji(r.emoji) === REPOST_AUTO_STAR_EMOJI
+  );
+  if (!starReaction) return 0;
+
+  const users = await starReaction.users.fetch().catch(() => null);
+  if (!users) return 0;
+
+  let count = 0;
+  for (const user of users.values()) {
+    if (user.bot) continue;
+    count++;
+  }
+  return count;
+}
+
+// Counts a board's total for one message (original-channel reactions + starboard-repost
+// boost, if it's already been posted) and syncs the post accordingly.
+async function countAndSync(guild, board, message) {
+  const originalCount = await countOriginalReactions(board, message);
+
+  const existingPost = await repo.getPost(board.id, message.id);
+  let repostBoost = 0;
+  if (existingPost) {
+    const postChannel = await guild.channels.fetch(board.post_channel_id).catch(() => null);
+    const repostMessage = postChannel
+      ? await postChannel.messages.fetch(existingPost.starboard_message_id).catch(() => null)
+      : null;
+    if (repostMessage) repostBoost = await countRepostBoost(repostMessage);
+  }
+
+  return syncStarboardPost(guild, board, message, originalCount + repostBoost);
 }
 
 // Called on every messageReactionAdd/Remove for a message in a channel that at least
@@ -437,9 +442,7 @@ async function countAndSync(guild, board, message) {
 async function handleReactionChange(reaction, guild) {
   if (!(await repo.isEnabled(guild.id))) return;
 
-  const boards = (await repo.getBoardsWatchingChannel(guild.id, reaction.message.channelId)).filter(
-    (b) => b.voting_method === 'reactions'
-  );
+  const boards = await repo.getBoardsWatchingChannel(guild.id, reaction.message.channelId);
   if (boards.length === 0) return;
 
   let message;
@@ -456,10 +459,31 @@ async function handleReactionChange(reaction, guild) {
   }
 }
 
+// Called on every messageReactionAdd/Remove for a message that turns out to be a
+// starboard's own repost of something (i.e. someone reacted to the copy sitting in the
+// post channel, not the original). Recomputes the combined total and re-syncs.
+async function handleStarboardPostReactionChange(reaction, guild) {
+  const post = await repo.getPostByStarboardMessageId(reaction.message.id);
+  if (!post) return; // not a tracked starboard repost
+
+  const board = await repo.getById(post.starboard_id);
+  if (!board || board.guild_id !== guild.id) return;
+  if (!(await repo.isEnabled(guild.id))) return;
+
+  const watchChannel = await guild.channels.fetch(board.watch_channel_id).catch(() => null);
+  const originalMessage = watchChannel
+    ? await watchChannel.messages.fetch(post.original_message_id).catch(() => null)
+    : null;
+  if (!originalMessage) return; // original message is gone; leave the existing post as-is
+
+  await countAndSync(guild, board, originalMessage).catch((err) =>
+    console.error(`[starboard] Error syncing board "${board.name}" from a repost reaction (message ${originalMessage.id}):`, err)
+  );
+}
+
 // Called on messageDelete: removes every starboard post that pointed at the deleted
 // original message, across every board, so a starred-then-deleted message doesn't stay
-// visible on the starboard forever. Also cleans up any vote-button message and vote
-// records tied to it.
+// visible on the starboard forever.
 async function handleMessageDelete(message) {
   if (!message.guildId) return;
 
@@ -473,124 +497,9 @@ async function handleMessageDelete(message) {
     }
     await repo.deletePost(post.starboard_id, post.original_message_id);
   }
-
-  const voteMessages = await repo.getVoteMessagesForOriginalMessage(message.id);
-  for (const voteMessage of voteMessages) {
-    const board = await repo.getById(voteMessage.starboard_id);
-    if (board) {
-      const watchChannel = await message.client.channels.fetch(board.watch_channel_id).catch(() => null);
-      const buttonMessage = watchChannel
-        ? await watchChannel.messages.fetch(voteMessage.button_message_id).catch(() => null)
-        : null;
-      if (buttonMessage) await buttonMessage.delete().catch(() => {});
-    }
-    await repo.deleteVoteMessage(voteMessage.starboard_id, voteMessage.original_message_id);
-  }
 }
 
-// --- Button-vote mode ---
-// One button per (matching) new message in the watch channel, posted by the bot as a
-// reply. Clicking toggles that user's vote; the label shows the live count.
-
-function buildVoteButtonRow(board, count) {
-  const [emoji] = JSON.parse(board.emojis);
-  const button = new ButtonBuilder()
-    .setCustomId(`starboard:vote:${board.id}`)
-    .setLabel(String(count))
-    .setStyle(count >= board.threshold ? ButtonStyle.Success : ButtonStyle.Secondary);
-
-  const customEmojiMatch = emoji.match(/^<a?:(\w{2,32}):(\d{17,20})>$/);
-  if (customEmojiMatch) {
-    button.setEmoji({ name: customEmojiMatch[1], id: customEmojiMatch[2], animated: emoji.startsWith('<a:') });
-  } else {
-    button.setEmoji(emoji);
-  }
-
-  return new ActionRowBuilder().addComponents(button);
-}
-
-// Posts one vote button (starting at 0) as a reply to `message`, for `board`, and
-// records the mapping. Returns true on success, false if it couldn't post (e.g.
-// missing permissions) — callers just skip it and move on rather than fail hard.
-async function postVoteButton(message, board) {
-  try {
-    const row = buildVoteButtonRow(board, 0);
-    const sent = await message.reply({ components: [row], allowedMentions: { repliedUser: false } });
-    await repo.createVoteMessage(board.id, message.id, sent.id);
-    return true;
-  } catch (err) {
-    console.warn(`[starboard] Could not post the vote button for board "${board.name}" in guild ${message.guild.id}:`, err.message);
-    return false;
-  }
-}
-
-// Called from messageCreate for every new message in a channel watched by at least one
-// buttons-mode board. Posts one vote button per matching board, as a reply so it's
-// visually tied to the original message.
-async function handleNewMessage(message) {
-  if (!message.guild || message.author?.bot) return;
-  if (!(await repo.isEnabled(message.guild.id))) return;
-
-  const boards = (await repo.getBoardsWatchingChannel(message.guild.id, message.channelId)).filter(
-    (b) => b.voting_method === 'buttons'
-  );
-
-  for (const board of boards) {
-    if (!matchesContentType(message, board.content_type)) continue;
-    await postVoteButton(message, board);
-  }
-}
-
-// Called from interactionCreate for clicks on a "starboard:vote:<boardId>" button.
-async function handleVoteButtonClick(interaction) {
-  const boardId = Number(interaction.customId.split(':')[2]);
-  const board = await repo.getById(boardId);
-
-  if (!board || board.guild_id !== interaction.guildId || board.voting_method !== 'buttons') {
-    await interaction.reply({ content: '⚠️ This starboard no longer exists.', flags: MessageFlags.Ephemeral });
-    return;
-  }
-  if (!(await repo.isEnabled(interaction.guildId))) {
-    await interaction.reply({
-      content: '⚠️ The Starboard feature is currently disabled in this server.',
-      flags: MessageFlags.Ephemeral,
-    });
-    return;
-  }
-
-  const voteMessage = await repo.getVoteMessageByButtonMessageId(board.id, interaction.message.id);
-  if (!voteMessage) {
-    await interaction.reply({ content: '⚠️ Could not find the original message for this vote.', flags: MessageFlags.Ephemeral });
-    return;
-  }
-
-  const watchChannel = await interaction.guild.channels.fetch(board.watch_channel_id).catch(() => null);
-  const originalMessage = watchChannel
-    ? await watchChannel.messages.fetch(voteMessage.original_message_id).catch(() => null)
-    : null;
-  if (!originalMessage) {
-    await interaction.reply({ content: '⚠️ The original message no longer exists.', flags: MessageFlags.Ephemeral });
-    return;
-  }
-
-  if (originalMessage.author?.id === interaction.user.id) {
-    await interaction.reply({ content: "You can't vote for your own message.", flags: MessageFlags.Ephemeral });
-    return;
-  }
-
-  const alreadyVoted = await repo.hasVoted(board.id, voteMessage.original_message_id, interaction.user.id);
-  if (alreadyVoted) {
-    await repo.removeVote(board.id, voteMessage.original_message_id, interaction.user.id);
-  } else {
-    await repo.addVote(board.id, voteMessage.original_message_id, interaction.user.id);
-  }
-
-  const count = await repo.countVotes(board.id, voteMessage.original_message_id);
-  const row = buildVoteButtonRow(board, count);
-
-  await interaction.update({ components: [row] });
-  await syncStarboardPost(interaction.guild, board, originalMessage, count);
-}
+// --- Lookback (/starboard lookback) ---
 
 const LOOKBACK_DEFAULT_LIMIT = 200;
 const LOOKBACK_MAX_LIMIT = 1000;
@@ -601,6 +510,7 @@ const LOOKBACK_YEAR_HARD_CAP = 20000;
 const MESSAGE_FETCH_PAGE_SIZE = 100; // Discord's own per-call cap
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const DISCORD_EPOCH_MS = 1420070400000n; // 2015-01-01T00:00:00.000Z
+const MAX_LOOKBACK_CHANNELS = 5; // 1 primary watch channel + up to 4 extras
 
 // Builds a Discord snowflake for a given UTC instant. Not a real object's ID — just a
 // synthetic cursor Discord's API accepts as a `before` value, letting a scan start from
@@ -685,17 +595,52 @@ function parseUntilDate(input) {
   return new Date(midnight.getTime() + ONE_DAY_MS);
 }
 
-// Scans a starboard's watch channel for messages that already qualify but haven't been
-// picked up yet — the most recent `limit` messages by default, or a date-bounded window
-// using `sinceDateInput`/`sinceYearStart` (start) and `untilDateInput` (end). Also
-// supports one-off overrides — `contentType`, `emojisInput`, `threshold` — that apply
-// only to this scan, without touching the starboard's saved configuration. This backfills
-// a starboard that was just created, or catches up on messages missed while offline,
-// instead of only reacting to things going forward.
+// Scans a single channel and applies the lookback logic to every (non-bot) message in
+// it, accumulating into `stats`. Shared by every channel a lookback covers.
+async function scanChannelForLookback(guild, scanBoard, channel, fetchOptions, stats) {
+  // fetchMessagesUntil paginates newest-first (that's how Discord's API and the cutoff
+  // logic work), but the scan itself processes oldest-to-newest — so starboard posts (and
+  // their embeds' timestamps) appear in the same order the messages were actually sent.
+  const messages = await fetchMessagesUntil(channel, fetchOptions);
+  messages.reverse();
+
+  for (const message of messages) {
+    if (message.author?.bot) continue;
+    stats.scanned++;
+
+    // A single message failing (a transient Discord/Turso hiccup, a message that
+    // vanished mid-scan, ...) must not abort the whole lookback — log it, count it, and
+    // keep going. Without this, one bad message used to silently cut the scan short.
+    try {
+      const result = await countAndSync(guild, scanBoard, message);
+      if (result === 'created') stats.qualified++;
+    } catch (err) {
+      stats.errors++;
+      console.error(`[starboard] Lookback error on message ${message.id} (board "${scanBoard.name}"):`, err);
+    }
+  }
+}
+
+// Scans a starboard's watch channel (and, optionally, extra channels) for messages that
+// already qualify but haven't been picked up yet — the most recent `limit` messages by
+// default, or a date-bounded window using `sinceDateInput`/`sinceYearStart` (start) and
+// `untilDateInput` (end). Also supports one-off overrides — `contentType`, `emojisInput`,
+// `threshold` — that apply only to this scan, without touching the starboard's saved
+// configuration. This backfills a starboard that was just created, or catches up on
+// messages missed while offline, instead of only reacting to things going forward.
 async function runLookback(
   guild,
   name,
-  { limit = LOOKBACK_DEFAULT_LIMIT, sinceYearStart = false, sinceDateInput, untilDateInput, contentType, emojisInput, threshold } = {}
+  {
+    limit = LOOKBACK_DEFAULT_LIMIT,
+    sinceYearStart = false,
+    sinceDateInput,
+    untilDateInput,
+    contentType,
+    emojisInput,
+    threshold,
+    extraChannels = [],
+  } = {}
 ) {
   const board = await repo.getByName(guild.id, name);
   if (!board) {
@@ -707,13 +652,12 @@ async function runLookback(
   if (sinceYearStart && sinceDateInput) {
     throw new ValidationError('Use either "since_year_start" or "since_date", not both.');
   }
-  if ((emojisInput !== undefined || threshold !== undefined) && board.voting_method !== 'reactions') {
-    throw new ValidationError('The "emojis" and "threshold" overrides only apply to Reactions-mode starboards.');
+  if (extraChannels.length > MAX_LOOKBACK_CHANNELS - 1) {
+    throw new ValidationError(`You can scan at most ${MAX_LOOKBACK_CHANNELS} channels in one lookback.`);
   }
 
-  // These only narrow/change what THIS scan looks at and how it counts — one-off
-  // overrides, not a change to the starboard's saved configuration. Everything else
-  // about the board (post channel, ...) still comes from the real board record.
+  // All value-only validation happens up front, before any Discord/DB calls beyond the
+  // board lookup above — so a bad option value fails fast without wasting API calls.
   const overrides = {};
   if (contentType !== undefined) {
     assertValidContentType(contentType);
@@ -743,11 +687,21 @@ async function runLookback(
     }
   }
 
-  // All input validation is done at this point — only now do we reach out to Discord,
-  // so a bad option value fails fast without wasting an API call.
-  const channel = await guild.channels.fetch(board.watch_channel_id).catch(() => null);
-  if (!channel || !channel.isTextBased()) {
-    throw new ValidationError(`Could not access <#${board.watch_channel_id}> — check the bot still has access to it.`);
+  // Resolve every channel to scan: the board's own watch channel plus any extras,
+  // deduplicated (an admin might accidentally list the watch channel again).
+  const channelIds = [...new Set([board.watch_channel_id, ...extraChannels.map((c) => c.id)])];
+  const channels = [];
+  const inaccessibleChannelIds = [];
+  for (const channelId of channelIds) {
+    const channel = await guild.channels.fetch(channelId).catch(() => null);
+    if (channel && channel.isTextBased()) {
+      channels.push(channel);
+    } else {
+      inaccessibleChannelIds.push(channelId);
+    }
+  }
+  if (channels.length === 0) {
+    throw new ValidationError('None of the channels for this lookback could be accessed — check the bot still has access to them.');
   }
 
   const fetchOptions = {
@@ -756,49 +710,19 @@ async function runLookback(
     untilTimestampExclusive,
   };
 
-  // fetchMessagesUntil paginates newest-first (that's how Discord's API and the cutoff
-  // logic work), but the scan itself processes oldest-to-newest — so buttons get posted,
-  // and posts appear on the starboard, in the same order the messages were actually sent.
-  const messages = await fetchMessagesUntil(channel, fetchOptions);
-  messages.reverse();
   const stats = {
     scanned: 0,
     qualified: 0,
-    buttonsAdded: 0,
     errors: 0,
-    votingMethod: scanBoard.voting_method,
+    channelsScanned: channels.length,
+    inaccessibleChannelIds,
     contentType: scanBoard.content_type,
     emojis: JSON.parse(scanBoard.emojis),
     threshold: scanBoard.threshold,
   };
 
-  for (const message of messages) {
-    if (message.author?.bot) continue;
-    stats.scanned++;
-
-    // A single message failing (a transient Discord/Turso hiccup, a message that
-    // vanished mid-scan, ...) must not abort the whole lookback — log it, count it,
-    // and keep going. Without this, one bad message used to silently cut the scan
-    // short partway through a long channel.
-    try {
-      if (scanBoard.voting_method === 'buttons') {
-        if (!matchesContentType(message, scanBoard.content_type)) continue;
-        const existing = await repo.getVoteMessageByOriginalMessageId(scanBoard.id, message.id);
-        if (existing) continue; // already has a button, nothing to backfill
-
-        const posted = await postVoteButton(message, scanBoard);
-        if (posted) stats.buttonsAdded++;
-        continue;
-      }
-
-      // Reactions mode: reuse the exact same counting/sync logic the live event uses,
-      // so a lookback behaves identically to what would've happened in real time.
-      const result = await countAndSync(guild, scanBoard, message);
-      if (result === 'created') stats.qualified++;
-    } catch (err) {
-      stats.errors++;
-      console.error(`[starboard] Lookback error on message ${message.id} (board "${scanBoard.name}"):`, err);
-    }
+  for (const channel of channels) {
+    await scanChannelForLookback(guild, scanBoard, channel, fetchOptions, stats);
   }
 
   return stats;
@@ -808,8 +732,9 @@ module.exports = {
   ValidationError,
   CONTENT_TYPES,
   DEFAULT_CONTENT_TYPE,
-  VOTING_METHODS,
-  DEFAULT_VOTING_METHOD,
+  LOOKBACK_DEFAULT_LIMIT,
+  LOOKBACK_MAX_LIMIT,
+  MAX_LOOKBACK_CHANNELS,
   isEnabled,
   setEnabled,
   create,
@@ -819,10 +744,7 @@ module.exports = {
   getNamesList,
   formatEmojisForDisplay,
   handleReactionChange,
+  handleStarboardPostReactionChange,
   handleMessageDelete,
-  handleNewMessage,
-  handleVoteButtonClick,
   runLookback,
-  LOOKBACK_DEFAULT_LIMIT,
-  LOOKBACK_MAX_LIMIT,
 };

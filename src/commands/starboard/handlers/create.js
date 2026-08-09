@@ -16,7 +16,6 @@ async function handleCreate(interaction) {
   const threshold = interaction.options.getInteger('threshold');
   const emojisInput = interaction.options.getString('emojis');
   const contentType = interaction.options.getString('content_type') ?? undefined;
-  const votingMethod = interaction.options.getString('voting_method') ?? undefined;
 
   let result;
   try {
@@ -28,7 +27,6 @@ async function handleCreate(interaction) {
       threshold,
       emojisInput,
       contentType,
-      votingMethod,
       interaction.user.id
     );
   } catch (err) {
@@ -39,17 +37,11 @@ async function handleCreate(interaction) {
     throw err;
   }
 
-  const votingNote =
-    result.votingMethod === 'buttons'
-      ? "I'll post a vote button under every new matching message in that channel."
-      : 'People vote by reacting directly on the message.';
-
   await interaction.reply({
     content:
-      `✅ Starboard **${result.name}** created: messages in ${watchChannel} with **${threshold}+** votes ` +
+      `✅ Starboard **${result.name}** created: messages in ${watchChannel} with **${threshold}+** reactions ` +
       `(${starboardManager.formatEmojisForDisplay(result.emojis)}) get reposted to ${postChannel}. ` +
-      `Content filter: **${starboardManager.CONTENT_TYPES[result.contentType]}**. ` +
-      `Voting: **${starboardManager.VOTING_METHODS[result.votingMethod]}** — ${votingNote}`,
+      `Content filter: **${starboardManager.CONTENT_TYPES[result.contentType]}**.`,
     flags: MessageFlags.Ephemeral,
   });
 }

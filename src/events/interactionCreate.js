@@ -1,5 +1,3 @@
-const { MessageFlags } = require('discord.js');
-
 module.exports = {
   name: 'interactionCreate',
   once: false,
@@ -45,14 +43,27 @@ module.exports = {
       return;
     }
 
-    if (interaction.isButton() && interaction.customId.startsWith('starboard:vote:')) {
+    if (interaction.isChannelSelectMenu() && interaction.customId === 'starboard:lookback:channels') {
       try {
-        const starboardManager = require('../features/starboard/starboardManager');
-        await starboardManager.handleVoteButtonClick(interaction);
+        const { handleChannelSelect } = require('../commands/starboard/handlers/lookbackInteractions');
+        await handleChannelSelect(interaction);
       } catch (err) {
-        console.error('Error handling starboard vote button click:', err);
+        console.error('Error handling starboard lookback channel select:', err);
         await interaction
-          .reply({ content: '⚠️ An error occurred while registering your vote.', flags: MessageFlags.Ephemeral })
+          .update({ content: '⚠️ An error occurred while starting the scan.', components: [] })
+          .catch(() => null);
+      }
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId === 'starboard:lookback:run') {
+      try {
+        const { handleRunButton } = require('../commands/starboard/handlers/lookbackInteractions');
+        await handleRunButton(interaction);
+      } catch (err) {
+        console.error('Error handling starboard lookback run button:', err);
+        await interaction
+          .update({ content: '⚠️ An error occurred while starting the scan.', components: [] })
           .catch(() => null);
       }
       return;

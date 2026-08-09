@@ -22,5 +22,9 @@ module.exports = {
     await starboardManager.handleReactionChange(reaction, message.guild).catch((err) => {
       console.error('[starboard] Error handling reaction remove:', err);
     });
+
+    await starboardManager.handleStarboardPostReactionChange(reaction, message.guild).catch((err) => {
+      console.error('[starboard] Error handling reaction remove on a starboard repost:', err);
+    });
   },
 };

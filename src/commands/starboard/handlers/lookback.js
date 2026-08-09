@@ -1,73 +1,82 @@
-const { PermissionFlagsBits, MessageFlags } = require('discord.js');
+const {
+  PermissionFlagsBits,
+  MessageFlags,
+  ActionRowBuilder,
+  ChannelSelectMenuBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ChannelType,
+} = require('discord.js');
 const starboardManager = require('../../../features/starboard/starboardManager');
+const lookbackSessions = require('../../../features/starboard/lookbackSessions');
+
+const PICKER_CHANNEL_TYPES = [
+  ChannelType.GuildText,
+  ChannelType.GuildAnnouncement,
+  ChannelType.PublicThread,
+  ChannelType.PrivateThread,
+  ChannelType.AnnouncementThread,
+];
 
 async function handleLookback(interaction) {
+  // Ack the interaction FIRST, before any DB/Discord work below. Discord only gives 3
+  // seconds for the initial acknowledgment — if a slow database round-trip (e.g. a cold
+  // start) happened before this, the interaction token could already be dead by the time
+  // we tried to defer, and every lookback would fail with a generic "an error occurred".
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
   if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
-    await interaction.reply({
-      content: '❌ You need the "Manage Server" permission to use this command.',
-      flags: MessageFlags.Ephemeral,
+    await interaction.editReply({ content: '❌ You need the "Manage Server" permission to use this command.' });
+    return;
+  }
+  if (!(await starboardManager.isEnabled(interaction.guildId))) {
+    await interaction.editReply({
+      content: '⚠️ The Starboard feature is currently disabled in this server. An admin can re-enable it with `/disablefeature`.',
     });
     return;
   }
 
   const name = interaction.options.getString('name');
-  const limit = interaction.options.getInteger('limit') ?? starboardManager.LOOKBACK_DEFAULT_LIMIT;
-  const sinceYearStart = interaction.options.getBoolean('since_year_start') ?? false;
-  const sinceDateInput = interaction.options.getString('since_date') ?? undefined;
-  const untilDateInput = interaction.options.getString('until_date') ?? undefined;
-  const contentType = interaction.options.getString('content_type') ?? undefined;
-  const emojisInput = interaction.options.getString('emojis') ?? undefined;
-  const threshold = interaction.options.getInteger('threshold') ?? undefined;
-
-  // Scanning message history (and, in Reactions mode, fetching users per reaction) can
-  // take a while on a busy channel — defer so Discord doesn't time out the interaction.
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-  let stats;
-  try {
-    stats = await starboardManager.runLookback(interaction.guild, name, {
-      limit,
-      sinceYearStart,
-      sinceDateInput,
-      untilDateInput,
-      contentType,
-      emojisInput,
-      threshold,
-    });
-  } catch (err) {
-    if (err instanceof starboardManager.ValidationError) {
-      await interaction.editReply({ content: `⚠️ ${err.message}` });
-      return;
-    }
-    throw err;
+  const existingNames = await starboardManager.getNamesList(interaction.guildId);
+  if (!existingNames.includes(name)) {
+    await interaction.editReply({ content: `⚠️ No starboard named "${name}" found in this server.` });
+    return;
   }
 
-  const startBound = sinceDateInput ? `since ${sinceDateInput}` : sinceYearStart ? 'since January 1st' : null;
-  const endBound = untilDateInput ? `until ${untilDateInput}` : null;
-  const scope = startBound || endBound ? [startBound, endBound].filter(Boolean).join(' ') : `across the last ${limit} messages`;
+  // Everything besides the channel(s) to scan is known already — stash it, then let the
+  // person pick which channel(s) via a proper searchable list of the server's channels
+  // (a native Discord select menu), instead of guessing channel names into text options.
+  const options = {
+    name,
+    limit: interaction.options.getInteger('limit') ?? starboardManager.LOOKBACK_DEFAULT_LIMIT,
+    sinceYearStart: interaction.options.getBoolean('since_year_start') ?? false,
+    sinceDateInput: interaction.options.getString('since_date') ?? undefined,
+    untilDateInput: interaction.options.getString('until_date') ?? undefined,
+    contentType: interaction.options.getString('content_type') ?? undefined,
+    emojisInput: interaction.options.getString('emojis') ?? undefined,
+    threshold: interaction.options.getInteger('threshold') ?? undefined,
+  };
 
-  const filterNote = ` (filter: **${starboardManager.CONTENT_TYPES[stats.contentType]}**`;
-  const overrideNote =
-    stats.votingMethod === 'reactions' && (emojisInput !== undefined || threshold !== undefined)
-      ? `, emojis: **${starboardManager.formatEmojisForDisplay(stats.emojis)}**, threshold: **${stats.threshold}**)`
-      : ')';
+  const channelSelect = new ChannelSelectMenuBuilder()
+    .setCustomId('starboard:lookback:channels')
+    .setPlaceholder(`Optionally pick up to ${starboardManager.MAX_LOOKBACK_CHANNELS - 1} extra channels to also scan`)
+    .addChannelTypes(...PICKER_CHANNEL_TYPES)
+    .setMinValues(0)
+    .setMaxValues(starboardManager.MAX_LOOKBACK_CHANNELS - 1);
 
-  const errorNote =
-    stats.errors > 0
-      ? ` ⚠️ **${stats.errors}** message${stats.errors === 1 ? '' : 's'} couldn't be checked due to an error — you can safely run this again to retry them.`
-      : '';
-  const summary =
-    stats.votingMethod === 'buttons'
-      ? `✅ Scanned **${stats.scanned}** messages ${scope}${filterNote}${overrideNote} and added a vote button to **${stats.buttonsAdded}** that didn't have one yet.${errorNote}`
-      : `✅ Scanned **${stats.scanned}** messages ${scope}${filterNote}${overrideNote} — **${stats.qualified}** newly made it onto the starboard.${errorNote}`;
+  const runButton = new ButtonBuilder()
+    .setCustomId('starboard:lookback:run')
+    .setLabel("Run now (just this starboard's own channel)")
+    .setStyle(ButtonStyle.Primary);
 
-  // A very long scan can outlast the interaction token's 15-minute lifetime — by this
-  // point the actual work above is already done and saved either way, so a failed
-  // reply here just means the summary itself couldn't be delivered, not that the scan
-  // failed silently.
-  await interaction.editReply({ content: summary }).catch((err) => {
-    console.warn('[starboard] Lookback finished but the summary reply could not be sent (interaction likely expired):', err.message);
+  const sent = await interaction.editReply({
+    content:
+      `Starboard **${name}**'s own watch channel is always scanned. Want to also scan other channels? ` +
+      'Pick them from the list below, or just run it now with the default channel only.',
+    components: [new ActionRowBuilder().addComponents(channelSelect), new ActionRowBuilder().addComponents(runButton)],
   });
+
+  lookbackSessions.create(sent.id, options);
 }
 
 module.exports = { handleLookback };

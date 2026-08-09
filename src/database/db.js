@@ -107,6 +107,13 @@ async function createTables() {
         created_at INTEGER,
         PRIMARY KEY (guild_id, user_id, role_id)
       )`,
+      `CREATE TABLE IF NOT EXISTS booster_link_exempt_roles (
+        guild_id TEXT NOT NULL,
+        role_id TEXT NOT NULL,
+        added_by TEXT,
+        added_at INTEGER,
+        PRIMARY KEY (guild_id, role_id)
+      )`,
       `CREATE TABLE IF NOT EXISTS role_link_config (
         guild_id TEXT PRIMARY KEY,
         enabled INTEGER NOT NULL DEFAULT 1
@@ -163,7 +170,6 @@ async function createTables() {
         threshold INTEGER NOT NULL,
         emojis TEXT NOT NULL,
         content_type TEXT NOT NULL DEFAULT 'any',
-        voting_method TEXT NOT NULL DEFAULT 'reactions',
         created_by TEXT,
         created_at INTEGER,
         UNIQUE (guild_id, name)
@@ -176,18 +182,6 @@ async function createTables() {
         starboard_message_id TEXT NOT NULL,
         reaction_count INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (starboard_id, original_message_id)
-      )`,
-      `CREATE TABLE IF NOT EXISTS starboard_vote_messages (
-        starboard_id INTEGER NOT NULL,
-        original_message_id TEXT NOT NULL,
-        button_message_id TEXT NOT NULL,
-        PRIMARY KEY (starboard_id, original_message_id)
-      )`,
-      `CREATE TABLE IF NOT EXISTS starboard_votes (
-        starboard_id INTEGER NOT NULL,
-        original_message_id TEXT NOT NULL,
-        user_id TEXT NOT NULL,
-        PRIMARY KEY (starboard_id, original_message_id, user_id)
       )`,
     ],
     'write'
@@ -265,6 +259,26 @@ async function migrate() {
     await client.execute('DROP TABLE custom_role_links');
   }
 
+  // The booster-link auto-removal exemption used to be a single role ID hardcoded in
+  // the bot's source. It's now a configurable per-guild list (booster_link_exempt_roles,
+  // managed via /boosterlink exempt). This one-time seed preserves current behavior for
+  // any guild that was already using the feature, without overriding an admin who has
+  // since deliberately cleared their exempt list — it only runs while the new table is
+  // still completely empty.
+  const exemptRolesCount = await client.execute('SELECT COUNT(*) AS c FROM booster_link_exempt_roles');
+  if (Number(exemptRolesCount.rows[0]?.c ?? 0) === 0) {
+    const guildsWithBoosterLinkData = await client.execute(
+      'SELECT DISTINCT guild_id FROM booster_link_links UNION SELECT DISTINCT guild_id FROM booster_link_config'
+    );
+    for (const row of guildsWithBoosterLinkData.rows) {
+      await client.execute({
+        sql: `INSERT OR IGNORE INTO booster_link_exempt_roles (guild_id, role_id, added_by, added_at)
+              VALUES (?, ?, NULL, ?)`,
+        args: [row.guild_id, '1090658915810820156', Date.now()],
+      });
+    }
+  }
+
   // Adds the "enabled" toggle (default: on) to every guild config table that didn't
   // originally have one. New installs already get it via createTables() above; this
   // only runs against databases created before the toggle existed for that feature.
@@ -277,9 +291,8 @@ async function migrate() {
     }
   }
 
-  // The starboards table shipped without "content_type" and "voting_method" at first,
-  // then got them added in two later updates. Upgrades any database created against an
-  // earlier version of the table.
+  // The starboards table shipped without "content_type" at first. Upgrades any database
+  // created against an earlier version of the table.
   const starboardsTableExists = tableNames.includes('starboards');
   if (starboardsTableExists) {
     const starboardColumns = await client.execute('PRAGMA table_info(starboards)');
@@ -288,10 +301,16 @@ async function migrate() {
     if (!starboardColumnNames.includes('content_type')) {
       await client.execute("ALTER TABLE starboards ADD COLUMN content_type TEXT NOT NULL DEFAULT 'any'");
     }
-    if (!starboardColumnNames.includes('voting_method')) {
-      await client.execute("ALTER TABLE starboards ADD COLUMN voting_method TEXT NOT NULL DEFAULT 'reactions'");
+
+    // The short-lived "vote button" mode (voting_method + its two support tables) was
+    // removed — Starboard is Reactions-only now. Clean up any database that still has
+    // the old column/tables from before this change.
+    if (starboardColumnNames.includes('voting_method')) {
+      await client.execute('ALTER TABLE starboards DROP COLUMN voting_method');
     }
   }
+  await client.execute('DROP TABLE IF EXISTS starboard_vote_messages');
+  await client.execute('DROP TABLE IF EXISTS starboard_votes');
 }
 
 const ready = createTables()

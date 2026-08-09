@@ -15,7 +15,6 @@ const STARBOARD_CHANNEL_TYPES = [
 ];
 
 const CONTENT_TYPE_CHOICES = Object.entries(starboardManager.CONTENT_TYPES).map(([value, name]) => ({ name, value }));
-const VOTING_METHOD_CHOICES = Object.entries(starboardManager.VOTING_METHODS).map(([value, name]) => ({ name, value }));
 
 const data = new SlashCommandBuilder()
   .setName('starboard')
@@ -61,13 +60,6 @@ const data = new SlashCommandBuilder()
           .addChoices(...CONTENT_TYPE_CHOICES)
           .setRequired(false)
       )
-      .addStringOption((opt) =>
-        opt
-          .setName('voting_method')
-          .setDescription('Reactions (default) or a bot-posted vote button on every message')
-          .addChoices(...VOTING_METHOD_CHOICES)
-          .setRequired(false)
-      )
   )
   .addSubcommand((sub) =>
     sub
@@ -106,13 +98,6 @@ const data = new SlashCommandBuilder()
           .addChoices(...CONTENT_TYPE_CHOICES)
           .setRequired(false)
       )
-      .addStringOption((opt) =>
-        opt
-          .setName('voting_method')
-          .setDescription('New voting method (reactions or a bot-posted vote button)')
-          .addChoices(...VOTING_METHOD_CHOICES)
-          .setRequired(false)
-      )
   )
   .addSubcommand((sub) =>
     sub
@@ -126,14 +111,14 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('lookback')
-      .setDescription("[Admin] Scan recent messages in a starboard's channel for ones that already qualify")
+      .setDescription("[Admin] Scan recent messages in a starboard's channel(s) for ones that already qualify")
       .addStringOption((opt) =>
         opt.setName('name').setDescription('Which starboard to scan').setRequired(true).setAutocomplete(true)
       )
       .addIntegerOption((opt) =>
         opt
           .setName('limit')
-          .setDescription(`How many recent messages to scan (default ${starboardManager.LOOKBACK_DEFAULT_LIMIT}, ignored if since_year_start/since_date is set)`)
+          .setDescription(`Messages to scan per channel (default ${starboardManager.LOOKBACK_DEFAULT_LIMIT}, ignored with since_year_start/since_date)`)
           .setMinValue(1)
           .setMaxValue(starboardManager.LOOKBACK_MAX_LIMIT)
           .setRequired(false)
@@ -152,27 +137,24 @@ const data = new SlashCommandBuilder()
       )
       .addStringOption((opt) =>
         opt
-          .setName('content_type')
-          .setDescription("Only check this kind of message for this scan (default: the starboard's own filter)")
-          .addChoices(...CONTENT_TYPE_CHOICES)
-          .setRequired(false)
-      )
-      .addStringOption((opt) =>
-        opt
           .setName('until_date')
           .setDescription('Stop the scan at a specific date, DD/MM/YY or DD/MM/YYYY (inclusive of that whole day)')
           .setRequired(false)
       )
       .addStringOption((opt) =>
         opt
-          .setName('emojis')
-          .setDescription('Only count these emoji(s) for this scan (Reactions mode only)')
+          .setName('content_type')
+          .setDescription("Only check this kind of message for this scan (default: the starboard's own filter)")
+          .addChoices(...CONTENT_TYPE_CHOICES)
           .setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt.setName('emojis').setDescription("Only count these emoji(s) for this scan (default: the starboard's own)").setRequired(false)
       )
       .addIntegerOption((opt) =>
         opt
           .setName('threshold')
-          .setDescription('Use a different minimum vote count for this scan (Reactions mode only)')
+          .setDescription("Use a different minimum vote count for this scan (default: the starboard's own)")
           .setMinValue(1)
           .setMaxValue(1000)
           .setRequired(false)
@@ -180,6 +162,15 @@ const data = new SlashCommandBuilder()
   );
 
 async function execute(interaction) {
+  const subcommand = interaction.options.getSubcommand();
+
+  // Lookback defers (acks) the interaction itself, as the very first thing it does —
+  // so the enabled-feature check below must happen AFTER that, not before, or a slow
+  // DB round-trip here could eat into Discord's 3-second ack window.
+  if (subcommand === 'lookback') {
+    return handleLookback(interaction);
+  }
+
   if (!(await starboardManager.isEnabled(interaction.guildId))) {
     await interaction.reply({
       content: '⚠️ The Starboard feature is currently disabled in this server. An admin can re-enable it with `/disablefeature`.',
@@ -188,7 +179,7 @@ async function execute(interaction) {
     return;
   }
 
-  switch (interaction.options.getSubcommand()) {
+  switch (subcommand) {
     case 'create':
       return handleCreate(interaction);
     case 'edit':
@@ -197,14 +188,12 @@ async function execute(interaction) {
       return handleRemove(interaction);
     case 'list':
       return handleList(interaction);
-    case 'lookback':
-      return handleLookback(interaction);
     default:
       return interaction.reply({ content: 'Unknown subcommand.', flags: MessageFlags.Ephemeral });
   }
 }
 
-// Powers the "name" option's autocomplete on /starboard edit and /starboard remove.
+// Powers the "name" option's autocomplete on /starboard edit, remove and lookback.
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
   if (focused.name !== 'name') {

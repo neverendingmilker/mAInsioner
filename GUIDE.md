@@ -30,7 +30,7 @@ Admin only (Manage Roles). Links a custom role (that you assign manually to a bo
 - **`/boosterlink unlink`** — Stops tracking the link (does not remove the role from the user). The role is optional: if omitted, it untracks every role linked to that user at once.
 - **`/boosterlink list`** — Lists active links, optionally filtered by user.
 
-When a user loses Discord's Booster role (boost expired, manually removed, etc.), every custom role linked to them gets automatically removed. Users with role `1090658915810820156` are always excluded from this automatic removal, even if they have linked roles and lose the booster role.
+When a user loses Discord's Booster role (boost expired, manually removed, etc.), every custom role linked to them gets automatically removed. `/boosterlink exempt` manages a list of roles that skip this — a user only needs one of the configured exempt roles to be skipped entirely, even if they have linked roles and lose the booster role.
 
 ## 🔎 Combined role search (`/comboroles`)
 
@@ -65,11 +65,11 @@ Admin only (Manage Server). Collects the most popular messages of a channel (by 
 
 A message qualifies once enough different people have reacted with at least one of the configured emojis (reacting with two counted emojis only counts once per person, and the message author's own reaction doesn't count). The reaction count on the starboard post stays live: if it later drops back below the threshold, the post is removed from the starboard. If the original message gets deleted, its starboard post is removed too.
 
+Once a message is reposted, the bot auto-reacts with ⭐ on its own copy — you can keep starring it right from the starboard channel from then on, and those extra reactions add to the count too (the bot's own reaction never counts towards the total).
+
 Optionally, each starboard can restrict which kind of message qualifies at all: **Any message** (default), **Text only**, **Images only**, **GIFs only**, **Videos only**, **Any media**, or **Text + media** (needs both a caption and an attachment).
 
-By default people vote by reacting on the message ("Reactions" mode). You can instead set a starboard to "Buttons" mode: the bot posts a vote button under every new matching message in the watch channel, and clicking it toggles your vote (click again to remove it). You can't vote for your own message, and the button's color turns green once the threshold is reached.
-
-- **`/starboard lookback`** — Scans a starboard's watch channel for messages that already qualify but haven't been picked up yet — handy right after creating a new starboard, or to catch up on messages missed while the bot was offline. By default it scans the most recent 200 messages (up to 1000), but you can instead scan back to January 1st, back to a specific date, or a specific date range (from/to). Messages are processed oldest-first, so vote buttons and starboard posts appear in the same order the messages were actually sent. You can also, just for that scan, check a different content type, different emoji(s), or a different minimum vote count than what the starboard is normally configured for, without changing its saved settings. In Reactions mode it re-checks existing reactions; in Buttons mode it adds a vote button to any matching message that doesn't already have one. If a handful of messages fail to check (a temporary hiccup), the scan keeps going and tells you how many it had to skip — you can just run it again to pick those up.
+- **`/starboard lookback`** — Scans a starboard's watch channel for messages that already qualify but haven't been picked up yet — handy right after creating a new starboard, or to catch up on messages missed while the bot was offline. By default it scans the most recent 200 messages (up to 1000), but you can instead scan back to January 1st, back to a specific date, or a specific date range (from/to). After running the command, you'll get a channel picker showing every channel in the server, so you can optionally add a few more channels to the same scan — or just hit "Run now" to scan the starboard's own channel only. Messages are processed oldest-first, so starboard posts appear in the same order the messages were actually sent. You can also, just for that scan, check a different content type, different emoji(s), or a different minimum vote count than what the starboard is normally configured for, without changing its saved settings. If a handful of messages fail to check (a temporary hiccup), the scan keeps going and tells you how many it had to skip — you can just run it again to pick those up.
 
 ## 📌 Sticky messages (`/sticky`)
 

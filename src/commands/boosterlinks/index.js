@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { handleLink } = require('./handlers/link');
 const { handleUnlink } = require('./handlers/unlink');
 const { handleList } = require('./handlers/list');
+const { handleExemptAdd, handleExemptRemove, handleExemptList } = require('./handlers/exempt');
 
 const data = new SlashCommandBuilder()
   .setName('boosterlink')
@@ -31,9 +32,42 @@ const data = new SlashCommandBuilder()
       .setName('list')
       .setDescription('Lists tracked custom roles')
       .addUserOption((opt) => opt.setName('user').setDescription("Show only this user's tracked roles").setRequired(false))
+  )
+  .addSubcommandGroup((group) =>
+    group
+      .setName('exempt')
+      .setDescription('Manage which roles are exempt from the auto-removal, regardless of boost status')
+      .addSubcommand((sub) =>
+        sub
+          .setName('add')
+          .setDescription('Add a role: members with it are never touched by the auto-removal')
+          .addRoleOption((opt) => opt.setName('role').setDescription('The role to exempt').setRequired(true))
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName('remove')
+          .setDescription('Remove a role from the exempt list')
+          .addRoleOption((opt) => opt.setName('role').setDescription('The role to stop exempting').setRequired(true))
+      )
+      .addSubcommand((sub) => sub.setName('list').setDescription('Lists every exempt role'))
   );
 
 async function execute(interaction) {
+  const group = interaction.options.getSubcommandGroup(false);
+
+  if (group === 'exempt') {
+    switch (interaction.options.getSubcommand()) {
+      case 'add':
+        return handleExemptAdd(interaction);
+      case 'remove':
+        return handleExemptRemove(interaction);
+      case 'list':
+        return handleExemptList(interaction);
+      default:
+        return undefined;
+    }
+  }
+
   switch (interaction.options.getSubcommand()) {
     case 'link':
       return handleLink(interaction);

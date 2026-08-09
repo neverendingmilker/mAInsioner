@@ -16,7 +16,6 @@ async function handleEdit(interaction) {
   const threshold = interaction.options.getInteger('threshold') ?? undefined;
   const emojisInput = interaction.options.getString('emojis') ?? undefined;
   const contentType = interaction.options.getString('content_type') ?? undefined;
-  const votingMethod = interaction.options.getString('voting_method') ?? undefined;
 
   let updated;
   try {
@@ -26,7 +25,6 @@ async function handleEdit(interaction) {
       threshold,
       emojisInput,
       contentType,
-      votingMethod,
     });
   } catch (err) {
     if (err instanceof starboardManager.ValidationError) {
@@ -41,8 +39,7 @@ async function handleEdit(interaction) {
       `✅ Starboard **${name}** updated: watching <#${updated.watch_channel_id}>, ` +
       `posting to <#${updated.post_channel_id}>, threshold **${updated.threshold}**, ` +
       `emojis ${starboardManager.formatEmojisForDisplay(updated.emojis)}, ` +
-      `content filter **${starboardManager.CONTENT_TYPES[updated.content_type]}**, ` +
-      `voting **${starboardManager.VOTING_METHODS[updated.voting_method]}**.`,
+      `content filter **${starboardManager.CONTENT_TYPES[updated.content_type]}**.`,
     flags: MessageFlags.Ephemeral,
   });
 }

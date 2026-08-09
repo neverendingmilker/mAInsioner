@@ -34,28 +34,17 @@ function mapBoardRow(row) {
     threshold: Number(row.threshold),
     emojis: row.emojis, // stored as a JSON array string, parsed by the manager
     content_type: row.content_type,
-    voting_method: row.voting_method,
     created_by: row.created_by,
     created_at: row.created_at,
   };
 }
 
-async function createStarboard(
-  guildId,
-  name,
-  watchChannelId,
-  postChannelId,
-  threshold,
-  emojisJson,
-  contentType,
-  votingMethod,
-  createdBy
-) {
+async function createStarboard(guildId, name, watchChannelId, postChannelId, threshold, emojisJson, contentType, createdBy) {
   await db.ready;
   await db.client.execute({
-    sql: `INSERT INTO starboards (guild_id, name, watch_channel_id, post_channel_id, threshold, emojis, content_type, voting_method, created_by, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    args: [guildId, name, watchChannelId, postChannelId, threshold, emojisJson, contentType, votingMethod, createdBy, Date.now()],
+    sql: `INSERT INTO starboards (guild_id, name, watch_channel_id, post_channel_id, threshold, emojis, content_type, created_by, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [guildId, name, watchChannelId, postChannelId, threshold, emojisJson, contentType, createdBy, Date.now()],
   });
 }
 
@@ -80,11 +69,9 @@ async function removeStarboard(guildId, name) {
   const board = await getByName(guildId, name);
   if (!board) return 0;
 
-  // Cascade: drop every tracked starboard post/vote that belonged to this board too,
+  // Cascade: drop every tracked starboard post that belonged to this board too,
   // otherwise they'd linger as orphaned rows nothing ever cleans up.
   await db.client.execute({ sql: 'DELETE FROM starboard_posts WHERE starboard_id = ?', args: [board.id] });
-  await db.client.execute({ sql: 'DELETE FROM starboard_votes WHERE starboard_id = ?', args: [board.id] });
-  await db.client.execute({ sql: 'DELETE FROM starboard_vote_messages WHERE starboard_id = ?', args: [board.id] });
   const result = await db.client.execute({
     sql: 'DELETE FROM starboards WHERE guild_id = ? AND name = ?',
     args: [guildId, name],
@@ -140,6 +127,17 @@ async function getPost(starboardId, originalMessageId) {
   return result.rows[0] ?? null;
 }
 
+// Reverse lookup used when someone reacts on the STARBOARD's own copy of a message
+// (the repost), to find which original message/board it belongs to.
+async function getPostByStarboardMessageId(starboardMessageId) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT * FROM starboard_posts WHERE starboard_message_id = ?',
+    args: [starboardMessageId],
+  });
+  return result.rows[0] ?? null;
+}
+
 async function upsertPost(guildId, starboardId, originalMessageId, originalChannelId, starboardMessageId, reactionCount) {
   await db.ready;
   await db.client.execute({
@@ -178,93 +176,6 @@ async function getPostsForOriginalMessage(guildId, originalMessageId) {
   return result.rows;
 }
 
-// --- Vote-button mode: tracks the bot-posted button message for each original message,
-// and who has toggled their vote on, so the button can be a per-user toggle. ---
-
-async function createVoteMessage(starboardId, originalMessageId, buttonMessageId) {
-  await db.ready;
-  await db.client.execute({
-    sql: `INSERT INTO starboard_vote_messages (starboard_id, original_message_id, button_message_id)
-          VALUES (?, ?, ?)
-          ON CONFLICT(starboard_id, original_message_id) DO UPDATE SET button_message_id = excluded.button_message_id`,
-    args: [starboardId, originalMessageId, buttonMessageId],
-  });
-}
-
-async function getVoteMessageByButtonMessageId(starboardId, buttonMessageId) {
-  await db.ready;
-  const result = await db.client.execute({
-    sql: 'SELECT * FROM starboard_vote_messages WHERE starboard_id = ? AND button_message_id = ?',
-    args: [starboardId, buttonMessageId],
-  });
-  return result.rows[0] ?? null;
-}
-
-async function getVoteMessageByOriginalMessageId(starboardId, originalMessageId) {
-  await db.ready;
-  const result = await db.client.execute({
-    sql: 'SELECT * FROM starboard_vote_messages WHERE starboard_id = ? AND original_message_id = ?',
-    args: [starboardId, originalMessageId],
-  });
-  return result.rows[0] ?? null;
-}
-
-async function deleteVoteMessage(starboardId, originalMessageId) {
-  await db.ready;
-  await db.client.execute({
-    sql: 'DELETE FROM starboard_vote_messages WHERE starboard_id = ? AND original_message_id = ?',
-    args: [starboardId, originalMessageId],
-  });
-}
-
-// Used when the original message gets deleted: finds every board's vote-button message
-// for it at once (mirrors getPostsForOriginalMessage, but there's no guild_id column
-// here, so the caller filters by board afterwards).
-async function getVoteMessagesForOriginalMessage(originalMessageId) {
-  await db.ready;
-  const result = await db.client.execute({
-    sql: 'SELECT * FROM starboard_vote_messages WHERE original_message_id = ?',
-    args: [originalMessageId],
-  });
-  return result.rows;
-}
-
-async function hasVoted(starboardId, originalMessageId, userId) {
-  await db.ready;
-  const result = await db.client.execute({
-    sql: 'SELECT 1 FROM starboard_votes WHERE starboard_id = ? AND original_message_id = ? AND user_id = ?',
-    args: [starboardId, originalMessageId, userId],
-  });
-  return result.rows.length > 0;
-}
-
-async function addVote(starboardId, originalMessageId, userId) {
-  await db.ready;
-  await db.client.execute({
-    sql: `INSERT INTO starboard_votes (starboard_id, original_message_id, user_id)
-          VALUES (?, ?, ?)
-          ON CONFLICT(starboard_id, original_message_id, user_id) DO NOTHING`,
-    args: [starboardId, originalMessageId, userId],
-  });
-}
-
-async function removeVote(starboardId, originalMessageId, userId) {
-  await db.ready;
-  await db.client.execute({
-    sql: 'DELETE FROM starboard_votes WHERE starboard_id = ? AND original_message_id = ? AND user_id = ?',
-    args: [starboardId, originalMessageId, userId],
-  });
-}
-
-async function countVotes(starboardId, originalMessageId) {
-  await db.ready;
-  const result = await db.client.execute({
-    sql: 'SELECT COUNT(*) AS c FROM starboard_votes WHERE starboard_id = ? AND original_message_id = ?',
-    args: [starboardId, originalMessageId],
-  });
-  return Number(result.rows[0]?.c ?? 0);
-}
-
 module.exports = {
   isEnabled,
   setEnabled,
@@ -276,17 +187,9 @@ module.exports = {
   getAllInGuild,
   getBoardsWatchingChannel,
   getPost,
+  getPostByStarboardMessageId,
   upsertPost,
   updatePostCount,
   deletePost,
   getPostsForOriginalMessage,
-  createVoteMessage,
-  getVoteMessageByButtonMessageId,
-  getVoteMessageByOriginalMessageId,
-  deleteVoteMessage,
-  getVoteMessagesForOriginalMessage,
-  hasVoted,
-  addVote,
-  removeVote,
-  countVotes,
 };

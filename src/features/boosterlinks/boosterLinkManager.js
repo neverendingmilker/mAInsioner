@@ -2,11 +2,6 @@ const repo = require('./boosterLinkRepository');
 
 class ValidationError extends Error {}
 
-// Members with this role are never touched by the auto-removal, even if they
-// have linked custom roles and stop boosting (e.g. staff/VIP who keep perks
-// regardless of boost status).
-const IGNORED_ROLE_ID = '1090658915810820156';
-
 async function isEnabled(guildId) {
   return repo.isEnabled(guildId);
 }
@@ -47,6 +42,29 @@ async function listAll(guildId) {
   return repo.getAllLinksInGuild(guildId);
 }
 
+// --- Exempt roles ---
+// Members holding ANY of a guild's configured exempt roles are skipped by the
+// auto-removal entirely, even if they have linked custom roles and stop boosting.
+// A member only needs one of the configured roles, not all of them at once.
+
+async function addExemptRole(guildId, roleId, addedBy) {
+  await repo.addExemptRole(guildId, roleId, addedBy);
+}
+
+async function removeExemptRole(guildId, roleId) {
+  return repo.removeExemptRole(guildId, roleId);
+}
+
+async function listExemptRoles(guildId) {
+  return repo.getExemptRoles(guildId);
+}
+
+async function isMemberExempt(member) {
+  const exemptRoleIds = await repo.getExemptRoles(member.guild.id);
+  if (exemptRoleIds.length === 0) return false;
+  return exemptRoleIds.some((roleId) => member.roles.cache.has(roleId));
+}
+
 // Called from guildMemberUpdate: if the member just lost the server's Booster
 // role, remove every custom role linked to them and stop tracking those links —
 // the perk no longer applies once they stop boosting.
@@ -57,7 +75,7 @@ async function handleMemberUpdate(oldMember, newMember) {
   const hasBooster = newMember.roles.premiumSubscriberRole !== null;
   if (!hadBooster || hasBooster) return; // wasn't a booster before, or still is one
 
-  if (newMember.roles.cache.has(IGNORED_ROLE_ID)) return; // exempt from auto-removal regardless of boost status
+  if (await isMemberExempt(newMember)) return; // has at least one exempt role — skip regardless of boost status
 
   const links = await repo.getLinksForUser(newMember.guild.id, newMember.id);
   if (links.length === 0) return;
@@ -90,5 +108,9 @@ module.exports = {
   unlink,
   listForUser,
   listAll,
+  addExemptRole,
+  removeExemptRole,
+  listExemptRoles,
+  isMemberExempt,
   handleMemberUpdate,
 };
