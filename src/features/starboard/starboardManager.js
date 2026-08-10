@@ -283,14 +283,17 @@ function matchesContentType(message, contentType) {
 // --- Embed / message formatting ---
 
 function buildStarboardEmbed(message, count) {
+  const descriptionParts = [];
+  if (message.content) descriptionParts.push(message.content.slice(0, 4000));
+  descriptionParts.push(`[Original message](${message.url})`);
+
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLOR)
     .setAuthor({
       name: message.author?.tag ?? 'Unknown user',
       iconURL: message.author?.displayAvatarURL?.() ?? undefined,
     })
-    .setDescription(message.content ? message.content.slice(0, 4000) : null)
-    .addFields({ name: '\u200b', value: `[Original message](${message.url})` })
+    .setDescription(descriptionParts.join('\n\n'))
     .setFooter({ text: `#${message.channel?.name ?? 'unknown-channel'}` })
     .setTimestamp(message.createdAt);
 
