@@ -14,6 +14,7 @@ const FEATURES = {
   sticky: { label: 'Sticky Messages', manager: require('../../features/sticky/stickyManager') },
   suggestion: { label: 'Suggestions', manager: require('../../features/suggestion/suggestionManager') },
   verify: { label: 'Verification', manager: require('../../features/verify/verifyManager') },
+  warning: { label: 'Warnings', manager: require('../../features/warning/warningManager') },
 };
 
 const data = new SlashCommandBuilder()

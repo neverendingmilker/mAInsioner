@@ -54,6 +54,14 @@ src/
         list.js
         lookback.js            (shows the channel picker/"run now" button)
         lookbackInteractions.js (handles the picker's follow-up interactions, runs the scan)
+    warning/
+      index.js       (defines /warning give, roles, channel + autocomplete)
+      handlers/
+        give.js
+        roles.js
+        channel.js
+    verbal/
+      index.js       (defines /verbal, standalone command)
   features/         <- "Business logic" layer: one folder per feature
     birthday/
       birthdayManager.js     (validation and rules)
@@ -81,6 +89,9 @@ src/
       starboardManager.js     (validation, emoji parsing, reaction counting, embed/post building, lookback)
       starboardRepository.js  (SQL queries: per-guild boards + tracked posts)
       lookbackSessions.js     (in-memory state between the lookback channel picker and its follow-up)
+    warning/
+      warningManager.js     (validation, role assignment, embed building/updating)
+      warningRepository.js  (SQL queries: per-guild config + warning entries)
   database/
     db.js           <- Turso database connection, schema for all features
   events/           <- Discord events (clientReady, interactionCreate...)
@@ -199,6 +210,25 @@ Collects popular messages (by reaction count) and reposts them to a dedicated ch
 - `Text + media` — needs both a text caption and an attachment.
 
 A message qualifies for a starboard once **enough distinct people** have reacted to it with **at least one** of that board's configured emojis (reacting with more than one counted emoji only counts once per person; the message's own author reacting to their own message never counts). Once a message is reposted, the bot auto-reacts with ⭐ on its own copy in the starboard channel — further ⭐ reactions there (from anyone but the bot) add to the count too, so people can keep starring a message right from the starboard. The starboard post's count stays live as reactions are added or removed (on either the original message or the starboard's own copy) — and if it drops back below the threshold, the post is **removed** from the starboard (a starboard reflects what's currently popular). If the original message is deleted, the corresponding starboard post is deleted too. The bot needs "View Channel" + "Read Message History" in the watch channel, and "View Channel" + "Send Messages" in the post channel.
+
+## Available commands (Warning feature)
+
+Moderation notes on users. Two severities: a lightweight **verbal** warning (just a logged note) and a full **warning** (logged note + assigns one of two admin-configured roles). All subcommands require the **Moderate Members** permission.
+
+- `/warning roles role_1:<role> role_2:<role>` — configures the two roles selectable when issuing a full warning. The bot's own role must sit above both, since it needs to be able to assign them.
+- `/warning channel channel:<#channel>` — sets the channel where the warnings list is kept updated. Posting the list there for the first time happens right away.
+- `/warning give user:<@user> reason:<...> role:<...>` — issues a full warning: assigns the chosen role (autocomplete offers only the two configured roles, by their current name) and logs the entry.
+- `/verbal user:<@user> reason:<...>` — logs a verbal warning. No role is assigned; the standalone `/verbal` command mirrors `/warning give` without the role step.
+
+Both commands update a single, continuously-edited embed in the configured channel (it's never reposted, just edited in place) titled **"Warnings"**, with a `Last update: <Month> <Day>, <Year> <time>` line at the top (the time is a live Discord timestamp, so it always shows correctly in each viewer's own timezone). Below that, every user with at least one entry gets a block:
+
+```
+@User
+Warning - Reason - Date
+Verbal - Reason - Date
+```
+
+Users are listed **most-recently-warned first** — issuing a new warning or verbal for someone moves their whole block back to the top of the list, regardless of where it was before. If the list grows past what a single Discord embed can hold, it's truncated with a note rather than erroring out.
 
 ## Hosting
 

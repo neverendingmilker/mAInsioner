@@ -96,3 +96,14 @@ Admin only.
 - **`/verify config`** — Sets the roles to assign for each verification type (sub / domme / maledom), the shared role to remove (if any) when verifying someone, and the channel where reports get posted.
 - **`/verify sub`**, **`/verify domme`**, **`/verify maledom`** — Verifies a user as one of the three types: assigns the matching role, removes the configured role (if any), and posts a report in the set channel. If the user already had a previous report, it's replaced by the new one. **Note:** `/verify sub` no longer has a "social" field (removed on request); `/verify domme` and `/verify maledom` still have it.
 - **`/verify edit`** — Edits the verification/social fields of a user's last report.
+
+## ⚠️ Warnings (`/warning`, `/verbal`)
+
+Moderation only (Moderate Members permission). Keeps a running, always-up-to-date list of warnings in a channel you choose.
+
+- **`/warning roles`** — Admin only. Sets the two roles that can be handed out when giving a full warning.
+- **`/warning channel`** — Admin only. Sets the channel where the warnings list is posted and kept updated.
+- **`/warning give`** — Full warning: pick a user, a reason, and one of the two configured roles — the role gets assigned and the warning is logged.
+- **`/verbal`** — Lighter version: just a user and a reason, no role assigned.
+
+Everything is logged in a single embed that gets edited in place (never reposted) — titled "Warnings", showing when it was last updated, and then one block per user with every warning/verbal they've ever received. Whenever someone gets a new one, their block jumps back to the top of the list.

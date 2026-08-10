@@ -183,6 +183,24 @@ async function createTables() {
         reaction_count INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (starboard_id, original_message_id)
       )`,
+      `CREATE TABLE IF NOT EXISTS warning_config (
+        guild_id TEXT PRIMARY KEY,
+        channel_id TEXT,
+        role_1_id TEXT,
+        role_2_id TEXT,
+        embed_message_id TEXT,
+        enabled INTEGER NOT NULL DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS warnings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        role_id TEXT,
+        issued_by TEXT,
+        created_at INTEGER NOT NULL
+      )`,
     ],
     'write'
   );
