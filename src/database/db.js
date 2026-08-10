@@ -206,6 +206,7 @@ async function createTables() {
         channel_id TEXT,
         trigger_text TEXT NOT NULL DEFAULT 'pizza',
         emoji TEXT NOT NULL DEFAULT '<:pizza01:902913234959495188>',
+        response_mode TEXT NOT NULL DEFAULT 'message',
         enabled INTEGER NOT NULL DEFAULT 1
       )`,
     ],
@@ -336,6 +337,16 @@ async function migrate() {
   }
   await client.execute('DROP TABLE IF EXISTS starboard_vote_messages');
   await client.execute('DROP TABLE IF EXISTS starboard_votes');
+
+  // The goosepizza_config table shipped without "response_mode" at first. Upgrades any
+  // database created against an earlier version of the table.
+  if (tableNames.includes('goosepizza_config')) {
+    const goosepizzaColumns = await client.execute('PRAGMA table_info(goosepizza_config)');
+    const goosepizzaColumnNames = goosepizzaColumns.rows.map((row) => row.name);
+    if (!goosepizzaColumnNames.includes('response_mode')) {
+      await client.execute("ALTER TABLE goosepizza_config ADD COLUMN response_mode TEXT NOT NULL DEFAULT 'message'");
+    }
+  }
 }
 
 const ready = createTables()

@@ -62,6 +62,16 @@ async function setEmoji(guildId, emoji) {
   });
 }
 
+async function setMode(guildId, mode) {
+  await db.ready;
+  await db.client.execute({
+    sql: `INSERT INTO goosepizza_config (guild_id, response_mode)
+          VALUES (?, ?)
+          ON CONFLICT(guild_id) DO UPDATE SET response_mode = excluded.response_mode`,
+    args: [guildId, mode],
+  });
+}
+
 module.exports = {
   DEFAULT_TRIGGER,
   DEFAULT_EMOJI,
@@ -71,4 +81,5 @@ module.exports = {
   setChannel,
   setTrigger,
   setEmoji,
+  setMode,
 };

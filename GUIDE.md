@@ -38,13 +38,13 @@ Shows the users who have **all** of the given roles, optionally excluding anyone
 
 ## 🍕 GoosePizza (`/goosepizza`)
 
-Admin only (Manage Server). A little passive fun feature: whenever anyone says a chosen word in a chosen channel, the bot automatically posts a chosen emoji.
+Admin only (Manage Server). A little passive fun feature: whenever anyone says a chosen word in a chosen channel, the bot automatically responds with a chosen emoji — either by posting it as a new message, or by reacting with it directly on the triggering message.
 
 - **`/goosepizza channel`** — sets the channel to watch.
-- **`/goosepizza emoji`** — sets which emoji gets posted (default: the custom `pizza01` emoji).
+- **`/goosepizza emoji`** — sets which emoji to respond with (default: the custom `pizza01` emoji).
 - **`/goosepizza trigger`** — sets the word/phrase that triggers it (default: "pizza"). Matches case-insensitively, anywhere in the message.
-
-To disable it entirely, use `/disablefeature feature:GoosePizza enabled:false` (same as every other feature — see the top of this guide).
+- **`/goosepizza mode`** — choose **Comment** (posts a new message with the emoji, the default) or **React** (adds the emoji as a reaction on the triggering message instead).
+- **`/goosepizza toggle`** — turns GoosePizza on/off for the server. (`/disablefeature` works too, same on/off switch either way.)
 
 ## 🪧 Incident (`/incident`)
 

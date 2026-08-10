@@ -4,6 +4,11 @@ const repo = require('./goosepizzaRepository');
 class ValidationError extends Error {}
 
 const MAX_TRIGGER_LENGTH = 100;
+const RESPONSE_MODES = {
+  message: 'Comment (posts a new message with the emoji)',
+  reaction: 'React (reacts to the triggering message with the emoji)',
+};
+const DEFAULT_RESPONSE_MODE = 'message';
 
 async function isEnabled(guildId) {
   return repo.isEnabled(guildId);
@@ -19,6 +24,7 @@ async function getConfig(guildId) {
     channel_id: cfg?.channel_id ?? null,
     trigger_text: cfg?.trigger_text ?? repo.DEFAULT_TRIGGER,
     emoji: cfg?.emoji ?? repo.DEFAULT_EMOJI,
+    response_mode: cfg?.response_mode ?? DEFAULT_RESPONSE_MODE,
   };
 }
 
@@ -67,9 +73,27 @@ async function setEmoji(guildId, emojiInput) {
   return emoji;
 }
 
+async function setMode(guildId, mode) {
+  if (!Object.prototype.hasOwnProperty.call(RESPONSE_MODES, mode)) {
+    throw new ValidationError(`Unknown response mode "${mode}".`);
+  }
+  await repo.setMode(guildId, mode);
+}
+
+// message.react() wants just the custom emoji's numeric ID (or the raw unicode string),
+// not the full <:name:id> markup used when posting it as text.
+function extractReactableEmoji(emojiString) {
+  const customMatch = emojiString.match(/^<a?:\w{2,32}:(\d{17,20})>$/);
+  return customMatch ? customMatch[1] : emojiString;
+}
+
 // Called from messageCreate for every new guild message. If this channel is the
 // configured one and the trigger text appears anywhere in the message (case-insensitive),
 // posts the configured emoji as a reply-less follow-up message.
+// Called from messageCreate for every new guild message. If this channel is the
+// configured one and the trigger text appears anywhere in the message (case-insensitive),
+// either posts the configured emoji as a new message, or reacts with it on the
+// triggering message directly, depending on the configured response mode.
 async function handleMessage(message) {
   if (message.author?.bot) return;
   if (!(await repo.isEnabled(message.guild.id))) return;
@@ -81,18 +105,29 @@ async function handleMessage(message) {
   if (!message.content.toLowerCase().includes(trigger.toLowerCase())) return;
 
   const emoji = cfg.emoji || repo.DEFAULT_EMOJI;
-  await message.channel.send({ content: emoji, allowedMentions: { parse: [] } }).catch((err) => {
-    console.warn(`[goosepizza] Could not post the emoji in guild ${message.guild.id}:`, err.message);
-  });
+  const mode = cfg.response_mode || DEFAULT_RESPONSE_MODE;
+
+  if (mode === 'reaction') {
+    await message.react(extractReactableEmoji(emoji)).catch((err) => {
+      console.warn(`[goosepizza] Could not react in guild ${message.guild.id}:`, err.message);
+    });
+  } else {
+    await message.channel.send({ content: emoji, allowedMentions: { parse: [] } }).catch((err) => {
+      console.warn(`[goosepizza] Could not post the emoji in guild ${message.guild.id}:`, err.message);
+    });
+  }
 }
 
 module.exports = {
   ValidationError,
+  RESPONSE_MODES,
+  DEFAULT_RESPONSE_MODE,
   isEnabled,
   setEnabled,
   getConfig,
   setChannel,
   setTrigger,
   setEmoji,
+  setMode,
   handleMessage,
 };
