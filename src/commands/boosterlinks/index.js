@@ -3,6 +3,10 @@ const { handleLink } = require('./handlers/link');
 const { handleUnlink } = require('./handlers/unlink');
 const { handleList } = require('./handlers/list');
 const { handleExemptAdd, handleExemptRemove, handleExemptList } = require('./handlers/exempt');
+const boosterLinkManager = require('../../features/boosterlinks/boosterLinkManager');
+const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+
+const handleDisable = createDisableHandler(boosterLinkManager, PermissionFlagsBits.ManageRoles, 'Booster Links');
 
 const data = new SlashCommandBuilder()
   .setName('boosterlink')
@@ -50,13 +54,21 @@ const data = new SlashCommandBuilder()
           .addRoleOption((opt) => opt.setName('role').setDescription('The role to stop exempting').setRequired(true))
       )
       .addSubcommand((sub) => sub.setName('list').setDescription('Lists every exempt role'))
-  );
+  )
+  .addSubcommand(buildDisableSubcommand());
 
 async function execute(interaction) {
   const group = interaction.options.getSubcommandGroup(false);
+  const sub = interaction.options.getSubcommand();
+
+  // Disable must work even while the feature is disabled, otherwise there'd be no way
+  // to turn it back on through this command once it's off.
+  if (!group && sub === 'disable') {
+    return handleDisable(interaction);
+  }
 
   if (group === 'exempt') {
-    switch (interaction.options.getSubcommand()) {
+    switch (sub) {
       case 'add':
         return handleExemptAdd(interaction);
       case 'remove':
@@ -68,7 +80,7 @@ async function execute(interaction) {
     }
   }
 
-  switch (interaction.options.getSubcommand()) {
+  switch (sub) {
     case 'link':
       return handleLink(interaction);
     case 'unlink':

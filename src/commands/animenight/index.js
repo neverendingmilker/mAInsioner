@@ -1,9 +1,12 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
 const { handleList } = require('./handlers/list');
 const { handleLast } = require('./handlers/last');
 const { handleEdit } = require('./handlers/edit');
 const animeNightManager = require('../../features/animenight/animeNightManager');
+const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+
+const handleDisable = createDisableHandler(animeNightManager, PermissionFlagsBits.ManageRoles, 'Anime Night');
 
 const data = new SlashCommandBuilder()
   .setName('animenight')
@@ -66,10 +69,17 @@ const data = new SlashCommandBuilder()
           .setDescription('New date for this session: DD/MM, DD/MM/YYYY, "today" or "yesterday"')
           .setRequired(false)
       )
-  );
+  )
+  .addSubcommand(buildDisableSubcommand());
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();
+
+  // Disable must work even while the feature is disabled, otherwise there'd be no way
+  // to turn it back on through this command once it's off.
+  if (sub === 'disable') {
+    return handleDisable(interaction);
+  }
 
   if (!(await animeNightManager.isEnabled(interaction.guildId))) {
     await interaction.reply({

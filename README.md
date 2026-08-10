@@ -26,7 +26,7 @@ src/
         config.js    (configures the give/remove roles for the 3 types + report channel, merged into one subcommand)
         verifyAction.js (shared logic used by sub/domme/maledom, not a subcommand itself)
     goosepizza/
-      index.js       (defines /goosepizza create, edit, channels, remove, list, toggle + autocomplete)
+      index.js       (defines /goosepizza create, edit, channels, remove, list, disable + autocomplete)
       channelPicker.js (shared ChannelSelectMenu builder for create/channels)
       handlers/
         create.js
@@ -35,9 +35,9 @@ src/
         channelInteractions.js (handles the picker's follow-up selection)
         remove.js
         list.js
-        toggle.js
+        disable.js
     incident/
-      index.js       (defines /incident channel, setnumber, reset)
+      index.js       (defines /incident channel, setnumber, reset, disable)
       handlers/
         channel.js
         setnumber.js
@@ -66,13 +66,15 @@ src/
         lookback.js            (shows the channel picker/"run now" button)
         lookbackInteractions.js (handles the picker's follow-up interactions, runs the scan)
     warning/
-      index.js       (defines /warning give, roles, channel + autocomplete)
+      index.js       (defines /warning give, roles, channel, disable + autocomplete)
       handlers/
         give.js
         roles.js
         channel.js
     verbal/
       index.js       (defines /verbal, standalone command)
+    shared/
+      disableSubcommand.js  (shared "disable" subcommand builder + handler factory, used by every feature command below)
   features/         <- "Business logic" layer: one folder per feature
     birthday/
       birthdayManager.js     (validation and rules)
@@ -141,6 +143,8 @@ No existing file needs to change to add a feature (except the optional scheduler
    npm start
    ```
    (it registers the slash commands automatically on every start, then connects to Discord)
+
+Every feature below can be turned on/off for a server either with the universal `/disablefeature feature:<pick one> enabled:true|false` (Administrator only), or with that same feature's own `/<command> disable enabled:true|false` subcommand — both read/write the exact same on/off flag, so use whichever is more convenient. `/verbal` shares its on/off state with `/warning` rather than having its own.
 
 ## Available commands (birthday feature)
 
@@ -254,7 +258,7 @@ A small passive fun feature: whenever anyone says a chosen word in one of its ch
 - `/goosepizza channels name:<...>` — opens the same channel picker for an existing trigger, pre-filled with its current channels (shown as already selected); whatever you pick replaces the list entirely, so re-selecting the same ones plus a new one is how you add to it.
 - `/goosepizza remove name:<...>` — deletes a trigger.
 - `/goosepizza list` — shows every trigger configured in the server: its channels, trigger text, emoji, mode, and enabled/disabled state.
-- `/goosepizza toggle enabled:<true|false> [name]` — with `name` given (autocomplete), enables/disables just that one trigger without touching the others. Without `name`, it's a dedicated on/off switch for the whole feature (every trigger at once) — `/disablefeature feature:GoosePizza` controls that exact same all-triggers setting, so either works.
+- `/goosepizza disable enabled:<true|false> [name]` — with `name` given (autocomplete), enables/disables just that one trigger without touching the others. Without `name`, it's a dedicated on/off switch for the whole feature (every trigger at once) — `/disablefeature feature:GoosePizza` controls that exact same all-triggers setting, so either works.
 
 
 ## Hosting

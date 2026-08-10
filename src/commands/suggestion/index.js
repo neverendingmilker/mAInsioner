@@ -1,10 +1,13 @@
-const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
 const { handleEdit } = require('./handlers/edit');
 const { handleApprove, handleReject } = require('./handlers/decide');
 const { handleChannelSet, handleChannelRemove } = require('./handlers/channel');
 const { handleList } = require('./handlers/list');
 const suggestionManager = require('../../features/suggestion/suggestionManager');
+const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+
+const handleDisable = createDisableHandler(suggestionManager, PermissionFlagsBits.Administrator, 'Suggestions');
 
 const data = new SlashCommandBuilder()
   .setName('suggestion')
@@ -64,11 +67,18 @@ const data = new SlashCommandBuilder()
           )
       )
       .addSubcommand((sub) => sub.setName('remove').setDescription('Remove the configured suggestion channel'))
-  );
+  )
+  .addSubcommand(buildDisableSubcommand());
 
 async function execute(interaction) {
   const group = interaction.options.getSubcommandGroup(false);
   const sub = interaction.options.getSubcommand();
+
+  // Disable must work even while the feature is disabled, otherwise there'd be no way
+  // to turn it back on through this command once it's off.
+  if (!group && sub === 'disable') {
+    return handleDisable(interaction);
+  }
 
   if (!(await suggestionManager.isEnabled(interaction.guildId))) {
     await interaction.reply({

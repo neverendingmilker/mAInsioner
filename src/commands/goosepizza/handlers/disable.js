@@ -3,7 +3,7 @@ const goosepizzaManager = require('../../../features/goosepizza/goosepizzaManage
 
 // With `name` given, toggles that one trigger. Without it, toggles the whole feature
 // (every trigger at once) — same behavior as before this option existed.
-async function handleToggle(interaction) {
+async function handleDisable(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
     await interaction.reply({ content: '❌ You need the "Manage Server" permission to use this command.', ephemeral: true });
     return;
@@ -36,4 +36,4 @@ async function handleToggle(interaction) {
   });
 }
 
-module.exports = { handleToggle };
+module.exports = { handleDisable };

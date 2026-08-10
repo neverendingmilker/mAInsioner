@@ -3,6 +3,9 @@ const { handleGive } = require('./handlers/give');
 const { handleRoles } = require('./handlers/roles');
 const { handleChannel } = require('./handlers/channel');
 const warningManager = require('../../features/warning/warningManager');
+const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+
+const handleDisable = createDisableHandler(warningManager, PermissionFlagsBits.ModerateMembers, 'Warnings');
 
 const data = new SlashCommandBuilder()
   .setName('warning')
@@ -40,9 +43,18 @@ const data = new SlashCommandBuilder()
           .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
           .setRequired(true)
       )
-  );
+  )
+  .addSubcommand(buildDisableSubcommand());
 
 async function execute(interaction) {
+  const sub = interaction.options.getSubcommand();
+
+  // Disable must work even while the feature is disabled, otherwise there'd be no way
+  // to turn it back on through this command once it's off.
+  if (sub === 'disable') {
+    return handleDisable(interaction);
+  }
+
   if (!(await warningManager.isEnabled(interaction.guildId))) {
     await interaction.reply({
       content: '⚠️ The Warnings feature is currently disabled in this server. An admin can re-enable it with `/disablefeature`.',
@@ -51,7 +63,7 @@ async function execute(interaction) {
     return;
   }
 
-  switch (interaction.options.getSubcommand()) {
+  switch (sub) {
     case 'give':
       return handleGive(interaction);
     case 'roles':

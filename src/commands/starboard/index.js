@@ -5,6 +5,9 @@ const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
 const { handleLookback } = require('./handlers/lookback');
 const starboardManager = require('../../features/starboard/starboardManager');
+const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+
+const handleDisable = createDisableHandler(starboardManager, PermissionFlagsBits.ManageGuild, 'Starboard');
 
 const STARBOARD_CHANNEL_TYPES = [
   ChannelType.GuildText,
@@ -159,16 +162,21 @@ const data = new SlashCommandBuilder()
           .setMaxValue(1000)
           .setRequired(false)
       )
-  );
+  )
+  .addSubcommand(buildDisableSubcommand());
 
 async function execute(interaction) {
   const subcommand = interaction.options.getSubcommand();
 
   // Lookback defers (acks) the interaction itself, as the very first thing it does —
   // so the enabled-feature check below must happen AFTER that, not before, or a slow
-  // DB round-trip here could eat into Discord's 3-second ack window.
+  // DB round-trip here could eat into Discord's 3-second ack window. Disable must work
+  // even while the feature is disabled, otherwise there'd be no way to re-enable it.
   if (subcommand === 'lookback') {
     return handleLookback(interaction);
+  }
+  if (subcommand === 'disable') {
+    return handleDisable(interaction);
   }
 
   if (!(await starboardManager.isEnabled(interaction.guildId))) {

@@ -1,8 +1,11 @@
-const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
 const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
 const stickyManager = require('../../features/sticky/stickyManager');
+const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+
+const handleDisable = createDisableHandler(stickyManager, PermissionFlagsBits.ManageRoles, 'Sticky Messages');
 
 const STICKY_CHANNEL_TYPES = [
   ChannelType.GuildText,
@@ -46,10 +49,17 @@ const data = new SlashCommandBuilder()
           .setRequired(true)
       )
   )
-  .addSubcommand((sub) => sub.setName('list').setDescription('Show all sticky messages configured in this server'));
+  .addSubcommand((sub) => sub.setName('list').setDescription('Show all sticky messages configured in this server'))
+  .addSubcommand(buildDisableSubcommand());
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();
+
+  // Disable must work even while the feature is disabled, otherwise there'd be no way
+  // to turn it back on through this command once it's off.
+  if (sub === 'disable') {
+    return handleDisable(interaction);
+  }
 
   if (!stickyManager.isEnabled(interaction.guildId)) {
     await interaction.reply({

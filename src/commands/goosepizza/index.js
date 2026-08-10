@@ -4,7 +4,7 @@ const { handleEdit } = require('./handlers/edit');
 const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
 const { handleChannels } = require('./handlers/channels');
-const { handleToggle } = require('./handlers/toggle');
+const { handleDisable } = require('./handlers/disable');
 const goosepizzaManager = require('../../features/goosepizza/goosepizzaManager');
 
 const MODE_CHOICES = Object.entries(goosepizzaManager.RESPONSE_MODES).map(([value, name]) => ({ name, value }));
@@ -62,13 +62,13 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) => sub.setName('list').setDescription('Lists every GoosePizza trigger configured in this server'))
   .addSubcommand((sub) =>
     sub
-      .setName('toggle')
+      .setName('disable')
       .setDescription('[Admin] Enable/disable one trigger, or GoosePizza entirely if no trigger is given')
       .addBooleanOption((opt) => opt.setName('enabled').setDescription('On or off').setRequired(true))
       .addStringOption((opt) =>
         opt
           .setName('name')
-          .setDescription('Which trigger to toggle (omit to toggle every trigger at once)')
+          .setDescription('Which trigger to disable/enable (omit to affect every trigger at once)')
           .setRequired(false)
           .setAutocomplete(true)
       )
@@ -77,15 +77,15 @@ const data = new SlashCommandBuilder()
 async function execute(interaction) {
   const subcommand = interaction.options.getSubcommand();
 
-  // Toggle must work even while the feature is disabled, otherwise there'd be no way
+  // Disable must work even while the feature is disabled, otherwise there'd be no way
   // to turn it back on through this command once it's off.
-  if (subcommand === 'toggle') {
-    return handleToggle(interaction);
+  if (subcommand === 'disable') {
+    return handleDisable(interaction);
   }
 
   if (!(await goosepizzaManager.isEnabled(interaction.guildId))) {
     await interaction.reply({
-      content: '⚠️ GoosePizza is currently disabled in this server. Use `/goosepizza toggle enabled:true` to turn it back on.',
+      content: '⚠️ GoosePizza is currently disabled in this server. Use `/goosepizza disable enabled:true` to turn it back on.',
       ephemeral: true,
     });
     return;
@@ -107,7 +107,7 @@ async function execute(interaction) {
   }
 }
 
-// Powers the "name" option's autocomplete on /goosepizza edit, channels, remove, toggle.
+// Powers the "name" option's autocomplete on /goosepizza edit, channels, remove, disable.
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
   if (focused.name !== 'name') {

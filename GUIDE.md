@@ -2,9 +2,11 @@
 
 Quick guide to what each command does. No technical details, just practical usage.
 
-Every feature listed below can be turned on/off for the whole server with a single command:
-**`/disablefeature feature:<pick one> enabled:true|false`** (Administrator only). Disabling a feature
-keeps its saved data, but stops its automatic behavior and blocks its commands until it's re-enabled.
+Every feature listed below can be turned on/off for the whole server either with the universal
+**`/disablefeature feature:<pick one> enabled:true|false`** (Administrator only), or with that feature's own
+**`/<command> disable enabled:true|false`** subcommand — both control the exact same on/off switch, so use
+whichever is more convenient. Disabling a feature keeps its saved data, but stops its automatic behavior and
+blocks its commands until it's re-enabled.
 
 ## 📺 Anime Night (`/animenight`)
 
@@ -12,6 +14,7 @@ keeps its saved data, but stops its automatic behavior and blocks its commands u
 - **`/animenight list`** — Shows the full watched anime list, grouped by session.
 - **`/animenight last`** — Shows only the anime from the most recent session.
 - **`/animenight edit`** — Admin only. Edits an existing session (titles and/or date).
+- **`/animenight disable`** — Admin only. Turns the feature on/off for this server.
 
 ## 🎂 Birthdays (`/birthday`)
 
@@ -19,6 +22,7 @@ keeps its saved data, but stops its automatic behavior and blocks its commands u
 - **`/birthday remove`** — Delete your saved birthday. An admin can remove someone else's.
 - **`/birthday config`** — Admin only. Sets the role given to whoever's celebrating, how long before removing it, and/or the channel where greetings are posted.
 - **`/birthday list`** — Shows every birthday in the server, grouped by month.
+- **`/birthday disable`** — Admin only. Turns the feature on/off for this server.
 
 On someone's birthday, the bot automatically assigns the role (if configured) and posts a greeting (if a channel is configured), then removes the role after the configured time.
 
@@ -29,12 +33,14 @@ Admin only (Manage Roles). Links a custom role (that you assign manually to a bo
 - **`/boosterlink link`** — Links a custom role to a booster.
 - **`/boosterlink unlink`** — Stops tracking the link (does not remove the role from the user). The role is optional: if omitted, it untracks every role linked to that user at once.
 - **`/boosterlink list`** — Lists active links, optionally filtered by user.
+- **`/boosterlink disable`** — Turns the feature on/off for this server.
 
 When a user loses Discord's Booster role (boost expired, manually removed, etc.), every custom role linked to them gets automatically removed. `/boosterlink exempt` manages a list of roles that skip this — a user only needs one of the configured exempt roles to be skipped entirely, even if they have linked roles and lose the booster role.
 
 ## 🔎 Combined role search (`/comboroles`)
 
-Shows the users who have **all** of the given roles, optionally excluding anyone who also has one of up to three "BUT" roles. Results are paginated. Open to everyone, no admin restriction — though an admin can turn the whole feature off with `/disablefeature`.
+- **`/comboroles search`** — Shows the users who have **all** of the given roles, optionally excluding anyone who also has one of up to three "BUT" roles. Results are paginated. Open to everyone, no admin restriction.
+- **`/comboroles disable`** — Admin only. Turns the whole feature off/on for this server.
 
 ## 🍕 GoosePizza (`/goosepizza`)
 
@@ -45,7 +51,7 @@ Admin only (Manage Server). A little passive fun feature: whenever anyone says a
 - **`/goosepizza channels`** — opens the same channel picker for an existing trigger, pre-filled with its current channels; whatever you select replaces the list entirely.
 - **`/goosepizza remove`** — deletes a trigger.
 - **`/goosepizza list`** — shows every trigger configured in the server, and every channel each one watches.
-- **`/goosepizza toggle`** — turns a single trigger on/off (pass `name`), or GoosePizza entirely (every trigger at once, if `name` is omitted). (`/disablefeature` maps to the same all-triggers switch.)
+- **`/goosepizza disable`** — turns a single trigger on/off (pass `name`), or GoosePizza entirely (every trigger at once, if `name` is omitted). (`/disablefeature` maps to the same all-triggers switch.)
 
 ## 🪧 Incident (`/incident`)
 
@@ -54,6 +60,7 @@ Admin only (the command itself is hidden from anyone without the Administrator p
 - **`/incident channel`** — Sets the channel where the sign is kept updated.
 - **`/incident setnumber`** — Manually sets the counter to a specific number.
 - **`/incident reset`** — Resets the counter to 0 (use it when an incident just happened).
+- **`/incident disable`** — Turns the feature on/off for this server.
 
 Every day at midnight the counter increases by 1 automatically and the sign is regenerated. Only one message is ever kept visible: the old one is deleted when the sign updates.
 
@@ -64,6 +71,7 @@ Admin only (Manage Roles). Generic version of the concept above, not tied to boo
 - **`/rolelink link`** — Links role1 → role2. Optional `viceversa` option (default off): if on, losing role2 also removes role1.
 - **`/rolelink unlink`** — Removes a link (same role1/role2 order used when it was created).
 - **`/rolelink list`** — Lists every link configured in the server.
+- **`/rolelink disable`** — Admin only. Turns the feature on/off for this server.
 
 ## ⭐ Starboard (`/starboard`)
 
@@ -73,6 +81,7 @@ Admin only (Manage Server). Collects the most popular messages of a channel (by 
 - **`/starboard edit`** — Changes any combination of the settings above for an existing starboard. The `name` option has autocomplete.
 - **`/starboard remove`** — Deletes a starboard. Already-posted messages are left as they are, but stop being updated.
 - **`/starboard list`** — Shows every starboard configured in the server.
+- **`/starboard disable`** — Admin only. Turns the feature on/off for this server.
 
 A message qualifies once enough different people have reacted with at least one of the configured emojis (reacting with two counted emojis only counts once per person, and the message author's own reaction doesn't count). The reaction count on the starboard post stays live: if it later drops back below the threshold, the post is removed from the starboard. If the original message gets deleted, its starboard post is removed too.
 
@@ -89,6 +98,7 @@ Admin only.
 - **`/sticky add`** — Sets (or replaces) the sticky message for a channel. The message text is typed directly as a command option, no popup window.
 - **`/sticky remove`** — Removes the sticky message from a channel.
 - **`/sticky list`** — Shows every sticky message configured in the server.
+- **`/sticky disable`** — Admin only. Turns the feature on/off for this server.
 
 The sticky message is reposted at the bottom of the channel after each new message (deleting the old one first, waiting 10 seconds between the deletion and the repost).
 
@@ -99,6 +109,7 @@ The sticky message is reposted at the bottom of the channel after each new messa
 - **`/suggestion list`** — Shows every suggestion still waiting for a decision.
 - **`/suggestion approve`** / **`/suggestion reject`** — Admin only. Decides a suggestion. Admins can also decide by reacting to the suggestion's own message.
 - **`/suggestion channel set`** / **`/suggestion channel remove`** — Admin only. Configures where suggestions get posted.
+- **`/suggestion disable`** — Admin only. Turns the feature on/off for this server.
 
 ## ✅ Verification (`/verify`)
 
@@ -107,6 +118,7 @@ Admin only.
 - **`/verify config`** — Sets the roles to assign for each verification type (sub / domme / maledom), the shared role to remove (if any) when verifying someone, and the channel where reports get posted.
 - **`/verify sub`**, **`/verify domme`**, **`/verify maledom`** — Verifies a user as one of the three types: assigns the matching role, removes the configured role (if any), and posts a report in the set channel. If the user already had a previous report, it's replaced by the new one. **Note:** `/verify sub` no longer has a "social" field (removed on request); `/verify domme` and `/verify maledom` still have it.
 - **`/verify edit`** — Edits the verification/social fields of a user's last report.
+- **`/verify disable`** — Admin only. Turns the feature on/off for this server.
 
 ## ⚠️ Warnings (`/warning`, `/verbal`)
 
@@ -116,5 +128,6 @@ Moderation only (Moderate Members permission). Keeps a running, always-up-to-dat
 - **`/warning channel`** — Admin only. Sets the channel where the warnings list is posted and kept updated.
 - **`/warning give`** — Full warning: pick a user, a reason, and one of the two configured roles — the role gets assigned and the warning is logged.
 - **`/verbal`** — Lighter version: just a user and a reason, no role assigned.
+- **`/warning disable`** — Admin only. Turns the feature on/off for this server (also disables `/verbal`, which shares the same on/off state).
 
 Everything is logged in a single embed that gets edited in place (never reposted) — titled "Warnings", showing when it was last updated, and then one block per user with every warning/verbal they've ever received. Whenever someone gets a new one, their block jumps back to the top of the list.

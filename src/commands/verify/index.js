@@ -1,8 +1,11 @@
-const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleConfig } = require('./handlers/config');
 const { handleVerifyType } = require('./handlers/verifyAction');
 const { handleEdit } = require('./handlers/edit');
 const verifyManager = require('../../features/verify/verifyManager');
+const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+
+const handleDisable = createDisableHandler(verifyManager, PermissionFlagsBits.ManageRoles, 'Verification');
 
 const data = new SlashCommandBuilder()
   .setName('verify')
@@ -72,10 +75,17 @@ const data = new SlashCommandBuilder()
       .setName('edit')
       .setDescription('[Admin] Edit the Verification/Social fields of a user\'s last verification report')
       .addUserOption((opt) => opt.setName('user').setDescription('User whose report to edit').setRequired(true))
-  );
+  )
+  .addSubcommand(buildDisableSubcommand());
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();
+
+  // Disable must work even while the feature is disabled, otherwise there'd be no way
+  // to turn it back on through this command once it's off.
+  if (sub === 'disable') {
+    return handleDisable(interaction);
+  }
 
   if (!(await verifyManager.isEnabled(interaction.guildId))) {
     await interaction.reply({

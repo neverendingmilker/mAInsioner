@@ -2,6 +2,10 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { handleChannelSet } = require('./handlers/channel');
 const { handleSetNumber } = require('./handlers/setnumber');
 const { handleReset } = require('./handlers/reset');
+const incidentManager = require('../../features/incident/incidentManager');
+const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+
+const handleDisable = createDisableHandler(incidentManager, PermissionFlagsBits.Administrator, 'Incident Counter');
 
 const data = new SlashCommandBuilder()
   .setName('incident')
@@ -25,7 +29,8 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub.setName('reset').setDescription('Resets the counter to 0 (use it when an incident just happened)')
-  );
+  )
+  .addSubcommand(buildDisableSubcommand());
 
 async function execute(interaction) {
   switch (interaction.options.getSubcommand()) {
@@ -35,6 +40,8 @@ async function execute(interaction) {
       return handleSetNumber(interaction);
     case 'reset':
       return handleReset(interaction);
+    case 'disable':
+      return handleDisable(interaction);
     default:
       return undefined;
   }

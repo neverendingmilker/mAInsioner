@@ -1,9 +1,12 @@
-const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
 const { handleRemove } = require('./handlers/remove');
 const { handleConfig } = require('./handlers/config');
 const { handleList } = require('./handlers/list');
 const birthdayManager = require('../../features/birthday/birthdayManager');
+const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+
+const handleDisable = createDisableHandler(birthdayManager, PermissionFlagsBits.ManageRoles, 'Birthday');
 
 const data = new SlashCommandBuilder()
   .setName('birthday')
@@ -62,10 +65,17 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub.setName('list').setDescription('Show all birthdays in this server, grouped by month')
-  );
+  )
+  .addSubcommand(buildDisableSubcommand());
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();
+
+  // Disable must work even while the feature is disabled, otherwise there'd be no way
+  // to turn it back on through this command once it's off.
+  if (sub === 'disable') {
+    return handleDisable(interaction);
+  }
 
   if (!(await birthdayManager.isEnabled(interaction.guildId))) {
     await interaction.reply({
