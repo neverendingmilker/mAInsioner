@@ -203,11 +203,19 @@ async function createTables() {
       )`,
       `CREATE TABLE IF NOT EXISTS goosepizza_config (
         guild_id TEXT PRIMARY KEY,
-        channel_id TEXT,
-        trigger_text TEXT NOT NULL DEFAULT 'pizza',
-        emoji TEXT NOT NULL DEFAULT '<:pizza01:902913234959495188>',
-        response_mode TEXT NOT NULL DEFAULT 'message',
         enabled INTEGER NOT NULL DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS goosepizza_triggers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        trigger_text TEXT NOT NULL,
+        emoji TEXT NOT NULL,
+        response_mode TEXT NOT NULL DEFAULT 'message',
+        created_by TEXT,
+        created_at INTEGER,
+        UNIQUE (guild_id, name)
       )`,
     ],
     'write'
@@ -338,13 +346,38 @@ async function migrate() {
   await client.execute('DROP TABLE IF EXISTS starboard_vote_messages');
   await client.execute('DROP TABLE IF EXISTS starboard_votes');
 
-  // The goosepizza_config table shipped without "response_mode" at first. Upgrades any
-  // database created against an earlier version of the table.
+  // The goosepizza feature used to support only one channel/trigger/emoji per guild,
+  // stored directly on goosepizza_config. It's now multi-trigger (goosepizza_triggers),
+  // so any already-configured single trigger is migrated into a "default"-named row
+  // there, then the old single-trigger columns are dropped from goosepizza_config
+  // (which now only holds the guild-wide enabled toggle).
   if (tableNames.includes('goosepizza_config')) {
     const goosepizzaColumns = await client.execute('PRAGMA table_info(goosepizza_config)');
     const goosepizzaColumnNames = goosepizzaColumns.rows.map((row) => row.name);
-    if (!goosepizzaColumnNames.includes('response_mode')) {
+
+    if (!goosepizzaColumnNames.includes('response_mode') && goosepizzaColumnNames.includes('channel_id')) {
       await client.execute("ALTER TABLE goosepizza_config ADD COLUMN response_mode TEXT NOT NULL DEFAULT 'message'");
+    }
+
+    if (goosepizzaColumnNames.includes('channel_id')) {
+      const existingConfigs = await client.execute('SELECT * FROM goosepizza_config WHERE channel_id IS NOT NULL');
+      for (const row of existingConfigs.rows) {
+        await client.execute({
+          sql: `INSERT OR IGNORE INTO goosepizza_triggers (guild_id, name, channel_id, trigger_text, emoji, response_mode, created_at)
+                VALUES (?, 'default', ?, ?, ?, ?, ?)`,
+          args: [
+            row.guild_id,
+            row.channel_id,
+            row.trigger_text ?? 'pizza',
+            row.emoji ?? '<:pizza01:902913234959495188>',
+            row.response_mode ?? 'message',
+            Date.now(),
+          ],
+        });
+      }
+      for (const col of ['channel_id', 'trigger_text', 'emoji', 'response_mode']) {
+        await client.execute(`ALTER TABLE goosepizza_config DROP COLUMN ${col}`);
+      }
     }
   }
 }

@@ -26,12 +26,12 @@ src/
         config.js    (configures the give/remove roles for the 3 types + report channel, merged into one subcommand)
         verifyAction.js (shared logic used by sub/domme/maledom, not a subcommand itself)
     goosepizza/
-      index.js       (defines /goosepizza channel, emoji, trigger, mode, toggle)
+      index.js       (defines /goosepizza create, edit, remove, list, toggle + autocomplete)
       handlers/
-        channel.js
-        emoji.js
-        trigger.js
-        mode.js
+        create.js
+        edit.js
+        remove.js
+        list.js
         toggle.js
     incident/
       index.js       (defines /incident channel, setnumber, reset)
@@ -82,8 +82,8 @@ src/
       verifyManager.js     (validation and rules)
       verifyRepository.js  (SQL queries)
     goosepizza/
-      goosepizzaManager.js     (validation, config, passive trigger handling)
-      goosepizzaRepository.js  (SQL queries)
+      goosepizzaManager.js     (validation, config, multi-trigger matching/response)
+      goosepizzaRepository.js  (SQL queries: per-guild triggers + enabled toggle)
     incident/
       incidentManager.js     (validation + posts/refreshes the sign in Discord)
       incidentRepository.js  (SQL queries)
@@ -243,13 +243,13 @@ Users are listed **most-recently-warned first** — issuing a new warning or ver
 
 ## Available commands (GoosePizza feature)
 
-A small passive fun feature: whenever anyone says a chosen word in a chosen channel, the bot automatically responds with a chosen emoji — either as a new message, or as a reaction on the triggering message, depending on the configured mode. Nothing happens until a channel is configured. All subcommands require the **Manage Server** permission.
+A small passive fun feature: whenever anyone says a chosen word in a chosen channel, the bot automatically responds with a chosen emoji — either as a new message, or as a reaction on the triggering message, depending on the configured mode. A server can have several independent triggers at once — different words, channels, emojis, and modes can all coexist, including more than one watching the same channel simultaneously (a message matching two different triggers fires both, independently). All subcommands require the **Manage Server** permission.
 
-- `/goosepizza channel channel:<#channel>` — sets the channel to watch. Required before anything triggers.
-- `/goosepizza emoji emoji:<...>` — sets which emoji to respond with; accepts a unicode emoji or a custom server emoji. Defaults to `<:pizza01:902913234959495188>`.
-- `/goosepizza trigger text:<...>` — sets the word/phrase that triggers a response; matched case-insensitively as a substring anywhere in the message. Defaults to `"pizza"`.
-- `/goosepizza mode mode:<Comment|React>` — **Comment** (default) posts the emoji as a brand new message in the channel. **React** instead adds the emoji as a reaction directly on the message that triggered it, without posting anything new.
-- `/goosepizza toggle enabled:<true|false>` — a dedicated on/off switch for this feature specifically. `/disablefeature feature:GoosePizza` controls the exact same setting, so either works — use whichever is more convenient.
+- `/goosepizza create name:<...> channel:<#channel> trigger:<...> emoji:<...> mode:<Comment|React>` — creates a new trigger. `trigger` is matched case-insensitively as a substring anywhere in the message. `emoji` accepts a unicode emoji or a custom server emoji. `mode` is **Comment** (posts the emoji as a brand new message in the channel) or **React** (adds the emoji as a reaction directly on the triggering message, without posting anything new) — the permission the bot needs in the channel depends on which one you pick (Send Messages for Comment; Add Reactions + Read Message History for React).
+- `/goosepizza edit name:<...> [channel] [trigger] [emoji] [mode]` — updates any combination of an existing trigger's settings. The `name` option has autocomplete.
+- `/goosepizza remove name:<...>` — deletes a trigger.
+- `/goosepizza list` — shows every trigger configured in the server, with its channel, trigger text, emoji, and mode.
+- `/goosepizza toggle enabled:<true|false>` — a dedicated on/off switch for the whole feature (every trigger at once). `/disablefeature feature:GoosePizza` controls the exact same setting, so either works — use whichever is more convenient.
 
 ## Hosting
 

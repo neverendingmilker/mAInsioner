@@ -38,13 +38,13 @@ Shows the users who have **all** of the given roles, optionally excluding anyone
 
 ## 🍕 GoosePizza (`/goosepizza`)
 
-Admin only (Manage Server). A little passive fun feature: whenever anyone says a chosen word in a chosen channel, the bot automatically responds with a chosen emoji — either by posting it as a new message, or by reacting with it directly on the triggering message.
+Admin only (Manage Server). A little passive fun feature: whenever anyone says a chosen word in a chosen channel, the bot automatically responds with a chosen emoji — either by posting it as a new message, or by reacting with it directly on the triggering message. You can set up multiple independent triggers — different words, channels, emojis and modes can all coexist, including several in the same channel at once.
 
-- **`/goosepizza channel`** — sets the channel to watch.
-- **`/goosepizza emoji`** — sets which emoji to respond with (default: the custom `pizza01` emoji).
-- **`/goosepizza trigger`** — sets the word/phrase that triggers it (default: "pizza"). Matches case-insensitively, anywhere in the message.
-- **`/goosepizza mode`** — choose **Comment** (posts a new message with the emoji, the default) or **React** (adds the emoji as a reaction on the triggering message instead).
-- **`/goosepizza toggle`** — turns GoosePizza on/off for the server. (`/disablefeature` works too, same on/off switch either way.)
+- **`/goosepizza create`** — sets up a new trigger: a name, the channel to watch, the word/phrase, the emoji, and the mode (Comment or React).
+- **`/goosepizza edit`** — changes any combination of an existing trigger's settings. The `name` option has autocomplete.
+- **`/goosepizza remove`** — deletes a trigger.
+- **`/goosepizza list`** — shows every trigger configured in the server.
+- **`/goosepizza toggle`** — turns GoosePizza on/off (all triggers at once) for the server. (`/disablefeature` works too, same on/off switch either way.)
 
 ## 🪧 Incident (`/incident`)
 
