@@ -3,38 +3,34 @@ const goosepizzaManager = require('../../../features/goosepizza/goosepizzaManage
 const sessions = require('../../../features/goosepizza/goosepizzaChannelSessions');
 const { buildChannelPickerRow } = require('../channelPicker');
 
-async function handleCreate(interaction) {
+async function handleChannels(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
     await interaction.reply({ content: '❌ You need the "Manage Server" permission to use this command.', ephemeral: true });
     return;
   }
 
   const name = interaction.options.getString('name');
-  const triggerText = interaction.options.getString('trigger');
-  const emoji = interaction.options.getString('emoji');
-  const mode = interaction.options.getString('mode');
 
-  let pending;
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+  let currentChannelIds;
   try {
-    pending = await goosepizzaManager.validateNewTrigger(interaction.guildId, name, triggerText, emoji, mode);
+    currentChannelIds = await goosepizzaManager.getChannelIdsForTrigger(interaction.guildId, name);
   } catch (err) {
     if (err instanceof goosepizzaManager.ValidationError) {
-      await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });
+      await interaction.editReply({ content: `⚠️ ${err.message}` });
       return;
     }
     throw err;
   }
-  pending.createdBy = interaction.user.id;
 
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-
-  const row = buildChannelPickerRow('goosepizza:create:channels');
+  const row = buildChannelPickerRow('goosepizza:edit:channels', currentChannelIds);
   const sent = await interaction.editReply({
-    content: `Pick which channel(s) trigger **${pending.name}** should watch:`,
+    content: `Pick the channel(s) trigger **${name}** should watch — this replaces its current list entirely:`,
     components: [row],
   });
 
-  sessions.create(sent.id, { type: 'create', pending });
+  sessions.create(sent.id, { type: 'edit', name });
 }
 
-module.exports = { handleCreate };
+module.exports = { handleChannels };

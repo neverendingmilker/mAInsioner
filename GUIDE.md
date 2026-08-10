@@ -38,12 +38,13 @@ Shows the users who have **all** of the given roles, optionally excluding anyone
 
 ## 🍕 GoosePizza (`/goosepizza`)
 
-Admin only (Manage Server). A little passive fun feature: whenever anyone says a chosen word in a chosen channel, the bot automatically responds with a chosen emoji — either by posting it as a new message, or by reacting with it directly on the triggering message. You can set up multiple independent triggers — different words, channels, emojis and modes can all coexist, including several in the same channel at once.
+Admin only (Manage Server). A little passive fun feature: whenever anyone says a chosen word in one of its chosen channels, the bot automatically responds with a chosen emoji — either by posting it as a new message, or by reacting with it directly on the triggering message. You can set up multiple independent triggers — different words, channels, emojis and modes can all coexist, including several watching the same channel at once — and each trigger can itself watch more than one channel.
 
-- **`/goosepizza create`** — sets up a new trigger: a name, the channel to watch, the word/phrase, the emoji, and the mode (Comment or React).
-- **`/goosepizza edit`** — changes any combination of an existing trigger's settings. The `name` option has autocomplete.
+- **`/goosepizza create`** — sets up a new trigger's name, word/phrase, emoji, and mode (Comment or React); right after, you'll get a channel picker (a native Discord select menu listing every channel in the server) to choose which channel(s) it watches.
+- **`/goosepizza edit`** — changes the word/phrase, emoji, and/or mode of an existing trigger. The `name` option has autocomplete.
+- **`/goosepizza channels`** — opens the same channel picker for an existing trigger, pre-filled with its current channels; whatever you select replaces the list entirely.
 - **`/goosepizza remove`** — deletes a trigger.
-- **`/goosepizza list`** — shows every trigger configured in the server.
+- **`/goosepizza list`** — shows every trigger configured in the server, and every channel each one watches.
 - **`/goosepizza toggle`** — turns a single trigger on/off (pass `name`), or GoosePizza entirely (every trigger at once, if `name` is omitted). (`/disablefeature` maps to the same all-triggers switch.)
 
 ## 🪧 Incident (`/incident`)

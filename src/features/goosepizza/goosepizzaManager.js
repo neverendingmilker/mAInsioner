@@ -4,6 +4,7 @@ const repo = require('./goosepizzaRepository');
 class ValidationError extends Error {}
 
 const MAX_TRIGGER_LENGTH = 100;
+const MAX_CHANNELS_PER_TRIGGER = 10;
 const RESPONSE_MODES = {
   message: 'Comment (posts a new message with the emoji)',
   reaction: 'React (reacts to the triggering message with the emoji)',
@@ -78,26 +79,39 @@ function extractReactableEmoji(emojiString) {
 
 // --- CRUD used by the /goosepizza command handlers ---
 
-async function create(guild, name, channel, triggerInput, emojiInput, mode, createdBy) {
+// Step 1 of creating a trigger: validates everything EXCEPT the channel(s), since those
+// are picked afterward via a channel-select component. Nothing is saved yet.
+async function validateNewTrigger(guildId, name, triggerInput, emojiInput, mode) {
   const trimmedName = name.trim();
   if (!trimmedName) {
     throw new ValidationError('Give this trigger a name.');
   }
 
-  const resolvedMode = mode ?? DEFAULT_RESPONSE_MODE;
-  assertValidResponseMode(resolvedMode);
+  assertValidResponseMode(mode);
   const triggerText = assertValidTriggerText(triggerInput ?? repo.DEFAULT_TRIGGER);
   const emoji = assertValidEmoji(emojiInput ?? repo.DEFAULT_EMOJI);
-  assertCanRespondInChannel(guild, channel, resolvedMode);
 
-  const existing = await repo.getByName(guild.id, trimmedName);
+  const existing = await repo.getByName(guildId, trimmedName);
   if (existing) {
     throw new ValidationError(`A GoosePizza trigger named "${trimmedName}" already exists. Use \`/goosepizza edit\` to change it.`);
   }
 
-  await repo.createTrigger(guild.id, trimmedName, channel.id, triggerText, emoji, resolvedMode, createdBy);
+  return { name: trimmedName, triggerText, emoji, mode };
+}
 
-  return { name: trimmedName, channel, triggerText, emoji, mode: resolvedMode };
+// Step 2: actually creates the trigger, once the channel(s) have been picked.
+async function finalizeCreate(guild, pending, channels) {
+  if (channels.length === 0) {
+    throw new ValidationError('Pick at least one channel.');
+  }
+  for (const channel of channels) {
+    assertCanRespondInChannel(guild, channel, pending.mode);
+  }
+
+  const triggerId = await repo.createTrigger(guild.id, pending.name, pending.triggerText, pending.emoji, pending.mode, pending.createdBy);
+  await repo.setTriggerChannels(triggerId, channels.map((c) => c.id));
+
+  return { ...pending, channels };
 }
 
 async function edit(guild, name, updates) {
@@ -107,7 +121,6 @@ async function edit(guild, name, updates) {
   }
 
   const fields = {};
-
   if (updates.triggerInput !== undefined) {
     fields.trigger_text = assertValidTriggerText(updates.triggerInput);
   }
@@ -118,18 +131,19 @@ async function edit(guild, name, updates) {
     assertValidResponseMode(updates.mode);
     fields.response_mode = updates.mode;
   }
-  if (updates.channel) {
-    fields.channel_id = updates.channel.id;
-  }
 
   if (Object.keys(fields).length === 0) {
     throw new ValidationError('Provide at least one field to change.');
   }
 
-  const finalChannel = updates.channel ?? (await guild.channels.fetch(trigger.channel_id).catch(() => null));
-  const finalMode = fields.response_mode ?? trigger.response_mode;
-  if (finalChannel) {
-    assertCanRespondInChannel(guild, finalChannel, finalMode);
+  // Changing mode changes which permission the bot needs — re-check every channel this
+  // trigger currently watches against the new mode before saving.
+  if (fields.response_mode) {
+    const channelIds = await repo.getChannelsForTrigger(trigger.id);
+    for (const channelId of channelIds) {
+      const channel = await guild.channels.fetch(channelId).catch(() => null);
+      if (channel) assertCanRespondInChannel(guild, channel, fields.response_mode);
+    }
   }
 
   await repo.updateTrigger(guild.id, name, fields);
@@ -141,7 +155,8 @@ async function remove(guildId, name) {
 }
 
 async function listAll(guildId) {
-  return repo.getAllInGuild(guildId);
+  const triggers = await repo.getAllInGuild(guildId);
+  return Promise.all(triggers.map(async (t) => ({ ...t, channel_ids: await repo.getChannelsForTrigger(t.id) })));
 }
 
 async function getNamesList(guildId) {
@@ -155,6 +170,33 @@ async function setTriggerEnabled(guildId, name, enabled) {
     throw new ValidationError(`No GoosePizza trigger named "${name}" found.`);
   }
   await repo.setTriggerEnabled(guildId, name, enabled);
+}
+
+// --- Channel management (used by /goosepizza channels, the dedicated picker flow) ---
+
+async function getChannelIdsForTrigger(guildId, name) {
+  const trigger = await repo.getByName(guildId, name);
+  if (!trigger) {
+    throw new ValidationError(`No GoosePizza trigger named "${name}" found.`);
+  }
+  return repo.getChannelsForTrigger(trigger.id);
+}
+
+// Replaces a trigger's whole channel set, once new ones have been picked.
+async function setChannels(guild, name, channels) {
+  const trigger = await repo.getByName(guild.id, name);
+  if (!trigger) {
+    throw new ValidationError(`No GoosePizza trigger named "${name}" found.`);
+  }
+  if (channels.length === 0) {
+    throw new ValidationError('Pick at least one channel.');
+  }
+  for (const channel of channels) {
+    assertCanRespondInChannel(guild, channel, trigger.response_mode);
+  }
+
+  await repo.setTriggerChannels(trigger.id, channels.map((c) => c.id));
+  return { ...trigger, channels };
 }
 
 // --- Passive trigger handling ---
@@ -190,13 +232,17 @@ module.exports = {
   ValidationError,
   RESPONSE_MODES,
   DEFAULT_RESPONSE_MODE,
+  MAX_CHANNELS_PER_TRIGGER,
   isEnabled,
   setEnabled,
-  create,
+  validateNewTrigger,
+  finalizeCreate,
   edit,
   remove,
   listAll,
   getNamesList,
   setTriggerEnabled,
+  getChannelIdsForTrigger,
+  setChannels,
   handleMessage,
 };

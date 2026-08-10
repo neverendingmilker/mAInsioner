@@ -26,10 +26,13 @@ src/
         config.js    (configures the give/remove roles for the 3 types + report channel, merged into one subcommand)
         verifyAction.js (shared logic used by sub/domme/maledom, not a subcommand itself)
     goosepizza/
-      index.js       (defines /goosepizza create, edit, remove, list, toggle + autocomplete)
+      index.js       (defines /goosepizza create, edit, channels, remove, list, toggle + autocomplete)
+      channelPicker.js (shared ChannelSelectMenu builder for create/channels)
       handlers/
         create.js
         edit.js
+        channels.js            (shows the channel picker, pre-filled for edits)
+        channelInteractions.js (handles the picker's follow-up selection)
         remove.js
         list.js
         toggle.js
@@ -83,7 +86,8 @@ src/
       verifyRepository.js  (SQL queries)
     goosepizza/
       goosepizzaManager.js     (validation, config, multi-trigger matching/response)
-      goosepizzaRepository.js  (SQL queries: per-guild triggers + enabled toggle)
+      goosepizzaRepository.js  (SQL queries: per-guild triggers + their channels + enabled toggle)
+      goosepizzaChannelSessions.js (in-memory state between the channel picker and its follow-up)
     incident/
       incidentManager.js     (validation + posts/refreshes the sign in Discord)
       incidentRepository.js  (SQL queries)
@@ -243,13 +247,15 @@ Users are listed **most-recently-warned first** — issuing a new warning or ver
 
 ## Available commands (GoosePizza feature)
 
-A small passive fun feature: whenever anyone says a chosen word in a chosen channel, the bot automatically responds with a chosen emoji — either as a new message, or as a reaction on the triggering message, depending on the configured mode. A server can have several independent triggers at once — different words, channels, emojis, and modes can all coexist, including more than one watching the same channel simultaneously (a message matching two different triggers fires both, independently). All subcommands require the **Manage Server** permission.
+A small passive fun feature: whenever anyone says a chosen word in one of its chosen channels, the bot automatically responds with a chosen emoji — either as a new message, or as a reaction on the triggering message, depending on the configured mode. A server can have several independent triggers at once — different words, channels, emojis, and modes can all coexist, including more than one watching the same channel simultaneously (a message matching two different triggers fires both, independently) — and each trigger itself can watch more than one channel (up to 10). All subcommands require the **Manage Server** permission.
 
-- `/goosepizza create name:<...> channel:<#channel> trigger:<...> emoji:<...> mode:<Comment|React>` — creates a new trigger. `trigger` is matched case-insensitively as a substring anywhere in the message. `emoji` accepts a unicode emoji or a custom server emoji. `mode` is **Comment** (posts the emoji as a brand new message in the channel) or **React** (adds the emoji as a reaction directly on the triggering message, without posting anything new) — the permission the bot needs in the channel depends on which one you pick (Send Messages for Comment; Add Reactions + Read Message History for React).
-- `/goosepizza edit name:<...> [channel] [trigger] [emoji] [mode]` — updates any combination of an existing trigger's settings. The `name` option has autocomplete.
+- `/goosepizza create name:<...> trigger:<...> emoji:<...> mode:<Comment|React>` — starts creating a new trigger. `trigger` is matched case-insensitively as a substring anywhere in the message. `emoji` accepts a unicode emoji or a custom server emoji. `mode` is **Comment** (posts the emoji as a brand new message in the channel) or **React** (adds the emoji as a reaction directly on the triggering message, without posting anything new) — the permission the bot needs in each channel depends on which one you pick (Send Messages for Comment; Add Reactions + Read Message History for React). After running the command, a channel picker (a native Discord select menu listing every channel in the server, up to 10 selections) appears — the trigger is only actually created once at least one channel is chosen there.
+- `/goosepizza edit name:<...> [trigger] [emoji] [mode]` — updates the word/phrase, emoji, and/or mode of an existing trigger. The `name` option has autocomplete. If `mode` changes, every channel the trigger currently watches is re-checked for the new mode's required permission. Doesn't touch which channels it watches — use `/goosepizza channels` for that.
+- `/goosepizza channels name:<...>` — opens the same channel picker for an existing trigger, pre-filled with its current channels (shown as already selected); whatever you pick replaces the list entirely, so re-selecting the same ones plus a new one is how you add to it.
 - `/goosepizza remove name:<...>` — deletes a trigger.
-- `/goosepizza list` — shows every trigger configured in the server, with its channel, trigger text, emoji, and mode.
+- `/goosepizza list` — shows every trigger configured in the server: its channels, trigger text, emoji, mode, and enabled/disabled state.
 - `/goosepizza toggle enabled:<true|false> [name]` — with `name` given (autocomplete), enables/disables just that one trigger without touching the others. Without `name`, it's a dedicated on/off switch for the whole feature (every trigger at once) — `/disablefeature feature:GoosePizza` controls that exact same all-triggers setting, so either works.
+
 
 ## Hosting
 

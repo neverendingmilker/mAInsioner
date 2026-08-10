@@ -8,14 +8,13 @@ async function handleEdit(interaction) {
   }
 
   const name = interaction.options.getString('name');
-  const channel = interaction.options.getChannel('channel') ?? undefined;
   const triggerInput = interaction.options.getString('trigger') ?? undefined;
   const emojiInput = interaction.options.getString('emoji') ?? undefined;
   const mode = interaction.options.getString('mode') ?? undefined;
 
   let updated;
   try {
-    updated = await goosepizzaManager.edit(interaction.guild, name, { channel, triggerInput, emojiInput, mode });
+    updated = await goosepizzaManager.edit(interaction.guild, name, { triggerInput, emojiInput, mode });
   } catch (err) {
     if (err instanceof goosepizzaManager.ValidationError) {
       await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });
@@ -26,9 +25,9 @@ async function handleEdit(interaction) {
 
   await interaction.reply({
     content:
-      `✅ GoosePizza trigger **${name}** updated: watching <#${updated.channel_id}>, ` +
-      `trigger "${updated.trigger_text}", emoji ${updated.emoji}, ` +
-      `mode **${goosepizzaManager.RESPONSE_MODES[updated.response_mode]}**.`,
+      `✅ GoosePizza trigger **${name}** updated: trigger "${updated.trigger_text}", emoji ${updated.emoji}, ` +
+      `mode **${goosepizzaManager.RESPONSE_MODES[updated.response_mode]}**. ` +
+      "(Use `/goosepizza channels` to change which channels it watches.)",
     ephemeral: true,
   });
 }

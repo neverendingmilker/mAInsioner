@@ -69,6 +69,22 @@ module.exports = {
       return;
     }
 
+    if (
+      interaction.isChannelSelectMenu() &&
+      (interaction.customId === 'goosepizza:create:channels' || interaction.customId === 'goosepizza:edit:channels')
+    ) {
+      try {
+        const { handleChannelSelect } = require('../commands/goosepizza/handlers/channelInteractions');
+        await handleChannelSelect(interaction);
+      } catch (err) {
+        console.error('Error handling GoosePizza channel select:', err);
+        await interaction
+          .update({ content: '⚠️ An error occurred while saving the channel selection.', components: [] })
+          .catch(() => null);
+      }
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     const command = interaction.client.commands.get(interaction.commandName);

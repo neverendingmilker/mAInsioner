@@ -209,7 +209,6 @@ async function createTables() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         guild_id TEXT NOT NULL,
         name TEXT NOT NULL,
-        channel_id TEXT NOT NULL,
         trigger_text TEXT NOT NULL,
         emoji TEXT NOT NULL,
         response_mode TEXT NOT NULL DEFAULT 'message',
@@ -217,6 +216,11 @@ async function createTables() {
         created_by TEXT,
         created_at INTEGER,
         UNIQUE (guild_id, name)
+      )`,
+      `CREATE TABLE IF NOT EXISTS goosepizza_trigger_channels (
+        trigger_id INTEGER NOT NULL,
+        channel_id TEXT NOT NULL,
+        PRIMARY KEY (trigger_id, channel_id)
       )`,
     ],
     'write'
@@ -390,6 +394,21 @@ async function migrate() {
     const triggerColumnNames = triggerColumns.rows.map((row) => row.name);
     if (!triggerColumnNames.includes('enabled')) {
       await client.execute('ALTER TABLE goosepizza_triggers ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1');
+    }
+
+    // Each trigger used to watch exactly one channel (channel_id directly on this
+    // table). It's now many-to-many via goosepizza_trigger_channels, so any
+    // already-configured trigger's single channel is migrated into that table before
+    // the old column is dropped.
+    if (triggerColumnNames.includes('channel_id')) {
+      const existingTriggers = await client.execute('SELECT id, channel_id FROM goosepizza_triggers WHERE channel_id IS NOT NULL');
+      for (const row of existingTriggers.rows) {
+        await client.execute({
+          sql: 'INSERT OR IGNORE INTO goosepizza_trigger_channels (trigger_id, channel_id) VALUES (?, ?)',
+          args: [row.id, row.channel_id],
+        });
+      }
+      await client.execute('ALTER TABLE goosepizza_triggers DROP COLUMN channel_id');
     }
   }
 }

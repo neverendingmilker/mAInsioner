@@ -14,7 +14,8 @@ async function handleList(interaction) {
   const lines = triggers.map((t) => {
     const modeLabel = t.response_mode === 'reaction' ? 'React' : 'Comment';
     const statusLabel = t.enabled ? '' : ' · 🔴 disabled';
-    return `**${t.name}** — <#${t.channel_id}> · "${t.trigger_text}" → ${t.emoji} (${modeLabel})${statusLabel}`;
+    const channelsLabel = t.channel_ids.length > 0 ? t.channel_ids.map((id) => `<#${id}>`).join(', ') : '*(no channels set)*';
+    return `**${t.name}** — ${channelsLabel} · "${t.trigger_text}" → ${t.emoji} (${modeLabel})${statusLabel}`;
   });
 
   const embed = new EmbedBuilder().setColor(EMBED_COLOR).setTitle('GoosePizza triggers').setDescription(lines.join('\n'));
