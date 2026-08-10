@@ -121,7 +121,7 @@ No existing file needs to change to add a feature (except the optional scheduler
 ## Setup
 
 1. **Create the Discord application**: go to https://discord.com/developers/applications, create a new app, go to "Bot" and create the bot, copy the **Token**. In "General Information" copy the **Application ID** (= CLIENT_ID).
-2. Enable the privileged **Server Members Intent** in Bot -> Privileged Gateway Intents (needed to assign/remove roles and read members).
+2. Enable the privileged **Server Members Intent** and **Message Content Intent** in Bot -> Privileged Gateway Intents (Server Members is needed to assign/remove roles and read members; Message Content is needed for GoosePizza's trigger word and for the starboard's text-based content filters/embed text — without it Discord always sends an empty `content`, so those features silently do nothing even though the bot itself is online and responding to slash commands).
 3. Generate the invite link in OAuth2 -> URL Generator, scopes `bot` + `applications.commands`, permissions at least `Manage Roles`, `Send Messages`, `Use Application Commands`. Invite the bot to your server.
    - ⚠️ The bot's role must be **higher** than the "birthday" role in the role list, otherwise it won't be able to assign/remove it.
 4. **Create the database on Turso** (https://turso.tech, web dashboard, nothing to install): create an account, create a new database, and from its page copy the **Database URL** (starts with `libsql://...`) and create/copy an **Auth Token**.
