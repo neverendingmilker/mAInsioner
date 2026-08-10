@@ -201,6 +201,13 @@ async function createTables() {
         issued_by TEXT,
         created_at INTEGER NOT NULL
       )`,
+      `CREATE TABLE IF NOT EXISTS goosepizza_config (
+        guild_id TEXT PRIMARY KEY,
+        channel_id TEXT,
+        trigger_text TEXT NOT NULL DEFAULT 'pizza',
+        emoji TEXT NOT NULL DEFAULT '<:pizza01:902913234959495188>',
+        enabled INTEGER NOT NULL DEFAULT 1
+      )`,
     ],
     'write'
   );

@@ -25,6 +25,12 @@ src/
       handlers/
         config.js    (configures the give/remove roles for the 3 types + report channel, merged into one subcommand)
         verifyAction.js (shared logic used by sub/domme/maledom, not a subcommand itself)
+    goosepizza/
+      index.js       (defines /goosepizza channel, emoji, trigger)
+      handlers/
+        channel.js
+        emoji.js
+        trigger.js
     incident/
       index.js       (defines /incident channel, setnumber, reset)
       handlers/
@@ -73,6 +79,9 @@ src/
     verify/
       verifyManager.js     (validation and rules)
       verifyRepository.js  (SQL queries)
+    goosepizza/
+      goosepizzaManager.js     (validation, config, passive trigger handling)
+      goosepizzaRepository.js  (SQL queries)
     incident/
       incidentManager.js     (validation + posts/refreshes the sign in Discord)
       incidentRepository.js  (SQL queries)
@@ -229,6 +238,16 @@ Verbal - Reason - Date
 ```
 
 Users are listed **most-recently-warned first** — issuing a new warning or verbal for someone moves their whole block back to the top of the list, regardless of where it was before. If the list grows past what a single Discord embed can hold, it's truncated with a note rather than erroring out.
+
+## Available commands (GoosePizza feature)
+
+A small passive fun feature: whenever anyone says a chosen word in a chosen channel, the bot automatically posts a chosen emoji as a new message in that channel. Nothing happens until a channel is configured. All subcommands require the **Manage Server** permission.
+
+- `/goosepizza channel channel:<#channel>` — sets the channel to watch. Required before anything triggers.
+- `/goosepizza emoji emoji:<...>` — sets which emoji gets posted; accepts a unicode emoji or a custom server emoji. Defaults to `<:pizza01:902913234959495188>`.
+- `/goosepizza trigger text:<...>` — sets the word/phrase that triggers a response; matched case-insensitively as a substring anywhere in the message. Defaults to `"pizza"`.
+
+To turn it off entirely for a server, use `/disablefeature feature:GoosePizza enabled:false` — same centralized toggle every other feature uses, rather than a separate on/off subcommand here.
 
 ## Hosting
 

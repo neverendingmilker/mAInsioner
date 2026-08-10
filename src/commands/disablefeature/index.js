@@ -8,6 +8,7 @@ const FEATURES = {
   birthday: { label: 'Birthday', manager: require('../../features/birthday/birthdayManager') },
   boosterlink: { label: 'Booster Links', manager: require('../../features/boosterlinks/boosterLinkManager') },
   comboroles: { label: 'Combined Role Search', manager: require('../../features/comboroles/comboRolesManager') },
+  goosepizza: { label: 'GoosePizza', manager: require('../../features/goosepizza/goosepizzaManager') },
   incident: { label: 'Incident Counter', manager: require('../../features/incident/incidentManager') },
   rolelink: { label: 'Role Links', manager: require('../../features/rolelinks/roleLinkManager') },
   starboard: { label: 'Starboard', manager: require('../../features/starboard/starboardManager') },

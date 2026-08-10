@@ -36,6 +36,16 @@ When a user loses Discord's Booster role (boost expired, manually removed, etc.)
 
 Shows the users who have **all** of the given roles, optionally excluding anyone who also has one of up to three "BUT" roles. Results are paginated. Open to everyone, no admin restriction — though an admin can turn the whole feature off with `/disablefeature`.
 
+## 🍕 GoosePizza (`/goosepizza`)
+
+Admin only (Manage Server). A little passive fun feature: whenever anyone says a chosen word in a chosen channel, the bot automatically posts a chosen emoji.
+
+- **`/goosepizza channel`** — sets the channel to watch.
+- **`/goosepizza emoji`** — sets which emoji gets posted (default: the custom `pizza01` emoji).
+- **`/goosepizza trigger`** — sets the word/phrase that triggers it (default: "pizza"). Matches case-insensitively, anywhere in the message.
+
+To disable it entirely, use `/disablefeature feature:GoosePizza enabled:false` (same as every other feature — see the top of this guide).
+
 ## 🪧 Incident (`/incident`)
 
 Admin only (the command itself is hidden from anyone without the Administrator permission). Keeps a "Days since last incident" sign updated in a channel with the current count.
