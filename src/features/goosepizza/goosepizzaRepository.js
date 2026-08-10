@@ -37,6 +37,7 @@ function mapTriggerRow(row) {
     trigger_text: row.trigger_text,
     emoji: row.emoji,
     response_mode: row.response_mode,
+    enabled: Number(row.enabled) === 1,
     created_by: row.created_by,
     created_at: row.created_at,
   };
@@ -94,15 +95,24 @@ async function getAllInGuild(guildId) {
   return result.rows.map(mapTriggerRow);
 }
 
-// Triggers configured to watch a given channel — a channel can have more than one
-// independent trigger (different words/emojis/modes) at once.
+// Triggers configured to watch a given channel, and currently enabled — a channel can
+// have more than one independent trigger (different words/emojis/modes) at once.
 async function getTriggersForChannel(guildId, channelId) {
   await db.ready;
   const result = await db.client.execute({
-    sql: 'SELECT * FROM goosepizza_triggers WHERE guild_id = ? AND channel_id = ?',
+    sql: 'SELECT * FROM goosepizza_triggers WHERE guild_id = ? AND channel_id = ? AND enabled = 1',
     args: [guildId, channelId],
   });
   return result.rows.map(mapTriggerRow);
+}
+
+async function setTriggerEnabled(guildId, name, enabled) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'UPDATE goosepizza_triggers SET enabled = ? WHERE guild_id = ? AND name = ?',
+    args: [enabled ? 1 : 0, guildId, name],
+  });
+  return result.rowsAffected ?? 0;
 }
 
 module.exports = {
@@ -117,4 +127,5 @@ module.exports = {
   getByName,
   getAllInGuild,
   getTriggersForChannel,
+  setTriggerEnabled,
 };

@@ -64,8 +64,15 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('toggle')
-      .setDescription('[Admin] Enable or disable GoosePizza (all triggers) for this server')
+      .setDescription('[Admin] Enable/disable one trigger, or GoosePizza entirely if no trigger is given')
       .addBooleanOption((opt) => opt.setName('enabled').setDescription('On or off').setRequired(true))
+      .addStringOption((opt) =>
+        opt
+          .setName('name')
+          .setDescription('Which trigger to toggle (omit to toggle every trigger at once)')
+          .setRequired(false)
+          .setAutocomplete(true)
+      )
   );
 
 async function execute(interaction) {

@@ -44,7 +44,7 @@ Admin only (Manage Server). A little passive fun feature: whenever anyone says a
 - **`/goosepizza edit`** — changes any combination of an existing trigger's settings. The `name` option has autocomplete.
 - **`/goosepizza remove`** — deletes a trigger.
 - **`/goosepizza list`** — shows every trigger configured in the server.
-- **`/goosepizza toggle`** — turns GoosePizza on/off (all triggers at once) for the server. (`/disablefeature` works too, same on/off switch either way.)
+- **`/goosepizza toggle`** — turns a single trigger on/off (pass `name`), or GoosePizza entirely (every trigger at once, if `name` is omitted). (`/disablefeature` maps to the same all-triggers switch.)
 
 ## 🪧 Incident (`/incident`)
 

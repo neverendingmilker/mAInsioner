@@ -249,7 +249,7 @@ A small passive fun feature: whenever anyone says a chosen word in a chosen chan
 - `/goosepizza edit name:<...> [channel] [trigger] [emoji] [mode]` — updates any combination of an existing trigger's settings. The `name` option has autocomplete.
 - `/goosepizza remove name:<...>` — deletes a trigger.
 - `/goosepizza list` — shows every trigger configured in the server, with its channel, trigger text, emoji, and mode.
-- `/goosepizza toggle enabled:<true|false>` — a dedicated on/off switch for the whole feature (every trigger at once). `/disablefeature feature:GoosePizza` controls the exact same setting, so either works — use whichever is more convenient.
+- `/goosepizza toggle enabled:<true|false> [name]` — with `name` given (autocomplete), enables/disables just that one trigger without touching the others. Without `name`, it's a dedicated on/off switch for the whole feature (every trigger at once) — `/disablefeature feature:GoosePizza` controls that exact same all-triggers setting, so either works.
 
 ## Hosting
 

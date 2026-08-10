@@ -13,7 +13,8 @@ async function handleList(interaction) {
 
   const lines = triggers.map((t) => {
     const modeLabel = t.response_mode === 'reaction' ? 'React' : 'Comment';
-    return `**${t.name}** — <#${t.channel_id}> · "${t.trigger_text}" → ${t.emoji} (${modeLabel})`;
+    const statusLabel = t.enabled ? '' : ' · 🔴 disabled';
+    return `**${t.name}** — <#${t.channel_id}> · "${t.trigger_text}" → ${t.emoji} (${modeLabel})${statusLabel}`;
   });
 
   const embed = new EmbedBuilder().setColor(EMBED_COLOR).setTitle('GoosePizza triggers').setDescription(lines.join('\n'));

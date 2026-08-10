@@ -149,6 +149,14 @@ async function getNamesList(guildId) {
   return triggers.map((t) => t.name);
 }
 
+async function setTriggerEnabled(guildId, name, enabled) {
+  const trigger = await repo.getByName(guildId, name);
+  if (!trigger) {
+    throw new ValidationError(`No GoosePizza trigger named "${name}" found.`);
+  }
+  await repo.setTriggerEnabled(guildId, name, enabled);
+}
+
 // --- Passive trigger handling ---
 
 // Called from messageCreate for every new guild message. Every trigger configured to
@@ -189,5 +197,6 @@ module.exports = {
   remove,
   listAll,
   getNamesList,
+  setTriggerEnabled,
   handleMessage,
 };

@@ -213,6 +213,7 @@ async function createTables() {
         trigger_text TEXT NOT NULL,
         emoji TEXT NOT NULL,
         response_mode TEXT NOT NULL DEFAULT 'message',
+        enabled INTEGER NOT NULL DEFAULT 1,
         created_by TEXT,
         created_at INTEGER,
         UNIQUE (guild_id, name)
@@ -378,6 +379,17 @@ async function migrate() {
       for (const col of ['channel_id', 'trigger_text', 'emoji', 'response_mode']) {
         await client.execute(`ALTER TABLE goosepizza_config DROP COLUMN ${col}`);
       }
+    }
+  }
+
+  // The goosepizza_triggers table shipped without a per-trigger "enabled" toggle at
+  // first (only the guild-wide one on goosepizza_config existed). Upgrades any database
+  // created against an earlier version of the table.
+  if (tableNames.includes('goosepizza_triggers')) {
+    const triggerColumns = await client.execute('PRAGMA table_info(goosepizza_triggers)');
+    const triggerColumnNames = triggerColumns.rows.map((row) => row.name);
+    if (!triggerColumnNames.includes('enabled')) {
+      await client.execute('ALTER TABLE goosepizza_triggers ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1');
     }
   }
 }
