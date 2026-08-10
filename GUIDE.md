@@ -8,6 +8,10 @@ Every feature listed below can be turned on/off for the whole server either with
 whichever is more convenient. Disabling a feature keeps its saved data, but stops its automatic behavior and
 blocks its commands until it's re-enabled.
 
+**`/commandlist`** — open to everyone. Shows a table of every command in the bot and who can use it: **Admin**
+(needs the Administrator permission), **Mod** (needs Manage Roles/Manage Server/Moderate Members — whichever role
+your server grants those to), or **Everyone**. Paginated with buttons if it doesn't fit on one page.
+
 ## 📺 Anime Night (`/animenight`)
 
 - **`/animenight add`** — Admin only. Adds one or more anime watched in a session (e.g. "Naruto, Bleach").
