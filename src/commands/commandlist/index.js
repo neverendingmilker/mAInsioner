@@ -10,8 +10,9 @@ const data = new SlashCommandBuilder()
   .setDescription('Shows every bot command and who can use it (Admin, Mod, or Everyone)');
 
 function buildFeatureBlock(feature) {
-  const nameWidth = Math.max(...feature.subcommands.map((s) => s.name.length));
-  const lines = feature.subcommands.map((s) => {
+  const sortedSubcommands = [...feature.subcommands].sort((a, b) => a.name.localeCompare(b.name));
+  const nameWidth = Math.max(...sortedSubcommands.map((s) => s.name.length));
+  const lines = sortedSubcommands.map((s) => {
     const tierText = s.note ? `${s.tier} (${s.note})` : s.tier;
     return `  ${s.name.padEnd(nameWidth)}  ${tierText}`;
   });
