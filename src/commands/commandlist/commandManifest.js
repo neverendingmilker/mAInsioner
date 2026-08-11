@@ -134,6 +134,20 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
+    feature: 'Sticky: Add (right-click)',
+    command: 'Sticky: Add',
+    subcommands: [
+      { name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator, note: 'right-click a message -> Apps' },
+    ],
+  },
+  {
+    feature: 'Sticky: Remove (right-click)',
+    command: 'Sticky: Remove',
+    subcommands: [
+      { name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator, note: 'right-click a message -> Apps' },
+    ],
+  },
+  {
     feature: 'Suggestions',
     command: '/suggestion',
     subcommands: [

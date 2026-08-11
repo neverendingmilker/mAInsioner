@@ -109,6 +109,8 @@ Admin only, except `list` which is open to everyone.
 - **`/sticky add`** — Sets (or replaces) the sticky message for a channel. The message text is typed directly as a command option, no popup window.
 - **`/sticky remove`** — Removes the sticky message from a channel.
 - **`/sticky list`** — Shows every sticky message configured in the server.
+- **Right-click a message → Apps → "Sticky: Add"** — same as `/sticky add`, but uses that message's own text instead of retyping it.
+- **Right-click a message → Apps → "Sticky: Remove"** — removes whatever sticky is configured for that channel (the message you clicked doesn't matter, it's just a quick entry point).
 - **`/sticky disable`** — Admin only. Turns the feature on/off for this server.
 
 The sticky message is reposted at the bottom of the channel after each new message (deleting the old one first, waiting 10 seconds between the deletion and the repost).
