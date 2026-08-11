@@ -19,11 +19,13 @@ function buildRow(page, totalPages) {
 
 // Sends a reply as a paginated embed. buildEmbed(pageIndex) must return an EmbedBuilder
 // for that page. If totalPages is 1, it's sent as a plain reply with no buttons.
-async function sendPaginated(interaction, totalPages, buildEmbed) {
+// `options.ephemeral` (default false) makes the whole thing visible only to the caller.
+async function sendPaginated(interaction, totalPages, buildEmbed, options = {}) {
   let page = 0;
+  const ephemeralFlag = options.ephemeral ? { ephemeral: true } : {};
 
   const components = totalPages > 1 ? [buildRow(page, totalPages)] : [];
-  await interaction.reply({ embeds: [buildEmbed(page)], components });
+  await interaction.reply({ embeds: [buildEmbed(page)], components, ...ephemeralFlag });
 
   if (totalPages <= 1) return;
 
