@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleEdit } = require('./handlers/edit');
-const { handleRoles } = require('./handlers/roles');
-const { handleChannel } = require('./handlers/channel');
+const { handleConfig } = require('./handlers/config');
 const { handleUpdate } = require('./handlers/update');
 const warningManager = require('../../features/warning/warningManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
@@ -28,21 +27,20 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
-      .setName('roles')
-      .setDescription('[Admin] Configure the two escalation roles used by /warn')
-      .addRoleOption((opt) => opt.setName('role_1').setDescription('First role (assigned on the first warning)').setRequired(true))
-      .addRoleOption((opt) => opt.setName('role_2').setDescription('Second role (assigned on the next warning)').setRequired(true))
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('channel')
-      .setDescription('[Admin] Set the channel where the warnings list is kept updated')
+      .setName('config')
+      .setDescription('[Admin] Configure the two escalation roles used by /warn and/or the warnings list channel')
+      .addRoleOption((opt) =>
+        opt.setName('role_1').setDescription('First role (assigned on the first warning) — set together with role_2').setRequired(false)
+      )
+      .addRoleOption((opt) =>
+        opt.setName('role_2').setDescription('Second role (assigned on the next warning) — set together with role_1').setRequired(false)
+      )
       .addChannelOption((opt) =>
         opt
           .setName('channel')
-          .setDescription('The channel')
+          .setDescription('Where the warnings list is kept updated')
           .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
-          .setRequired(true)
+          .setRequired(false)
       )
   )
   .addSubcommand((sub) =>
@@ -67,7 +65,7 @@ async function execute(interaction) {
     return;
   }
 
-  const needsAdmin = sub === 'roles' || sub === 'channel' || sub === 'update';
+  const needsAdmin = sub === 'config' || sub === 'update';
   const needsMod = sub === 'edit';
 
   if (needsAdmin && !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -82,10 +80,8 @@ async function execute(interaction) {
   switch (sub) {
     case 'edit':
       return handleEdit(interaction);
-    case 'roles':
-      return handleRoles(interaction);
-    case 'channel':
-      return handleChannel(interaction);
+    case 'config':
+      return handleConfig(interaction);
     case 'update':
       return handleUpdate(interaction);
     default:

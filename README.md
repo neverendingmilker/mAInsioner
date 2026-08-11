@@ -68,11 +68,10 @@ src/
         lookback.js            (shows the channel picker/"run now" button)
         lookbackInteractions.js (handles the picker's follow-up interactions, runs the scan)
     warning/
-      index.js       (defines /warning edit, roles, channel, update, disable + autocomplete)
+      index.js       (defines /warning edit, config, update, disable + autocomplete)
       handlers/
         edit.js
-        roles.js
-        channel.js
+        config.js
         update.js
     warn/
       index.js       (defines /warn, standalone command with role escalation logic)
@@ -251,8 +250,7 @@ A message qualifies for a starboard once **enough distinct people** have reacted
 Moderation notes on users. Two severities: a lightweight **verbal** warning (just a logged note) and a full **warning** (logged note + auto-assigns one of two admin-configured escalation roles). `/warn` and `/warning edit` require **Moderate Members**; `/warning roles`, `channel`, `update` and `disable` require **Administrator**.
 
 - `/warn user_id:<...> reason:<...> [date]` — warns a user by their **ID** (right-click → Copy User ID) rather than picking them from a member list, so it also works for people who've already left the server. Escalates automatically against the two roles configured via `/warning roles`: no role yet → assigns `role_1`; already has `role_1` → assigns `role_2`; already has `role_2` → assigns nothing, logs the warning anyway, and tells the moderator the team should discuss banning this user in chat instead. If the target isn't currently a member, the warning is still logged, just without any role check/assignment. The optional `date` (`DD/MM/YY` or `DD/MM/YYYY`) backdates it instead of using today; only ever a date, never a time.
-- `/warning roles role_1:<role> role_2:<role>` — **admin only**: configures the two escalation roles `/warn` uses. The bot's own role must sit above both, since it needs to be able to assign them.
-- `/warning channel channel:<#channel>` — **admin only**: sets the channel where the warnings list is kept updated. Posting the list there for the first time happens right away.
+- `/warning config [role_1] [role_2] [channel]` — **admin only**: configures any combination of the two escalation roles `/warn` uses (`role_1`/`role_2` must be given together — they're a pair) and/or the channel where the warnings list is kept updated. The bot's own role must sit above both configured roles, since it needs to be able to assign them.
 - `/warning edit warning:<...> [reason] [date]` — edits one of **your own** previously-issued warnings/verbals (autocomplete only ever lists entries **you** issued — not other mods'). Change the reason and/or overwrite the date.
 - `/warning update` — **admin only**: re-renders the warnings list embed against the current formatting/content logic, without waiting for a new warning to trigger a refresh — useful right after an update to the bot changes what the embed looks like.
 - `/verbal user:<@user> reason:<...> [date]` — logs a verbal warning. No role is assigned; shares its enabled state and permission tier with `/warning`/`/warn`.

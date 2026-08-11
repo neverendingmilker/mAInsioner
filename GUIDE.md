@@ -139,8 +139,7 @@ The sticky message is reposted at the bottom of the channel after each new messa
 Everything below Admin-only is Moderate Members. Keeps a running, always-up-to-date list of warnings in a channel you choose.
 
 - **`/warn`** — Warn a user by their **ID** (works even if they've already left the server). Automatically escalates: no role yet → assigns `role_1`; already has `role_1` → assigns `role_2`; already has `role_2` → assigns nothing and tells you the team should discuss banning them in chat instead. Optional `date` to backdate it (date only, never a time).
-- **`/warning roles`** — Admin only. Sets the two escalation roles `/warn` uses.
-- **`/warning channel`** — Admin only. Sets the channel where the warnings list is posted and kept updated.
+- **`/warning config`** — Admin only. Sets any combination of the two escalation roles `/warn` uses (`role_1` and `role_2`, provided together) and/or the channel where the warnings list is posted and kept updated.
 - **`/warning edit`** — Edit one of **your own** past warnings/verbals (autocomplete only shows entries you personally issued) — change the reason and/or the date.
 - **`/warning update`** — Admin only. Re-renders the warnings list embed with whatever the current formatting/content logic is, without needing a new warning to trigger it.
 - **`/verbal`** — Lighter version: just a user and a reason, no role assigned. Same optional `date`.

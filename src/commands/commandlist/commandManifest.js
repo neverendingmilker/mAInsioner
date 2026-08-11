@@ -226,8 +226,7 @@ const COMMAND_MANIFEST = [
     command: '/warning',
     subcommands: [
       { name: 'edit', tier: MOD, permission: PermissionFlagsBits.ModerateMembers, note: 'own issued warnings only' },
-      { name: 'roles', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
-      { name: 'channel', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'config', tier: ADMIN, permission: PermissionFlagsBits.Administrator, note: 'escalation roles + warnings channel' },
       { name: 'update', tier: ADMIN, permission: PermissionFlagsBits.Administrator, note: 'refreshes the embed formatting' },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],
