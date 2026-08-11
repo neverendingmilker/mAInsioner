@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { handleChannelSet } = require('./handlers/channel');
-const { handleSetNumber } = require('./handlers/setnumber');
+const { handleSet } = require('./handlers/set');
 const { handleReset } = require('./handlers/reset');
 const incidentManager = require('../../features/incident/incidentManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
@@ -21,10 +21,10 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
-      .setName('setnumber')
+      .setName('set')
       .setDescription('Manually sets the counter to a specific number')
       .addIntegerOption((opt) =>
-        opt.setName('numero').setDescription('New value for the counter').setRequired(true).setMinValue(0)
+        opt.setName('number').setDescription('New value for the counter').setRequired(true).setMinValue(0)
       )
   )
   .addSubcommand((sub) =>
@@ -36,8 +36,8 @@ async function execute(interaction) {
   switch (interaction.options.getSubcommand()) {
     case 'channel':
       return handleChannelSet(interaction);
-    case 'setnumber':
-      return handleSetNumber(interaction);
+    case 'set':
+      return handleSet(interaction);
     case 'reset':
       return handleReset(interaction);
     case 'disable':

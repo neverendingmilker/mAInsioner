@@ -95,7 +95,7 @@ const COMMAND_MANIFEST = [
     command: '/incident',
     subcommands: [
       { name: 'channel', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
-      { name: 'setnumber', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'set', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'reset', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],
@@ -115,7 +115,7 @@ const COMMAND_MANIFEST = [
     feature: 'Starboard',
     command: '/starboard',
     subcommands: [
-      { name: 'create', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'add', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'edit', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'list', tier: EVERYONE, permission: null },
@@ -143,7 +143,7 @@ const COMMAND_MANIFEST = [
       { name: 'list', tier: EVERYONE, permission: null },
       { name: 'approve', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'reject', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
-      { name: 'channel set/remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'channel', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],
   },

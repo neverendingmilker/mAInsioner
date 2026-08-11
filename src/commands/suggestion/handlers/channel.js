@@ -1,7 +1,9 @@
 const { PermissionFlagsBits } = require('discord.js');
 const suggestionManager = require('../../../features/suggestion/suggestionManager');
 
-async function handleChannelSet(interaction) {
+// Single subcommand instead of separate set/remove: passing `channel` configures it,
+// omitting it removes the current configuration — same pattern as /warning channel.
+async function handleChannel(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({
       content: '⚠️ You need admin permissions to configure the suggestion channel.',
@@ -11,6 +13,15 @@ async function handleChannelSet(interaction) {
   }
 
   const channel = interaction.options.getChannel('channel');
+
+  if (!channel) {
+    await suggestionManager.removeChannel(interaction.guild.id);
+    await interaction.reply({
+      content: '✅ Suggestion channel removed. `/suggestion add` will be unavailable until a new one is set.',
+      ephemeral: true,
+    });
+    return;
+  }
 
   const botMember = interaction.guild.members.me;
   const canPost =
@@ -29,21 +40,4 @@ async function handleChannelSet(interaction) {
   await interaction.reply({ content: `✅ Suggestions will now be posted in ${channel}.`, ephemeral: true });
 }
 
-async function handleChannelRemove(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({
-      content: '⚠️ You need admin permissions to configure the suggestion channel.',
-      ephemeral: true,
-    });
-    return;
-  }
-
-  await suggestionManager.removeChannel(interaction.guild.id);
-
-  await interaction.reply({
-    content: '✅ Suggestion channel removed. `/suggestion add` will be unavailable until a new one is set.',
-    ephemeral: true,
-  });
-}
-
-module.exports = { handleChannelSet, handleChannelRemove };
+module.exports = { handleChannel };

@@ -26,10 +26,10 @@ src/
         config.js    (configures the give/remove roles for the 3 types + report channel, merged into one subcommand)
         verifyAction.js (shared logic used by sub/domme/maledom, not a subcommand itself)
     goosepizza/
-      index.js       (defines /goosepizza create, edit, channels, remove, list, disable + autocomplete)
-      channelPicker.js (shared ChannelSelectMenu builder for create/channels)
+      index.js       (defines /goosepizza add, edit, channels, remove, list, disable + autocomplete)
+      channelPicker.js (shared ChannelSelectMenu builder for add/channels)
       handlers/
-        create.js
+        add.js
         edit.js
         channels.js            (shows the channel picker, pre-filled for edits)
         channelInteractions.js (handles the picker's follow-up selection)
@@ -37,29 +37,31 @@ src/
         list.js
         disable.js
     incident/
-      index.js       (defines /incident channel, setnumber, reset, disable)
+      index.js       (defines /incident channel, set, reset, disable)
       handlers/
         channel.js
-        setnumber.js
+        set.js
         reset.js
     boosterlinks/
-      index.js       (defines /boosterlink link, unlink, list, exempt add/remove/list)
+      index.js       (defines /boosterlink add, remove, edit, list, exempt add/remove/list, disable)
       handlers/
-        link.js
-        unlink.js
+        add.js
+        remove.js
+        edit.js
         list.js
         exempt.js
     rolelinks/
-      index.js       (defines /rolelink link, unlink, list, toggle)
+      index.js       (defines /rolelink add, remove, edit, list, disable)
       handlers/
-        link.js
-        unlink.js
+        add.js
+        remove.js
+        edit.js
         list.js
-        toggle.js
+        roleInteractions.js (handles the role-picker follow-up for /rolelink add)
     starboard/
-      index.js       (defines /starboard create, edit, remove, list, lookback + autocomplete)
+      index.js       (defines /starboard add, edit, remove, list, lookback + autocomplete)
       handlers/
-        create.js
+        add.js
         edit.js
         remove.js
         list.js
@@ -190,7 +192,7 @@ Each of the three types is independent — e.g. running `/verify domme` never to
 Ported from a separate Python bot: a "Days since last incident" sign, kept up to date as an image in a Discord channel. All subcommands require the **Administrator** permission.
 
 - `/incident channel channel:<#channel>` — sets the channel where the sign is posted. Also posts the sign right away with whatever count is currently set (0 the first time).
-- `/incident setnumber numero:<0-100000>` — manually sets the counter to a specific number and refreshes the sign.
+- `/incident set number:<0-100000>` — manually sets the counter to a specific number and refreshes the sign.
 - `/incident reset` — sets the counter back to 0 (i.e. "an incident just happened") and refreshes the sign.
 
 Every day at midnight (same `TZ` used by the birthday feature) the counter is incremented by 1 and the sign is regenerated, for every guild that has a channel configured. Only one sign message is ever visible at a time: posting a new one deletes the previous one first. Unlike the original bot (a 24h loop timed from the last restart), the daily increment now runs at a fixed time regardless of restarts, and does **not** also fire once at every startup — so restarting the bot never double-counts a day.
@@ -225,7 +227,7 @@ Also listens on `guildMemberUpdate`, same mechanism as the booster-link feature 
 
 Collects popular messages (by reaction count) and reposts them to a dedicated channel. A server can have several starboards, each with its own watch channel, post channel, threshold, emoji and content-type filter — e.g. one board watching `#general` and posting to `#starboard`, and a separate one watching `#memes` and posting only images to `#best-memes`. `list` is open to everyone; every other subcommand requires **Administrator**.
 
-- `/starboard create name:<...> watch_channel:<#channel> post_channel:<#channel> threshold:<1-1000> emojis:<...> [content_type]` — creates a new starboard. `emojis` accepts one or more emojis (unicode or custom server emojis), separated by spaces or commas, e.g. `⭐` or `⭐ 🔥` — or the special value `any`, which counts a reaction with *any* emoji instead of specific ones (can't be combined with actual emojis). `watch_channel` and `post_channel` must be different channels. `content_type` is optional (see below), defaulting to "Any message".
+- `/starboard add name:<...> watch_channel:<#channel> post_channel:<#channel> threshold:<1-1000> emojis:<...> [content_type]` — creates a new starboard. `emojis` accepts one or more emojis (unicode or custom server emojis), separated by spaces or commas, e.g. `⭐` or `⭐ 🔥` — or the special value `any`, which counts a reaction with *any* emoji instead of specific ones (can't be combined with actual emojis). `watch_channel` and `post_channel` must be different channels. `content_type` is optional (see below), defaulting to "Any message".
 - `/starboard edit name:<...> [watch_channel] [post_channel] [threshold] [emojis] [content_type]` — updates any combination of an existing starboard's settings. The `name` option has autocomplete. Providing `emojis` replaces the whole list, it doesn't add to it (also accepts `any`, same rules as above).
 - `/starboard remove name:<...>` — deletes a starboard's configuration. Already-posted messages are left alone but stop being tracked/updated.
 - `/starboard list` — shows every starboard configured in the server, with its watch/post channels, threshold, emojis and content-type filter.

@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, MessageFlags } = require('discord.js');
-const { handleCreate } = require('./handlers/create');
+const { handleAdd } = require('./handlers/add');
 const { handleEdit } = require('./handlers/edit');
 const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
@@ -24,7 +24,7 @@ const data = new SlashCommandBuilder()
   .setDescription('Reposts messages that get enough reactions to a dedicated channel')
   .addSubcommand((sub) =>
     sub
-      .setName('create')
+      .setName('add')
       .setDescription('[Admin] Set up a new starboard')
       .addStringOption((opt) => opt.setName('name').setDescription('A short name for this starboard (e.g. "main")').setRequired(true))
       .addChannelOption((opt) =>
@@ -187,8 +187,8 @@ async function execute(interaction) {
   }
 
   switch (subcommand) {
-    case 'create':
-      return handleCreate(interaction);
+    case 'add':
+      return handleAdd(interaction);
     case 'edit':
       return handleEdit(interaction);
     case 'remove':

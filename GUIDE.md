@@ -68,7 +68,7 @@ Admin only. A little passive fun feature: whenever anyone says a chosen word in 
 Admin only (the command itself is hidden from anyone without the Administrator permission). Keeps a "Days since last incident" sign updated in a channel with the current count.
 
 - **`/incident channel`** — Sets the channel where the sign is kept updated.
-- **`/incident setnumber`** — Manually sets the counter to a specific number.
+- **`/incident set`** — Manually sets the counter to a specific number.
 - **`/incident reset`** — Resets the counter to 0 (use it when an incident just happened).
 - **`/incident disable`** — Turns the feature on/off for this server.
 
@@ -120,7 +120,7 @@ The sticky message is reposted at the bottom of the channel after each new messa
 - **`/suggestion remove`** — Removes your own pending suggestion. If you have more than one pending, you must give the `number`. An admin can instead remove **any** suggestion by number.
 - **`/suggestion list`** — Shows every suggestion still waiting for a decision.
 - **`/suggestion approve`** / **`/suggestion reject`** — Admin only. Decides a suggestion. Admins can also decide by reacting to the suggestion's own message.
-- **`/suggestion channel set`** / **`/suggestion channel remove`** — Admin only. Configures where suggestions get posted.
+- **`/suggestion channel`** — Admin only. Sets where suggestions get posted; omit the channel to remove the current one.
 - **`/suggestion disable`** — Admin only. Turns the feature on/off for this server.
 
 ## ✅ Verification (`/verify`)

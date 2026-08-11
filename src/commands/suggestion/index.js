@@ -3,7 +3,7 @@ const { handleAdd } = require('./handlers/add');
 const { handleEdit } = require('./handlers/edit');
 const { handleRemove } = require('./handlers/remove');
 const { handleApprove, handleReject } = require('./handlers/decide');
-const { handleChannelSet, handleChannelRemove } = require('./handlers/channel');
+const { handleChannel } = require('./handlers/channel');
 const { handleList } = require('./handlers/list');
 const suggestionManager = require('../../features/suggestion/suggestionManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
@@ -63,33 +63,26 @@ const data = new SlashCommandBuilder()
         opt.setName('number').setDescription('Suggestion number (e.g. 12)').setMinValue(1).setRequired(true)
       )
   )
-  .addSubcommandGroup((group) =>
-    group
+  .addSubcommand((sub) =>
+    sub
       .setName('channel')
-      .setDescription('[Admin] Configure where suggestions get posted')
-      .addSubcommand((sub) =>
-        sub
-          .setName('set')
-          .setDescription('Set (or replace) the channel where suggestions are posted')
-          .addChannelOption((opt) =>
-            opt
-              .setName('channel')
-              .setDescription('Channel for suggestions')
-              .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
-              .setRequired(true)
-          )
+      .setDescription('[Admin] Set (or, omitting the channel, remove) where suggestions get posted')
+      .addChannelOption((opt) =>
+        opt
+          .setName('channel')
+          .setDescription('Channel for suggestions (omit to remove the current one)')
+          .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+          .setRequired(false)
       )
-      .addSubcommand((sub) => sub.setName('remove').setDescription('Remove the configured suggestion channel'))
   )
   .addSubcommand(buildDisableSubcommand());
 
 async function execute(interaction) {
-  const group = interaction.options.getSubcommandGroup(false);
   const sub = interaction.options.getSubcommand();
 
   // Disable must work even while the feature is disabled, otherwise there'd be no way
   // to turn it back on through this command once it's off.
-  if (!group && sub === 'disable') {
+  if (sub === 'disable') {
     return handleDisable(interaction);
   }
 
@@ -99,12 +92,6 @@ async function execute(interaction) {
       ephemeral: true,
     });
     return;
-  }
-
-  if (group === 'channel') {
-    if (sub === 'set') return handleChannelSet(interaction);
-    if (sub === 'remove') return handleChannelRemove(interaction);
-    return interaction.reply({ content: 'Unknown subcommand.', ephemeral: true });
   }
 
   switch (sub) {
@@ -120,6 +107,8 @@ async function execute(interaction) {
       return handleApprove(interaction);
     case 'reject':
       return handleReject(interaction);
+    case 'channel':
+      return handleChannel(interaction);
     default:
       return interaction.reply({ content: 'Unknown subcommand.', ephemeral: true });
   }

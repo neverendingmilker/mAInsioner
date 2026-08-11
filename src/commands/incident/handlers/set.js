@@ -1,7 +1,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 const incidentManager = require('../../../features/incident/incidentManager');
 
-async function handleSetNumber(interaction) {
+async function handleSet(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({
       content: '❌ You need Administrator permission to use this command.',
@@ -10,17 +10,17 @@ async function handleSetNumber(interaction) {
     return;
   }
 
-  const numero = interaction.options.getInteger('numero');
+  const number = interaction.options.getInteger('number');
 
   await interaction.deferReply({ ephemeral: true });
 
   try {
-    const result = await incidentManager.setCount(interaction.client, interaction.guildId, numero);
+    const result = await incidentManager.setCount(interaction.client, interaction.guildId, number);
     if (result.posted) {
-      await interaction.editReply({ content: `✅ Counter set to **${numero}**. Sign updated!` });
+      await interaction.editReply({ content: `✅ Counter set to **${number}**. Sign updated!` });
     } else {
       await interaction.editReply({
-        content: `✅ Counter set to **${numero}**, but the sign couldn't be posted (${result.reason}). Configure the channel with \`/incident channel\` first.`,
+        content: `✅ Counter set to **${number}**, but the sign couldn't be posted (${result.reason}). Configure the channel with \`/incident channel\` first.`,
       });
     }
   } catch (err) {
@@ -32,4 +32,4 @@ async function handleSetNumber(interaction) {
   }
 }
 
-module.exports = { handleSetNumber };
+module.exports = { handleSet };

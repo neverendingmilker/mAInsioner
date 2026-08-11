@@ -1,7 +1,7 @@
 const { PermissionFlagsBits, MessageFlags } = require('discord.js');
 const starboardManager = require('../../../features/starboard/starboardManager');
 
-async function handleCreate(interaction) {
+async function handleAdd(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({
       content: '❌ You need the "Administrator" permission to use this command.',
@@ -46,4 +46,4 @@ async function handleCreate(interaction) {
   });
 }
 
-module.exports = { handleCreate };
+module.exports = { handleAdd };
