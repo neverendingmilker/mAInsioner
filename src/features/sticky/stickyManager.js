@@ -159,6 +159,7 @@ async function removeSticky(guild, channelId) {
 // If the channel has an active sticky and this message isn't the sticky's
 // own repost, delete-and-repost it so it stays at the bottom of the channel.
 async function handleNewMessage(message) {
+  if (message.author?.bot) return; // don't let another bot feature's own message bump the sticky needlessly
   const sticky = cache.get(message.channel.id);
   if (!sticky) return;
   if (!isEnabled(sticky.guildId)) return;
