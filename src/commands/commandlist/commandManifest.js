@@ -1,3 +1,5 @@
+const { PermissionFlagsBits } = require('discord.js');
+
 // Hand-maintained reference of every slash command (and subcommand) the bot exposes,
 // with the access tier actually enforced in code:
 //   ADMIN     — requires the "Administrator" permission
@@ -6,11 +8,9 @@
 //               moderator role would be granted
 //   EVERYONE  — no permission check; any member can use it
 //
-// This mirrors the actual PermissionFlagsBits checks in each command's handler(s), not
-// any specific role — a member only gets the MOD-tier commands if their roles actually
-// carry one of those permissions in this server's own Discord settings. There's no
-// separate hardcoded "mod role"; access follows Discord's real permission grants, the
-// same way Discord enforces it everywhere else.
+// `permission` is the literal PermissionFlagsBits value actually checked in code (null
+// for EVERYONE), used by /commandlist to test it against the real "mod" role in the
+// server it's run in, rather than just repeating the static tier label.
 //
 // Keep this in sync by hand whenever a command's permission requirements change —
 // there's no way to derive it automatically, since some of it lives in per-subcommand
@@ -20,152 +20,186 @@ const ADMIN = 'Admin';
 const MOD = 'Mod';
 const EVERYONE = 'Everyone';
 
+// The user's own moderator role — referenced whenever "the mod role" comes up.
+const MOD_ROLE_ID = '1090658915810820156';
+
 const COMMAND_MANIFEST = [
   {
     feature: 'Anime Night',
     command: '/animenight',
     subcommands: [
-      { name: 'add', tier: MOD },
-      { name: 'list', tier: EVERYONE },
-      { name: 'last', tier: EVERYONE },
-      { name: 'edit', tier: MOD },
-      { name: 'disable', tier: MOD },
+      { name: 'add', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'list', tier: EVERYONE, permission: null },
+      { name: 'last', tier: EVERYONE, permission: null },
+      { name: 'edit', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'disable', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
     ],
   },
   {
     feature: 'Birthday',
     command: '/birthday',
     subcommands: [
-      { name: 'add', tier: EVERYONE, note: 'Admin to set for someone else' },
-      { name: 'remove', tier: EVERYONE, note: "Admin to remove someone else's" },
-      { name: 'config', tier: MOD },
-      { name: 'list', tier: EVERYONE },
-      { name: 'disable', tier: MOD },
+      { name: 'add', tier: EVERYONE, permission: null, note: 'Admin to set for someone else' },
+      { name: 'remove', tier: EVERYONE, permission: null, note: "Admin to remove someone else's" },
+      { name: 'config', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'list', tier: EVERYONE, permission: null },
+      { name: 'disable', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
     ],
   },
   {
     feature: 'Booster Links',
     command: '/boosterlink',
     subcommands: [
-      { name: 'link', tier: MOD },
-      { name: 'unlink', tier: MOD },
-      { name: 'list', tier: MOD },
-      { name: 'exempt add/remove/list', tier: MOD },
-      { name: 'disable', tier: MOD },
+      { name: 'link', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'unlink', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'list', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'exempt add/remove/list', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'disable', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
     ],
   },
   {
     feature: 'Combined Role Search',
     command: '/comboroles',
     subcommands: [
-      { name: 'search', tier: EVERYONE },
-      { name: 'disable', tier: MOD },
+      { name: 'search', tier: EVERYONE, permission: null },
+      { name: 'disable', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
     ],
   },
   {
     feature: 'Command List',
     command: '/commandlist',
-    subcommands: [{ name: '(the command itself)', tier: EVERYONE }],
+    subcommands: [{ name: '(the command itself)', tier: EVERYONE, permission: null }],
   },
   {
     feature: 'Disable Feature',
     command: '/disablefeature',
-    subcommands: [{ name: '(the command itself)', tier: ADMIN }],
+    subcommands: [{ name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator }],
   },
   {
     feature: 'GoosePizza',
     command: '/goosepizza',
     subcommands: [
-      { name: 'create', tier: MOD },
-      { name: 'edit', tier: MOD },
-      { name: 'channels', tier: MOD },
-      { name: 'remove', tier: MOD },
-      { name: 'list', tier: MOD },
-      { name: 'disable', tier: MOD },
+      { name: 'create', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
+      { name: 'edit', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
+      { name: 'channels', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
+      { name: 'remove', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
+      { name: 'list', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
+      { name: 'disable', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
     ],
   },
   {
     feature: 'Incident',
     command: '/incident',
     subcommands: [
-      { name: 'channel', tier: ADMIN },
-      { name: 'setnumber', tier: ADMIN },
-      { name: 'reset', tier: ADMIN },
-      { name: 'disable', tier: ADMIN },
+      { name: 'channel', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'setnumber', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'reset', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],
   },
   {
     feature: 'Role Links',
     command: '/rolelink',
     subcommands: [
-      { name: 'link', tier: MOD },
-      { name: 'unlink', tier: MOD },
-      { name: 'list', tier: MOD },
-      { name: 'disable', tier: MOD },
+      { name: 'link', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'unlink', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'list', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'disable', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
     ],
   },
   {
     feature: 'Starboard',
     command: '/starboard',
     subcommands: [
-      { name: 'create', tier: MOD },
-      { name: 'edit', tier: MOD },
-      { name: 'remove', tier: MOD },
-      { name: 'list', tier: MOD },
-      { name: 'lookback', tier: MOD },
-      { name: 'disable', tier: MOD },
+      { name: 'create', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
+      { name: 'edit', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
+      { name: 'remove', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
+      { name: 'list', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
+      { name: 'lookback', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
+      { name: 'disable', tier: MOD, permission: PermissionFlagsBits.ManageGuild },
     ],
   },
   {
     feature: 'Sticky Messages',
     command: '/sticky',
     subcommands: [
-      { name: 'add', tier: MOD },
-      { name: 'remove', tier: MOD },
-      { name: 'list', tier: EVERYONE },
-      { name: 'disable', tier: MOD },
+      { name: 'add', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'remove', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'list', tier: EVERYONE, permission: null },
+      { name: 'disable', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
     ],
   },
   {
     feature: 'Suggestions',
     command: '/suggestion',
     subcommands: [
-      { name: 'add', tier: EVERYONE },
-      { name: 'edit', tier: EVERYONE, note: 'own pending suggestions only' },
-      { name: 'list', tier: EVERYONE },
-      { name: 'approve', tier: ADMIN },
-      { name: 'reject', tier: ADMIN },
-      { name: 'channel set/remove', tier: ADMIN },
-      { name: 'disable', tier: ADMIN },
+      { name: 'add', tier: EVERYONE, permission: null },
+      { name: 'edit', tier: EVERYONE, permission: null, note: 'own pending suggestions only' },
+      { name: 'list', tier: EVERYONE, permission: null },
+      { name: 'approve', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'reject', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'channel set/remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],
   },
   {
     feature: 'Verbal',
     command: '/verbal',
-    subcommands: [{ name: '(the command itself)', tier: MOD, note: 'shares state with /warning' }],
+    subcommands: [
+      {
+        name: '(the command itself)',
+        tier: MOD,
+        permission: PermissionFlagsBits.ModerateMembers,
+        note: 'shares state with /warning',
+      },
+    ],
   },
   {
     feature: 'Verification',
     command: '/verify',
     subcommands: [
-      { name: 'config', tier: MOD },
-      { name: 'sub', tier: MOD, note: 'or the role set via /verify config allowedrole' },
-      { name: 'domme', tier: MOD, note: 'or the role set via /verify config allowedrole' },
-      { name: 'maledom', tier: MOD, note: 'or the role set via /verify config allowedrole' },
-      { name: 'edit', tier: MOD, note: 'or the role set via /verify config allowedrole' },
-      { name: 'disable', tier: MOD },
+      { name: 'config', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      {
+        name: 'sub',
+        tier: MOD,
+        permission: PermissionFlagsBits.ManageRoles,
+        note: 'or the role set via /verify config allowedrole',
+        verifyAllowedRoleCheck: true,
+      },
+      {
+        name: 'domme',
+        tier: MOD,
+        permission: PermissionFlagsBits.ManageRoles,
+        note: 'or the role set via /verify config allowedrole',
+        verifyAllowedRoleCheck: true,
+      },
+      {
+        name: 'maledom',
+        tier: MOD,
+        permission: PermissionFlagsBits.ManageRoles,
+        note: 'or the role set via /verify config allowedrole',
+        verifyAllowedRoleCheck: true,
+      },
+      {
+        name: 'edit',
+        tier: MOD,
+        permission: PermissionFlagsBits.ManageRoles,
+        note: 'or the role set via /verify config allowedrole',
+        verifyAllowedRoleCheck: true,
+      },
+      { name: 'disable', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
     ],
   },
   {
     feature: 'Warnings',
     command: '/warning',
     subcommands: [
-      { name: 'give', tier: MOD },
-      { name: 'roles', tier: MOD },
-      { name: 'channel', tier: MOD },
-      { name: 'disable', tier: MOD },
+      { name: 'give', tier: MOD, permission: PermissionFlagsBits.ModerateMembers },
+      { name: 'roles', tier: MOD, permission: PermissionFlagsBits.ModerateMembers },
+      { name: 'channel', tier: MOD, permission: PermissionFlagsBits.ModerateMembers },
+      { name: 'disable', tier: MOD, permission: PermissionFlagsBits.ModerateMembers },
     ],
   },
 ];
 
-module.exports = { ADMIN, MOD, EVERYONE, COMMAND_MANIFEST };
+module.exports = { ADMIN, MOD, EVERYONE, MOD_ROLE_ID, COMMAND_MANIFEST };

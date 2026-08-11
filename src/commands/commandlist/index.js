@@ -1,27 +1,51 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { COMMAND_MANIFEST } = require('./commandManifest');
+const { COMMAND_MANIFEST, MOD_ROLE_ID } = require('./commandManifest');
 const { sendPaginated } = require('../../utils/pagination');
+const verifyManager = require('../../features/verify/verifyManager');
 
 const EMBED_COLOR = 0x2ecc71;
 const MAX_PAGE_CHARS = 3500; // safety margin under Discord's 4096-char description cap
 
 const data = new SlashCommandBuilder()
   .setName('commandlist')
-  .setDescription('Shows every bot command and who can use it (Admin, Mod, or Everyone)');
+  .setDescription('Shows every bot command, who can use it, and whether the mod role actually can here');
 
-function buildFeatureBlock(feature) {
+// Checks whether the mod role can use this one subcommand in THIS guild: either it
+// holds the required permission directly, or — for /verify's sub/domme/maledom/edit —
+// it's the specific role configured via `/verify config allowedrole`, which grants
+// access independently of Manage Roles.
+async function modRoleCanUse(sub, modRole, guildId) {
+  if (!sub.permission) return true; // Everyone-tier, trivially usable
+  if (modRole.permissions.has(sub.permission)) return true;
+
+  if (sub.verifyAllowedRoleCheck) {
+    const config = await verifyManager.getGuildConfig(guildId);
+    if (config?.allowed_role_id === modRole.id) return true;
+  }
+
+  return false;
+}
+
+async function buildFeatureBlock(feature, modRole, guildId) {
   const nameWidth = Math.max(...feature.subcommands.map((s) => s.name.length));
-  const lines = feature.subcommands.map((s) => {
-    const tierText = s.note ? `${s.tier} (${s.note})` : s.tier;
-    return `  ${s.name.padEnd(nameWidth)}  ${tierText}`;
-  });
+
+  const lines = await Promise.all(
+    feature.subcommands.map(async (s) => {
+      let tierText = s.note ? `${s.tier} (${s.note})` : s.tier;
+      if (modRole) {
+        const canUse = await modRoleCanUse(s, modRole, guildId);
+        tierText += canUse ? ' ✅' : ' ❌';
+      }
+      return `  ${s.name.padEnd(nameWidth)}  ${tierText}`;
+    })
+  );
+
   return `${feature.feature} (${feature.command})\n${lines.join('\n')}`;
 }
 
 // Groups feature blocks into pages without ever splitting a feature's own subcommands
 // across two pages, staying under a safe character budget per page.
-function buildPages() {
-  const blocks = COMMAND_MANIFEST.map(buildFeatureBlock);
+function paginateBlocks(blocks) {
   const pages = [];
   let current = [];
   let currentLength = 0;
@@ -41,18 +65,22 @@ function buildPages() {
 }
 
 async function execute(interaction) {
-  const pages = buildPages();
+  const modRole = interaction.guild.roles.cache.get(MOD_ROLE_ID) ?? (await interaction.guild.roles.fetch(MOD_ROLE_ID).catch(() => null));
+
+  const blocks = await Promise.all(COMMAND_MANIFEST.map((feature) => buildFeatureBlock(feature, modRole, interaction.guildId)));
+  const pages = paginateBlocks(blocks);
+
+  const legend = modRole
+    ? `**Admin** = Administrator permission · **Mod** = Manage Roles/Manage Server/Moderate Members · **Everyone** = no restriction.\n` +
+      `✅/❌ shows whether ${modRole} can actually use that command in **this** server, based on the permissions it currently has.`
+    : `**Admin** = Administrator permission · **Mod** = Manage Roles/Manage Server/Moderate Members · **Everyone** = no restriction.\n` +
+      `⚠️ Couldn't find the configured mod role (<@&${MOD_ROLE_ID}>) in this server, so no per-role ✅/❌ check could be done.`;
 
   await sendPaginated(interaction, pages.length, (pageIndex) =>
     new EmbedBuilder()
       .setColor(EMBED_COLOR)
       .setTitle('📋 Command access levels')
-      .setDescription(
-        '**Admin** = requires the Administrator permission · **Mod** = requires Manage Roles/Manage Server/Moderate ' +
-          "Members (whatever role your server grants those to) · **Everyone** = no restriction.\n\n```\n" +
-          pages[pageIndex].join('\n\n') +
-          '\n```'
-      )
+      .setDescription(`${legend}\n\n\`\`\`\n${pages[pageIndex].join('\n\n')}\n\`\`\``)
       .setFooter({ text: `Page ${pageIndex + 1}/${pages.length}` })
   );
 }

@@ -10,7 +10,10 @@ blocks its commands until it's re-enabled.
 
 **`/commandlist`** — open to everyone. Shows a table of every command in the bot and who can use it: **Admin**
 (needs the Administrator permission), **Mod** (needs Manage Roles/Manage Server/Moderate Members — whichever role
-your server grants those to), or **Everyone**. Paginated with buttons if it doesn't fit on one page.
+your server grants those to), or **Everyone**. Also checks the server's configured mod role against each command's
+actual requirement and marks it ✅/❌, so you can see at a glance which commands that role can and can't use right
+now — including the special case where `/verify config allowedrole` grants `/verify sub`/`domme`/`maledom`/`edit`
+access independently of Manage Roles. Paginated with buttons if it doesn't fit on one page.
 
 ## 📺 Anime Night (`/animenight`)
 

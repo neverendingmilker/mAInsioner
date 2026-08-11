@@ -75,7 +75,7 @@ src/
       index.js       (defines /verbal, standalone command)
     commandlist/
       index.js            (defines /commandlist, a paginated table of every command + who can use it)
-      commandManifest.js  (hand-maintained data: feature -> subcommands -> access tier)
+      commandManifest.js  (hand-maintained data: feature -> subcommands -> access tier + actual permission, plus the mod role ID)
     shared/
       disableSubcommand.js  (shared "disable" subcommand builder + handler factory, used by every feature command below)
   features/         <- "Business logic" layer: one folder per feature
