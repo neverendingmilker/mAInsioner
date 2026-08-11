@@ -1,12 +1,13 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
+const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
 const { handleLast } = require('./handlers/last');
 const { handleEdit } = require('./handlers/edit');
 const animeNightManager = require('../../features/animenight/animeNightManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
-const handleDisable = createDisableHandler(animeNightManager, PermissionFlagsBits.ManageRoles, 'Anime Night');
+const handleDisable = createDisableHandler(animeNightManager, PermissionFlagsBits.Administrator, 'Anime Night');
 
 const data = new SlashCommandBuilder()
   .setName('animenight')
@@ -26,6 +27,14 @@ const data = new SlashCommandBuilder()
           .setName('date')
           .setDescription('Date watched: DD/MM, DD/MM/YYYY, "today" or "yesterday" (default: today)')
           .setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('remove')
+      .setDescription('[Admin] Remove a single anime entry from the watched list')
+      .addStringOption((opt) =>
+        opt.setName('entry').setDescription('Which entry to remove (start typing to search)').setRequired(true).setAutocomplete(true)
       )
   )
   .addSubcommand((sub) =>
@@ -93,6 +102,8 @@ async function execute(interaction) {
   switch (sub) {
     case 'add':
       return handleAdd(interaction);
+    case 'remove':
+      return handleRemove(interaction);
     case 'list':
       return handleList(interaction);
     case 'last':
@@ -104,10 +115,25 @@ async function execute(interaction) {
   }
 }
 
-// Powers the "session" option's autocomplete on /animenight edit: as the admin types,
-// suggest matching sessions (e.g. "Mystery Anime Night 3 — 23/10/2026 (5 anime)").
+// Powers the "session" option's autocomplete on /animenight edit (as the admin types,
+// suggest matching sessions), and the "entry" option's autocomplete on /animenight
+// remove (suggest individual anime, most recently added first).
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
+
+  if (focused.name === 'entry') {
+    const entries = await animeNightManager.getAllEntriesList(interaction.guildId);
+    const query = focused.value.toLowerCase();
+
+    const filtered = entries
+      .filter((e) => e.label.toLowerCase().includes(query))
+      .slice(-25)
+      .reverse();
+
+    await interaction.respond(filtered.map((e) => ({ name: e.label, value: String(e.id) })));
+    return;
+  }
+
   if (focused.name !== 'session') {
     await interaction.respond([]);
     return;

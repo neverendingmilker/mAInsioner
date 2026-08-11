@@ -6,9 +6,9 @@ const verifyManager = require('../../../features/verify/verifyManager');
 // the role allowed to run those three commands — provide any combination of the
 // 6 options in a single call.
 async function handleConfig(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)) {
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({
-      content: '❌ You need the "Manage Roles" permission to use this command.',
+      content: '❌ You need the "Administrator" permission to use this command.',
       ephemeral: true,
     });
     return;

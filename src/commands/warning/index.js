@@ -1,20 +1,20 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleGive } = require('./handlers/give');
+const { handleEdit } = require('./handlers/edit');
 const { handleRoles } = require('./handlers/roles');
 const { handleChannel } = require('./handlers/channel');
 const warningManager = require('../../features/warning/warningManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
-const handleDisable = createDisableHandler(warningManager, PermissionFlagsBits.ModerateMembers, 'Warnings');
+const handleDisable = createDisableHandler(warningManager, PermissionFlagsBits.Administrator, 'Warnings');
 
 const data = new SlashCommandBuilder()
   .setName('warning')
   .setDescription('Moderation warnings: logs a note on a user and assigns one of two configured roles')
-  .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
   .addSubcommand((sub) =>
     sub
       .setName('give')
-      .setDescription('Issue a full warning to a user')
+      .setDescription('[Mod] Issue a full warning to a user')
       .addUserOption((opt) => opt.setName('user').setDescription('Who to warn').setRequired(true))
       .addStringOption((opt) => opt.setName('reason').setDescription('Why').setRequired(true).setMaxLength(300))
       .addStringOption((opt) =>
@@ -23,6 +23,27 @@ const data = new SlashCommandBuilder()
           .setDescription('Which of the two configured roles to assign')
           .setRequired(true)
           .setAutocomplete(true)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('date')
+          .setDescription('Backdate it: DD/MM/YY or DD/MM/YYYY (default: today). Date only, no time.')
+          .setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription('[Mod] Edit one of your own previously-issued warnings/verbals')
+      .addStringOption((opt) =>
+        opt.setName('warning').setDescription('Which of your warnings to edit').setRequired(true).setAutocomplete(true)
+      )
+      .addStringOption((opt) => opt.setName('reason').setDescription('New reason (optional)').setRequired(false).setMaxLength(300))
+      .addStringOption((opt) =>
+        opt
+          .setName('date')
+          .setDescription('New date: DD/MM/YY or DD/MM/YYYY, overwrites the current one (optional)')
+          .setRequired(false)
       )
   )
   .addSubcommand((sub) =>
@@ -63,9 +84,23 @@ async function execute(interaction) {
     return;
   }
 
+  const needsAdmin = sub === 'roles' || sub === 'channel';
+  const needsMod = sub === 'give' || sub === 'edit';
+
+  if (needsAdmin && !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
+    return;
+  }
+  if (needsMod && !interaction.memberPermissions.has(PermissionFlagsBits.ModerateMembers)) {
+    await interaction.reply({ content: '❌ You need the "Moderate Members" permission to use this command.', ephemeral: true });
+    return;
+  }
+
   switch (sub) {
     case 'give':
       return handleGive(interaction);
+    case 'edit':
+      return handleEdit(interaction);
     case 'roles':
       return handleRoles(interaction);
     case 'channel':
@@ -75,10 +110,19 @@ async function execute(interaction) {
   }
 }
 
-// Powers the "role" option's autocomplete on /warning give — reflects whichever two
-// roles are currently configured, by their live name (in case they got renamed).
+// Powers the "role" option's autocomplete on /warning give (the two configured roles),
+// and the "warning" option's autocomplete on /warning edit (only the caller's own).
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
+
+  if (focused.name === 'warning') {
+    const own = await warningManager.getOwnWarningsList(interaction.guildId, interaction.user.id);
+    const query = focused.value.toLowerCase();
+    const filtered = own.filter((w) => w.label.toLowerCase().includes(query)).slice(0, 25);
+    await interaction.respond(filtered.map((w) => ({ name: w.label, value: String(w.id) })));
+    return;
+  }
+
   if (focused.name !== 'role') {
     await interaction.respond([]);
     return;

@@ -1,7 +1,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 const boosterLinkManager = require('../../../features/boosterlinks/boosterLinkManager');
 
-async function handleUnlink(interaction) {
+async function handleRemove(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)) {
     await interaction.reply({
       content: '❌ You need the "Manage Roles" permission to use this command.',
@@ -11,9 +11,14 @@ async function handleUnlink(interaction) {
   }
 
   const user = interaction.options.getUser('user');
-  const role = interaction.options.getRole('role');
+  const roleId = interaction.options.getString('role');
 
-  if (role) {
+  if (roleId) {
+    const role = interaction.guild.roles.cache.get(roleId) ?? (await interaction.guild.roles.fetch(roleId).catch(() => null));
+    if (!role) {
+      await interaction.reply({ content: "⚠️ That role doesn't seem to exist anymore.", ephemeral: true });
+      return;
+    }
     await boosterLinkManager.unlink(interaction.guildId, user.id, role.id);
     await interaction.reply({
       content: `✅ Stopped tracking ${role} for ${user}. The role itself was **not** removed from them.`,
@@ -35,4 +40,4 @@ async function handleUnlink(interaction) {
   });
 }
 
-module.exports = { handleUnlink };
+module.exports = { handleRemove };

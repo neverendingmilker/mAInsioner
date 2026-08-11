@@ -1,10 +1,10 @@
 const { PermissionFlagsBits } = require('discord.js');
 const roleLinkManager = require('../../../features/rolelinks/roleLinkManager');
 
-async function handleUnlink(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)) {
+async function handleRemove(interaction) {
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({
-      content: '❌ You need the "Manage Roles" permission to use this command.',
+      content: '❌ You need the "Administrator" permission to use this command.',
       ephemeral: true,
     });
     return;
@@ -26,4 +26,4 @@ async function handleUnlink(interaction) {
   await interaction.reply({ content: `✅ Unlinked ${roleA} → ${roleB}.`, ephemeral: true });
 }
 
-module.exports = { handleUnlink };
+module.exports = { handleRemove };

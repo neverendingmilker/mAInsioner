@@ -7,7 +7,7 @@ const { handleLookback } = require('./handlers/lookback');
 const starboardManager = require('../../features/starboard/starboardManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
-const handleDisable = createDisableHandler(starboardManager, PermissionFlagsBits.ManageGuild, 'Starboard');
+const handleDisable = createDisableHandler(starboardManager, PermissionFlagsBits.Administrator, 'Starboard');
 
 const STARBOARD_CHANNEL_TYPES = [
   ChannelType.GuildText,
@@ -22,7 +22,6 @@ const CONTENT_TYPE_CHOICES = Object.entries(starboardManager.CONTENT_TYPES).map(
 const data = new SlashCommandBuilder()
   .setName('starboard')
   .setDescription('Reposts messages that get enough reactions to a dedicated channel')
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addSubcommand((sub) =>
     sub
       .setName('create')

@@ -1,9 +1,17 @@
-const { EmbedBuilder, MessageFlags } = require('discord.js');
+const { EmbedBuilder, MessageFlags, PermissionFlagsBits } = require('discord.js');
 const starboardManager = require('../../../features/starboard/starboardManager');
 
 const EMBED_COLOR = 0xffd166;
 
 async function handleList(interaction) {
+  if (
+    !interaction.memberPermissions.has(PermissionFlagsBits.Administrator) &&
+    !interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)
+  ) {
+    await interaction.reply({ content: '❌ You don\'t have permission to use this command.', flags: MessageFlags.Ephemeral });
+    return;
+  }
+
   const boards = await starboardManager.listAll(interaction.guildId);
 
   if (boards.length === 0) {

@@ -43,6 +43,17 @@ async function getEntriesForDate(guildId, watchedDate) {
   return result.rows;
 }
 
+// Removes exactly one title from a session (identified by its row id), leaving the
+// rest of that session's entries untouched.
+async function removeEntry(guildId, entryId) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'DELETE FROM anime_night_entries WHERE guild_id = ? AND id = ?',
+    args: [guildId, entryId],
+  });
+  return result.rowsAffected ?? 0;
+}
+
 // Replaces the entire title list of a session, optionally moving it to a new date
 // in the same operation (delete + reinsert, in a single batch).
 async function replaceSession(guildId, oldDate, newDate, titles, editedBy) {
@@ -95,6 +106,7 @@ module.exports = {
   getAllEntries,
   getLastEntries,
   getEntriesForDate,
+  removeEntry,
   replaceSession,
   updateSessionDate,
   isEnabled,

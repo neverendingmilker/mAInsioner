@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const roleLinkManager = require('../../../features/rolelinks/roleLinkManager');
 const { sendPaginated } = require('../../../utils/pagination');
 
@@ -6,6 +6,14 @@ const ITEMS_PER_PAGE = 15;
 const EMBED_COLOR = 0x5865f2;
 
 async function handleList(interaction) {
+  if (
+    !interaction.memberPermissions.has(PermissionFlagsBits.Administrator) &&
+    !interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)
+  ) {
+    await interaction.reply({ content: '❌ You don\'t have permission to use this command.', ephemeral: true });
+    return;
+  }
+
   const links = await roleLinkManager.listAll(interaction.guildId);
 
   if (links.length === 0) {

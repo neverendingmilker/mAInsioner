@@ -2,8 +2,8 @@ const { PermissionFlagsBits } = require('discord.js');
 const warningManager = require('../../../features/warning/warningManager');
 
 async function handleRoles(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ModerateMembers)) {
-    await interaction.reply({ content: '❌ You need the "Moderate Members" permission to use this command.', ephemeral: true });
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
     return;
   }
 

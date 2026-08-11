@@ -2,8 +2,8 @@ const { PermissionFlagsBits } = require('discord.js');
 const stickyManager = require('../../../features/sticky/stickyManager');
 
 async function handleRemove(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)) {
-    await interaction.reply({ content: '⚠️ You need admin permissions to remove a sticky message.', ephemeral: true });
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '⚠️ You need Administrator permission to remove a sticky message.', ephemeral: true });
     return;
   }
 

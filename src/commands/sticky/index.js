@@ -5,7 +5,7 @@ const { handleList } = require('./handlers/list');
 const stickyManager = require('../../features/sticky/stickyManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
-const handleDisable = createDisableHandler(stickyManager, PermissionFlagsBits.ManageRoles, 'Sticky Messages');
+const handleDisable = createDisableHandler(stickyManager, PermissionFlagsBits.Administrator, 'Sticky Messages');
 
 const STICKY_CHANNEL_TYPES = [
   ChannelType.GuildText,

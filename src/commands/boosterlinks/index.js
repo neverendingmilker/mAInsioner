@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { handleLink } = require('./handlers/link');
-const { handleUnlink } = require('./handlers/unlink');
+const { handleAdd } = require('./handlers/add');
+const { handleRemove } = require('./handlers/remove');
+const { handleEdit } = require('./handlers/edit');
 const { handleList } = require('./handlers/list');
 const { handleExemptAdd, handleExemptRemove, handleExemptList } = require('./handlers/exempt');
 const boosterLinkManager = require('../../features/boosterlinks/boosterLinkManager');
@@ -14,22 +15,33 @@ const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
   .addSubcommand((sub) =>
     sub
-      .setName('link')
+      .setName('add')
       .setDescription('Associate a custom role with a booster, so it gets auto-removed if they stop boosting')
       .addUserOption((opt) => opt.setName('user').setDescription('The booster').setRequired(true))
       .addRoleOption((opt) => opt.setName('role').setDescription('Their custom perk role').setRequired(true))
   )
   .addSubcommand((sub) =>
     sub
-      .setName('unlink')
+      .setName('remove')
       .setDescription('Stop tracking custom role(s) for a user (does not remove the role itself)')
       .addUserOption((opt) => opt.setName('user').setDescription('The user').setRequired(true))
-      .addRoleOption((opt) =>
+      .addStringOption((opt) =>
         opt
           .setName('role')
-          .setDescription('The role to stop tracking (omit to untrack all of this user\'s linked roles)')
+          .setDescription("The role to stop tracking (omit to untrack all of this user's linked roles)")
           .setRequired(false)
+          .setAutocomplete(true)
       )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription('Change which role is tracked for a user (swaps one linked role for another)')
+      .addUserOption((opt) => opt.setName('user').setDescription('The user').setRequired(true))
+      .addStringOption((opt) =>
+        opt.setName('old_role').setDescription('Their currently-tracked role').setRequired(true).setAutocomplete(true)
+      )
+      .addRoleOption((opt) => opt.setName('new_role').setDescription('The role to track instead').setRequired(true))
   )
   .addSubcommand((sub) =>
     sub
@@ -81,10 +93,12 @@ async function execute(interaction) {
   }
 
   switch (sub) {
-    case 'link':
-      return handleLink(interaction);
-    case 'unlink':
-      return handleUnlink(interaction);
+    case 'add':
+      return handleAdd(interaction);
+    case 'remove':
+      return handleRemove(interaction);
+    case 'edit':
+      return handleEdit(interaction);
     case 'list':
       return handleList(interaction);
     default:
@@ -92,4 +106,35 @@ async function execute(interaction) {
   }
 }
 
-module.exports = { data, execute };
+// Powers the "role" option's autocomplete on /boosterlink remove, and the "old_role"
+// option's autocomplete on /boosterlink edit — both show whichever roles are actually
+// tracked for the selected user, instead of every role in the server.
+async function autocomplete(interaction) {
+  const focused = interaction.options.getFocused(true);
+  if (focused.name !== 'role' && focused.name !== 'old_role') {
+    await interaction.respond([]);
+    return;
+  }
+
+  const user = interaction.options.getUser('user');
+  if (!user) {
+    await interaction.respond([]);
+    return;
+  }
+
+  const links = await boosterLinkManager.listForUser(interaction.guildId, user.id);
+  const query = focused.value.toLowerCase();
+
+  const choices = links
+    .map((l) => {
+      const role = interaction.guild.roles.cache.get(l.role_id);
+      return role ? { name: role.name, value: role.id } : null;
+    })
+    .filter(Boolean)
+    .filter((c) => c.name.toLowerCase().includes(query))
+    .slice(0, 25);
+
+  await interaction.respond(choices);
+}
+
+module.exports = { data, execute, autocomplete };

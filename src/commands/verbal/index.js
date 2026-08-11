@@ -6,7 +6,13 @@ const data = new SlashCommandBuilder()
   .setDescription('Logs a verbal warning for a user (no role assigned)')
   .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
   .addUserOption((opt) => opt.setName('user').setDescription('Who to warn').setRequired(true))
-  .addStringOption((opt) => opt.setName('reason').setDescription('Why').setRequired(true).setMaxLength(300));
+  .addStringOption((opt) => opt.setName('reason').setDescription('Why').setRequired(true).setMaxLength(300))
+  .addStringOption((opt) =>
+    opt
+      .setName('date')
+      .setDescription('Backdate it: DD/MM/YY or DD/MM/YYYY (default: today). Date only, no time.')
+      .setRequired(false)
+  );
 
 async function execute(interaction) {
   if (!(await warningManager.isEnabled(interaction.guildId))) {
@@ -19,9 +25,10 @@ async function execute(interaction) {
 
   const targetUser = interaction.options.getUser('user');
   const reason = interaction.options.getString('reason');
+  const dateInput = interaction.options.getString('date') ?? undefined;
 
   try {
-    await warningManager.giveVerbal(interaction.guild, targetUser, reason, interaction.user.id);
+    await warningManager.giveVerbal(interaction.guild, targetUser, reason, interaction.user.id, dateInput);
   } catch (err) {
     if (err instanceof warningManager.ValidationError) {
       await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });

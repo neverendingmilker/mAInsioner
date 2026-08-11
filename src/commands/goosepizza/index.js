@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { handleCreate } = require('./handlers/create');
+const { handleAdd } = require('./handlers/add');
 const { handleEdit } = require('./handlers/edit');
 const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
@@ -12,10 +12,10 @@ const MODE_CHOICES = Object.entries(goosepizzaManager.RESPONSE_MODES).map(([valu
 const data = new SlashCommandBuilder()
   .setName('goosepizza')
   .setDescription('A passive emoji responder: several independent word/channel/emoji combos')
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .addSubcommand((sub) =>
     sub
-      .setName('create')
+      .setName('add')
       .setDescription('[Admin] Set up a new trigger (you\'ll pick channels next)')
       .addStringOption((opt) => opt.setName('name').setDescription('A short name for this trigger (e.g. "pizza")').setRequired(true))
       .addStringOption((opt) =>
@@ -92,8 +92,8 @@ async function execute(interaction) {
   }
 
   switch (subcommand) {
-    case 'create':
-      return handleCreate(interaction);
+    case 'add':
+      return handleAdd(interaction);
     case 'edit':
       return handleEdit(interaction);
     case 'channels':

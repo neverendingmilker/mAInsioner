@@ -3,7 +3,7 @@ const { handleRun } = require('./handlers/run');
 const comboRolesManager = require('../../features/comboroles/comboRolesManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
-const handleDisable = createDisableHandler(comboRolesManager, PermissionFlagsBits.ManageGuild, 'Combined Role Search');
+const handleDisable = createDisableHandler(comboRolesManager, PermissionFlagsBits.Administrator, 'Combined Role Search');
 
 const data = new SlashCommandBuilder()
   .setName('comboroles')
@@ -43,6 +43,14 @@ async function execute(interaction) {
       content: '⚠️ The combined role search feature is currently disabled in this server. An admin can re-enable it with `/disablefeature`.',
       ephemeral: true,
     });
+    return;
+  }
+
+  if (
+    !interaction.memberPermissions.has(PermissionFlagsBits.Administrator) &&
+    !interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)
+  ) {
+    await interaction.reply({ content: '❌ You don\'t have permission to use this command.', ephemeral: true });
     return;
   }
 

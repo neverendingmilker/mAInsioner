@@ -1,7 +1,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 const boosterLinkManager = require('../../../features/boosterlinks/boosterLinkManager');
 
-async function handleLink(interaction) {
+async function handleAdd(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)) {
     await interaction.reply({
       content: '❌ You need the "Manage Roles" permission to use this command.',
@@ -34,7 +34,7 @@ async function handleLink(interaction) {
   }
 
   const enabled = await boosterLinkManager.isEnabled(interaction.guildId);
-  const disabledNote = enabled ? '' : '\n⚠️ Note: the feature is currently **disabled** for this server (`/boosterlink toggle`), so auto-removal won\'t run until it\'s re-enabled.';
+  const disabledNote = enabled ? '' : '\n⚠️ Note: the feature is currently **disabled** for this server (`/boosterlink disable`), so auto-removal won\'t run until it\'s re-enabled.';
 
   await interaction.reply({
     content: `✅ ${role} is now linked to ${user}. It'll be automatically removed if they stop boosting.${warning}${disabledNote}`,
@@ -42,4 +42,4 @@ async function handleLink(interaction) {
   });
 }
 
-module.exports = { handleLink };
+module.exports = { handleAdd };

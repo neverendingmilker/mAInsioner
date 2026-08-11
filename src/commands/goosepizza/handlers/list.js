@@ -1,9 +1,14 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const goosepizzaManager = require('../../../features/goosepizza/goosepizzaManager');
 
 const EMBED_COLOR = 0xf39c12;
 
 async function handleList(interaction) {
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
+    return;
+  }
+
   const triggers = await goosepizzaManager.listAll(interaction.guildId);
 
   if (triggers.length === 0) {

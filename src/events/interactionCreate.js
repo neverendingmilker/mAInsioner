@@ -85,6 +85,19 @@ module.exports = {
       return;
     }
 
+    if (interaction.isRoleSelectMenu() && interaction.customId === 'rolelink:add:roles') {
+      try {
+        const { handleRoleSelect } = require('../commands/rolelinks/handlers/roleInteractions');
+        await handleRoleSelect(interaction);
+      } catch (err) {
+        console.error('Error handling rolelink role select:', err);
+        await interaction
+          .update({ content: '⚠️ An error occurred while saving the role selection.', components: [] })
+          .catch(() => null);
+      }
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) return;
 
     const command = interaction.client.commands.get(interaction.commandName);

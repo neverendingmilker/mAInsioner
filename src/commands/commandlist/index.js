@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { COMMAND_MANIFEST, MOD_ROLE_ID } = require('./commandManifest');
 const { sendPaginated } = require('../../utils/pagination');
 const verifyManager = require('../../features/verify/verifyManager');
@@ -65,6 +65,14 @@ function paginateBlocks(blocks) {
 }
 
 async function execute(interaction) {
+  if (
+    !interaction.memberPermissions.has(PermissionFlagsBits.Administrator) &&
+    !interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)
+  ) {
+    await interaction.reply({ content: '❌ You don\'t have permission to use this command.', ephemeral: true });
+    return;
+  }
+
   const modRole = interaction.guild.roles.cache.get(MOD_ROLE_ID) ?? (await interaction.guild.roles.fetch(MOD_ROLE_ID).catch(() => null));
 
   const blocks = await Promise.all(COMMAND_MANIFEST.map((feature) => buildFeatureBlock(feature, modRole, interaction.guildId)));

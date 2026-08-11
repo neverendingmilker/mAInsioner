@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
 const { handleEdit } = require('./handlers/edit');
+const { handleRemove } = require('./handlers/remove');
 const { handleApprove, handleReject } = require('./handlers/decide');
 const { handleChannelSet, handleChannelRemove } = require('./handlers/channel');
 const { handleList } = require('./handlers/list');
@@ -29,6 +30,18 @@ const data = new SlashCommandBuilder()
       )
       .addStringOption((opt) =>
         opt.setName('text').setDescription('New text for the suggestion').setMaxLength(1000).setRequired(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('remove')
+      .setDescription('Remove your own pending suggestion, or (mods) any suggestion by number')
+      .addIntegerOption((opt) =>
+        opt
+          .setName('number')
+          .setDescription("Suggestion number — required if you have more than one pending, or for a mod's removal")
+          .setMinValue(1)
+          .setRequired(false)
       )
   )
   .addSubcommand((sub) =>
@@ -99,6 +112,8 @@ async function execute(interaction) {
       return handleAdd(interaction);
     case 'edit':
       return handleEdit(interaction);
+    case 'remove':
+      return handleRemove(interaction);
     case 'list':
       return handleList(interaction);
     case 'approve':

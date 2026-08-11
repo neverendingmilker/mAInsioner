@@ -2,9 +2,9 @@ const { PermissionFlagsBits } = require('discord.js');
 const animeNightManager = require('../../../features/animenight/animeNightManager');
 
 async function handleEdit(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)) {
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({
-      content: '❌ You need the "Manage Roles" permission to use this command.',
+      content: '❌ You need the "Administrator" permission to use this command.',
       ephemeral: true,
     });
     return;

@@ -3,9 +3,9 @@ const goosepizzaManager = require('../../../features/goosepizza/goosepizzaManage
 const sessions = require('../../../features/goosepizza/goosepizzaChannelSessions');
 const { buildChannelPickerRow } = require('../channelPicker');
 
-async function handleCreate(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
-    await interaction.reply({ content: '❌ You need the "Manage Server" permission to use this command.', ephemeral: true });
+async function handleAdd(interaction) {
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
     return;
   }
 
@@ -37,4 +37,4 @@ async function handleCreate(interaction) {
   sessions.create(sent.id, { type: 'create', pending });
 }
 
-module.exports = { handleCreate };
+module.exports = { handleAdd };

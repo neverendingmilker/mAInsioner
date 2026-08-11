@@ -1,12 +1,43 @@
 const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const repo = require('./warningRepository');
 const config = require('../../config/config');
+const { zonedTimeToUtc } = require('../../utils/timezoneDate');
 
 class ValidationError extends Error {}
 
 const EMBED_COLOR = 0xe74c3c;
 const MAX_DESCRIPTION_LENGTH = 4000; // stay safely under Discord's 4096-char embed description cap
 const REASON_MAX_LENGTH = 300;
+
+// Parses "DD/MM/YY" or "DD/MM/YYYY" into midnight of that date, in the bot's configured
+// timezone — used to backdate a warning/verbal to when it actually happened, rather
+// than when it was logged. Never includes a time component, only ever a date.
+function parseWarningDate(input) {
+  const match = /^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/.exec(input.trim());
+  if (!match) {
+    throw new ValidationError('Invalid date. Use DD/MM/YY or DD/MM/YYYY — e.g. 15/03/25 or 15/03/2025.');
+  }
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  let year = Number(match[3]);
+  if (match[3].length === 2) {
+    year += year <= 79 ? 2000 : 1900;
+  }
+
+  const roundTrip = new Date(year, month - 1, day);
+  const isValidCalendarDate =
+    roundTrip.getFullYear() === year && roundTrip.getMonth() === month - 1 && roundTrip.getDate() === day;
+  if (!isValidCalendarDate) {
+    throw new ValidationError(`"${input}" isn't a valid date.`);
+  }
+
+  const midnight = zonedTimeToUtc(year, month - 1, day, 0, 0, 0, config.timezone);
+  if (midnight.getTime() > Date.now()) {
+    throw new ValidationError(`"${input}" is in the future.`);
+  }
+  return midnight.getTime();
+}
 
 async function isEnabled(guildId) {
   return repo.isEnabled(guildId);
@@ -66,7 +97,7 @@ async function getRoleChoices(guild) {
 
 // --- Issuing warnings ---
 
-async function giveWarning(guild, targetUser, reason, roleId, issuedBy) {
+async function giveWarning(guild, targetUser, reason, roleId, issuedBy, dateInput) {
   const cfg = await repo.getConfig(guild.id);
   if (!cfg?.role_1_id || !cfg?.role_2_id) {
     throw new ValidationError('Configure the two assignable roles first with `/warning roles`.');
@@ -100,13 +131,13 @@ async function giveWarning(guild, targetUser, reason, roleId, issuedBy) {
     });
   }
 
-  await repo.addWarning(guild.id, targetUser.id, 'warning', trimmedReason, role.id, issuedBy);
+  await repo.addWarning(guild.id, targetUser.id, 'warning', trimmedReason, role.id, issuedBy, dateInput ? parseWarningDate(dateInput) : undefined);
   await refreshEmbed(guild);
 
   return { role };
 }
 
-async function giveVerbal(guild, targetUser, reason, issuedBy) {
+async function giveVerbal(guild, targetUser, reason, issuedBy, dateInput) {
   const cfg = await repo.getConfig(guild.id);
   if (!cfg?.channel_id) {
     throw new ValidationError('Configure the warnings channel first with `/warning channel`.');
@@ -117,8 +148,51 @@ async function giveVerbal(guild, targetUser, reason, issuedBy) {
     throw new ValidationError('Provide a reason.');
   }
 
-  await repo.addWarning(guild.id, targetUser.id, 'verbal', trimmedReason, null, issuedBy);
+  await repo.addWarning(guild.id, targetUser.id, 'verbal', trimmedReason, null, issuedBy, dateInput ? parseWarningDate(dateInput) : undefined);
   await refreshEmbed(guild);
+}
+
+// Edits an existing warning/verbal — but ONLY if the person editing is the same one who
+// originally issued it. Can change the reason and/or backdate it to a different date.
+async function editWarning(guild, warningId, editorId, updates) {
+  const warning = await repo.getWarningById(warningId);
+  if (!warning || warning.guild_id !== guild.id) {
+    throw new ValidationError("That warning doesn't exist.");
+  }
+  if (warning.issued_by !== editorId) {
+    throw new ValidationError('You can only edit warnings you issued yourself.');
+  }
+
+  const fields = {};
+  if (updates.reason !== undefined) {
+    const trimmedReason = updates.reason.trim().slice(0, REASON_MAX_LENGTH);
+    if (!trimmedReason) {
+      throw new ValidationError('Provide a reason.');
+    }
+    fields.reason = trimmedReason;
+  }
+  if (updates.dateInput !== undefined) {
+    fields.created_at = parseWarningDate(updates.dateInput);
+  }
+
+  if (Object.keys(fields).length === 0) {
+    throw new ValidationError('Provide at least a new reason or a new date to change.');
+  }
+
+  await repo.updateWarning(warningId, fields);
+  await refreshEmbed(guild);
+
+  return { ...warning, ...fields };
+}
+
+// Warnings/verbals issued by one specific person — powers the autocomplete on
+// /warning edit, so a mod only ever sees (and can pick from) their own entries.
+async function getOwnWarningsList(guildId, issuedBy) {
+  const rows = await repo.getWarningsByIssuer(guildId, issuedBy);
+  return rows.map((row) => ({
+    id: row.id,
+    label: `${row.type === 'verbal' ? 'Verbal' : 'Warning'} — ${row.reason.slice(0, 60)}`,
+  }));
 }
 
 // --- Embed building / posting ---
@@ -208,5 +282,7 @@ module.exports = {
   getRoleChoices,
   giveWarning,
   giveVerbal,
+  editWarning,
+  getOwnWarningsList,
   refreshEmbed,
 };

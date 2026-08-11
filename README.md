@@ -151,9 +151,10 @@ Every feature below can be turned on/off for a server either with the universal 
 
 ## Available commands (birthday feature)
 
-- `/birthday add day:<1-31> month:<1-12> [year] [user]` — anyone can save their own birthday. If today happens to be that date, the birthday role is assigned right away. The optional `user` option lets an **admin (Manage Roles permission)** set someone else's birthday instead of their own.
-- `/birthday remove [user]` — anyone can remove their own saved birthday. The optional `user` option lets an **admin (Manage Roles permission)** remove someone else's instead.
-- `/birthday config [role] [removeafter] [channel]` — **admin (Manage Roles permission)**: configures any combination of the three settings in one call:
+- `/birthday add day:<1-31> month:<1-12> [year] [user]` — anyone can save their own birthday. If today happens to be that date, the birthday role is assigned right away. The optional `user` option lets a **mod (Manage Roles permission)** set someone else's birthday instead of their own.
+- `/birthday edit day:<1-31> month:<1-12> [year] [user]` — same as `add`, but requires that a birthday is already saved (points you at `/birthday add` otherwise). Same self/mod split as `add`.
+- `/birthday remove [user]` — anyone can remove their own saved birthday. The optional `user` option lets a **mod (Manage Roles permission)** remove someone else's instead.
+- `/birthday config [role] [removeafter] [channel]` — **mod (Manage Roles permission)**: configures any combination of the three settings in one call:
   - `role:<@role>` — the role to assign on someone's birthday. Also checks the bot's role hierarchy and immediately assigns the role to anyone already celebrating today.
   - `removeafter:<duration>` — after how long to remove the role. Accepts a number followed by a unit: `s` (seconds), `m` (minutes), `h` (hours), `d` (days) — e.g. `30s`, `10m`, `24h`, `3d`. Minimum 10 seconds, maximum 30 days, default 24h.
   - `channel:<#channel>` — the text channel where automatic birthday greetings are posted. Also greets anyone already celebrating today, right away.
@@ -163,16 +164,17 @@ Every day at midnight (timezone set via `TZ` in `.env`) the bot checks who's cel
 
 ## Available commands (Mystery Anime Night feature)
 
-- `/animenight add titles:<...> [date]` — **admin (Manage Roles permission)**: adds one or more anime to the watched list. Separate multiple titles with a comma or a slash, e.g. `Naruto, One Piece / Bleach`. The optional `date` accepts `DD/MM`, `DD/MM/YYYY`, `today`, or `yesterday`; defaults to today if omitted entirely. Every distinct date is a "session" (e.g. "Mystery Anime Night 3"), numbered chronologically.
+- `/animenight add titles:<...> [date]` — **admin only**: adds one or more anime to the watched list. Separate multiple titles with a comma or a slash, e.g. `Naruto, One Piece / Bleach`. The optional `date` accepts `DD/MM`, `DD/MM/YYYY`, `today`, or `yesterday`; defaults to today if omitted entirely. Every distinct date is a "session" (e.g. "Mystery Anime Night 3"), numbered chronologically.
+- `/animenight remove entry:<...>` — **admin only**: removes a single anime entry (not a whole session). The `entry` option has autocomplete, listing individual anime with their session date.
 - `/animenight list [order]` — shows the watch list as an embed **grouped by session** (10 sessions per page), paginated with ◀ Previous / Next ▶ buttons once there are more than 10. Sessions always appear in chronological order; `order` only controls how titles are sorted *within* each session — `alphabetical` (default) or `added` (the order they were added in).
 - `/animenight last` — shows every anime from the most recent Mystery Anime Night **session** (i.e. the latest distinct date), not just the last few inserted rows. Also paginated if that session has many entries.
-- `/animenight edit session:<...> [titles] [date]` — **admin**: edits an existing session. The `session` option has autocomplete — start typing and Discord suggests matching sessions (e.g. "Mystery Anime Night 3 — 23/10/2026 (5 anime)"), most recent first. Provide `titles` to replace the whole anime list for that session, `date` to move it to a different day (moving it onto an existing session's date merges the two), or both. Session numbers are computed dynamically from chronological order, so they stay correct even after edits.
+- `/animenight edit session:<...> [titles] [date]` — **admin only**: edits an existing session. The `session` option has autocomplete — start typing and Discord suggests matching sessions (e.g. "Mystery Anime Night 3 — 23/10/2026 (5 anime)"), most recent first. Provide `titles` to replace the whole anime list for that session, `date` to move it to a different day (moving it onto an existing session's date merges the two), or both. Session numbers are computed dynamically from chronological order, so they stay correct even after edits.
 
 ## Available commands (Verify feature)
 
-All `/verify` subcommands require the **Manage Roles** permission.
+`/verify config` requires the **Administrator** permission; every other subcommand requires **Manage Roles**, or the role configured via `/verify config allowedrole`.
 
-- `/verify config [verified_sub] [subremove] [verified_domme] [dommeremove] [verified_maledom] [maledomremove] [channel]` — configures any combination of the following in one call:
+- `/verify config [verified_sub] [subremove] [verified_domme] [dommeremove] [verified_maledom] [maledomremove] [channel] [allowedrole]` — **admin only**: configures any combination of the following in one call:
   - `verified_sub` / `verified_domme` / `verified_maledom` — the role assigned by `/verify sub`, `/verify domme`, `/verify maledom` respectively.
   - `subremove` / `dommeremove` / `maledomremove` — an **optional** role to strip from the member (if they currently have it) when that command is run — e.g. remove a generic "Unverified" or "Findomme" role once the specific Verified role is granted.
   - `channel:<#channel>` — the text channel where verification reports are posted (report format: TBD).
@@ -194,10 +196,11 @@ Every day at midnight (same `TZ` used by the birthday feature) the counter is in
 
 Tracks custom perk roles manually given to server boosters, so they get auto-removed if the person stops boosting. All subcommands require the **Manage Roles** permission.
 
-- `/boosterlink link user:<user> role:<role>` — links a custom role to a booster.
-- `/boosterlink unlink user:<user> role:<role>` — stops tracking that link (does **not** remove the role itself). `role` is optional: omit it to untrack every role linked to that user at once.
+- `/boosterlink add user:<user> role:<role>` — links a custom role to a booster.
+- `/boosterlink remove user:<user> [role]` — stops tracking that link (does **not** remove the role itself). `role` is optional (autocomplete, shows only roles actually tracked for that user): omit it to untrack every role linked to that user at once.
+- `/boosterlink edit user:<user> old_role:<...> new_role:<role>` — re-points an existing link to a different role, in one step. `old_role` has autocomplete showing only that user's currently-tracked roles.
 - `/boosterlink list [user]` — lists tracked links, optionally filtered to one user.
-- `/boosterlink toggle enabled:<true/false>` — enables or disables auto-removal for the whole server with a single command. Existing links are kept while disabled; nothing is removed until it's turned back on.
+- `/boosterlink disable enabled:<true/false>` — enables or disables auto-removal for the whole server with a single command. Existing links are kept while disabled; nothing is removed until it's turned back on.
 
 Listens on Discord's `guildMemberUpdate` event: whenever a member who had the server's Booster role no longer has it (boost expired, manually removed, etc.), every custom role linked to them is removed and the link is deleted. Requires the bot's own role to sit above the linked role in the role list.
 
@@ -205,18 +208,19 @@ Exempt roles: `/boosterlink exempt add role:<role>` / `remove` / `list` manage a
 
 ## Available commands (Role link feature)
 
-Generic version of the same idea, not tied to boosting: links any two roles so that losing one auto-removes the other. Requires the **Manage Roles** permission.
+Generic version of the same idea, not tied to boosting: links any two roles so that losing one auto-removes the other. `list` requires **Manage Roles**; every other subcommand requires **Administrator**.
 
-- `/rolelink link role1:<role> role2:<role> [viceversa:<true/false>]` — losing `role1` removes `role2`. If `viceversa` is `true` (default `false`), losing `role2` also removes `role1`.
-- `/rolelink unlink role1:<role> role2:<role>` — removes that link (same role order as when it was created).
+- `/rolelink add role1:<role> [viceversa:<true/false>]` — after running this, a role picker (native Discord multi-select, listing every role in the server) appears so you can choose **one or more** target roles at once; losing `role1` removes all of them. If `viceversa` is `true` (default `false`), losing any of the target roles also removes `role1`.
+- `/rolelink remove role1:<role> role2:<role>` — removes that link (same role order as when it was created).
+- `/rolelink edit role1:<role> role2:<role> [new_role1] [new_role2] [viceversa]` — identifies the link by its current `role1`/`role2`, then updates whichever of `new_role1`/`new_role2`/`viceversa` you provide.
 - `/rolelink list` — lists all configured role links in the server.
-- `/rolelink toggle enabled:<true/false>` — enables or disables role link auto-removal for the whole server.
+- `/rolelink disable enabled:<true/false>` — enables or disables role link auto-removal for the whole server.
 
 Also listens on `guildMemberUpdate`, same mechanism as the booster-link feature above. The bot's own role must sit above both roles involved in a link.
 
 ## Available commands (Starboard feature)
 
-Collects popular messages (by reaction count) and reposts them to a dedicated channel. A server can have several starboards, each with its own watch channel, post channel, threshold, emoji and content-type filter — e.g. one board watching `#general` and posting to `#starboard`, and a separate one watching `#memes` and posting only images to `#best-memes`. All subcommands require the **Manage Server** permission.
+Collects popular messages (by reaction count) and reposts them to a dedicated channel. A server can have several starboards, each with its own watch channel, post channel, threshold, emoji and content-type filter — e.g. one board watching `#general` and posting to `#starboard`, and a separate one watching `#memes` and posting only images to `#best-memes`. `list` requires **Manage Roles**; every other subcommand requires **Administrator**.
 
 - `/starboard create name:<...> watch_channel:<#channel> post_channel:<#channel> threshold:<1-1000> emojis:<...> [content_type]` — creates a new starboard. `emojis` accepts one or more emojis (unicode or custom server emojis), separated by spaces or commas, e.g. `⭐` or `⭐ 🔥` — or the special value `any`, which counts a reaction with *any* emoji instead of specific ones (can't be combined with actual emojis). `watch_channel` and `post_channel` must be different channels. `content_type` is optional (see below), defaulting to "Any message".
 - `/starboard edit name:<...> [watch_channel] [post_channel] [threshold] [emojis] [content_type]` — updates any combination of an existing starboard's settings. The `name` option has autocomplete. Providing `emojis` replaces the whole list, it doesn't add to it (also accepts `any`, same rules as above).
@@ -235,12 +239,13 @@ A message qualifies for a starboard once **enough distinct people** have reacted
 
 ## Available commands (Warning feature)
 
-Moderation notes on users. Two severities: a lightweight **verbal** warning (just a logged note) and a full **warning** (logged note + assigns one of two admin-configured roles). All subcommands require the **Moderate Members** permission.
+Moderation notes on users. Two severities: a lightweight **verbal** warning (just a logged note) and a full **warning** (logged note + assigns one of two admin-configured roles). `give` and `edit` require **Moderate Members**; `roles`, `channel` and `disable` require **Administrator**.
 
-- `/warning roles role_1:<role> role_2:<role>` — configures the two roles selectable when issuing a full warning. The bot's own role must sit above both, since it needs to be able to assign them.
-- `/warning channel channel:<#channel>` — sets the channel where the warnings list is kept updated. Posting the list there for the first time happens right away.
-- `/warning give user:<@user> reason:<...> role:<...>` — issues a full warning: assigns the chosen role (autocomplete offers only the two configured roles, by their current name) and logs the entry.
-- `/verbal user:<@user> reason:<...>` — logs a verbal warning. No role is assigned; the standalone `/verbal` command mirrors `/warning give` without the role step.
+- `/warning roles role_1:<role> role_2:<role>` — **admin only**: configures the two roles selectable when issuing a full warning. The bot's own role must sit above both, since it needs to be able to assign them.
+- `/warning channel channel:<#channel>` — **admin only**: sets the channel where the warnings list is kept updated. Posting the list there for the first time happens right away.
+- `/warning give user:<@user> reason:<...> role:<...> [date]` — issues a full warning: assigns the chosen role (autocomplete offers only the two configured roles, by their current name) and logs the entry. The optional `date` (`DD/MM/YY` or `DD/MM/YYYY`) backdates it instead of using today; only ever a date, never a time.
+- `/warning edit warning:<...> [reason] [date]` — edits one of **your own** previously-issued warnings/verbals (autocomplete only ever lists entries **you** issued — not other mods'). Change the reason and/or overwrite the date.
+- `/verbal user:<@user> reason:<...> [date]` — logs a verbal warning. No role is assigned; the standalone `/verbal` command mirrors `/warning give` without the role step, and shares its enabled state and permission tier with `/warning`.
 
 Both commands update a single, continuously-edited embed in the configured channel (it's never reposted, just edited in place) titled **"Warnings"**, with a `Last update: <Month> <Day>, <Year> <time>` line at the top (the time is a live Discord timestamp, so it always shows correctly in each viewer's own timezone). Below that, every user with at least one entry gets a block:
 
@@ -254,9 +259,9 @@ Users are listed **most-recently-warned first** — issuing a new warning or ver
 
 ## Available commands (GoosePizza feature)
 
-A small passive fun feature: whenever anyone says a chosen word in one of its chosen channels, the bot automatically responds with a chosen emoji — either as a new message, or as a reaction on the triggering message, depending on the configured mode. A server can have several independent triggers at once — different words, channels, emojis, and modes can all coexist, including more than one watching the same channel simultaneously (a message matching two different triggers fires both, independently) — and each trigger itself can watch more than one channel (up to 10). All subcommands require the **Manage Server** permission.
+A small passive fun feature: whenever anyone says a chosen word in one of its chosen channels, the bot automatically responds with a chosen emoji — either as a new message, or as a reaction on the triggering message, depending on the configured mode. A server can have several independent triggers at once — different words, channels, emojis, and modes can all coexist, including more than one watching the same channel simultaneously (a message matching two different triggers fires both, independently) — and each trigger itself can watch more than one channel (up to 10). All subcommands require the **Administrator** permission.
 
-- `/goosepizza create name:<...> trigger:<...> emoji:<...> mode:<Comment|React>` — starts creating a new trigger. `trigger` is matched case-insensitively as a substring anywhere in the message. `emoji` accepts a unicode emoji or a custom server emoji. `mode` is **Comment** (posts the emoji as a brand new message in the channel) or **React** (adds the emoji as a reaction directly on the triggering message, without posting anything new) — the permission the bot needs in each channel depends on which one you pick (Send Messages for Comment; Add Reactions + Read Message History for React). After running the command, a channel picker (a native Discord select menu listing every channel in the server, up to 10 selections) appears — the trigger is only actually created once at least one channel is chosen there.
+- `/goosepizza add name:<...> trigger:<...> emoji:<...> mode:<Comment|React>` — starts creating a new trigger. `trigger` is matched case-insensitively as a substring anywhere in the message. `emoji` accepts a unicode emoji or a custom server emoji. `mode` is **Comment** (posts the emoji as a brand new message in the channel) or **React** (adds the emoji as a reaction directly on the triggering message, without posting anything new) — the permission the bot needs in each channel depends on which one you pick (Send Messages for Comment; Add Reactions + Read Message History for React). After running the command, a channel picker (a native Discord select menu listing every channel in the server, up to 10 selections) appears — the trigger is only actually created once at least one channel is chosen there.
 - `/goosepizza edit name:<...> [trigger] [emoji] [mode]` — updates the word/phrase, emoji, and/or mode of an existing trigger. The `name` option has autocomplete. If `mode` changes, every channel the trigger currently watches is re-checked for the new mode's required permission. Doesn't touch which channels it watches — use `/goosepizza channels` for that.
 - `/goosepizza channels name:<...>` — opens the same channel picker for an existing trigger, pre-filled with its current channels (shown as already selected); whatever you pick replaces the list entirely, so re-selecting the same ones plus a new one is how you add to it.
 - `/goosepizza remove name:<...>` — deletes a trigger.

@@ -220,6 +220,38 @@ async function listPending(guildId) {
   return result.rows;
 }
 
+// This user's own still-pending suggestions — used by /suggestion remove to figure out
+// which one they mean when they don't specify a number.
+async function listPendingForUser(guildId, userId) {
+  const result = await db.execute({
+    sql: "SELECT * FROM suggestions WHERE guild_id = ? AND user_id = ? AND status = 'pending' ORDER BY number ASC",
+    args: [guildId, userId],
+  });
+  return result.rows;
+}
+
+// Deletes a suggestion entirely: removes its posted message (if any) and its DB row.
+// Used both for a user removing their own pending suggestion, and for a mod removing
+// any suggestion from the list.
+async function removeSuggestion(guild, number) {
+  const suggestion = await getSuggestion(guild.id, number);
+  if (!suggestion) return false;
+
+  if (suggestion.message_id && suggestion.channel_id) {
+    const channel = guild.channels.cache.get(suggestion.channel_id);
+    if (channel) {
+      const message = await channel.messages.fetch(suggestion.message_id).catch(() => null);
+      if (message) await message.delete().catch(() => {});
+    }
+  }
+
+  await db.execute({
+    sql: 'DELETE FROM suggestions WHERE guild_id = ? AND number = ?',
+    args: [guild.id, number],
+  });
+  return true;
+}
+
 module.exports = {
   UPVOTE_EMOJI,
   DOWNVOTE_EMOJI,
@@ -234,4 +266,6 @@ module.exports = {
   editContent,
   setStatus,
   listPending,
+  listPendingForUser,
+  removeSuggestion,
 };

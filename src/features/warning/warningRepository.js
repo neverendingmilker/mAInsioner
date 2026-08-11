@@ -65,13 +65,49 @@ async function setEmbedMessageId(guildId, messageId) {
 
 // --- Warning entries ---
 
-async function addWarning(guildId, userId, type, reason, roleId, issuedBy) {
+async function addWarning(guildId, userId, type, reason, roleId, issuedBy, createdAt) {
   await db.ready;
-  await db.client.execute({
+  const result = await db.client.execute({
     sql: `INSERT INTO warnings (guild_id, user_id, type, reason, role_id, issued_by, created_at)
           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    args: [guildId, userId, type, reason, roleId ?? null, issuedBy, Date.now()],
+    args: [guildId, userId, type, reason, roleId ?? null, issuedBy, createdAt ?? Date.now()],
   });
+  return Number(result.lastInsertRowid);
+}
+
+async function getWarningById(id) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT * FROM warnings WHERE id = ?',
+    args: [id],
+  });
+  return result.rows[0] ?? null;
+}
+
+// Warnings issued by a specific person, most recent first — used for the "which of my
+// own warnings do you mean" autocomplete on /warning edit.
+async function getWarningsByIssuer(guildId, issuedBy) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT * FROM warnings WHERE guild_id = ? AND issued_by = ? ORDER BY created_at DESC',
+    args: [guildId, issuedBy],
+  });
+  return result.rows;
+}
+
+async function updateWarning(id, fields) {
+  await db.ready;
+  const columns = Object.keys(fields);
+  if (columns.length === 0) return 0;
+
+  const setClause = columns.map((col) => `${col} = ?`).join(', ');
+  const args = [...columns.map((col) => fields[col]), id];
+
+  const result = await db.client.execute({
+    sql: `UPDATE warnings SET ${setClause} WHERE id = ?`,
+    args,
+  });
+  return result.rowsAffected ?? 0;
 }
 
 // All warnings for a guild, oldest first — the manager groups these by user and decides
@@ -102,6 +138,9 @@ module.exports = {
   setChannel,
   setEmbedMessageId,
   addWarning,
+  getWarningById,
+  getWarningsByIssuer,
+  updateWarning,
   getAllWarnings,
   getWarningsForUser,
 };

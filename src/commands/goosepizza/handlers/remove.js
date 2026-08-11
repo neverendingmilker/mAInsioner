@@ -2,8 +2,8 @@ const { PermissionFlagsBits } = require('discord.js');
 const goosepizzaManager = require('../../../features/goosepizza/goosepizzaManager');
 
 async function handleRemove(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
-    await interaction.reply({ content: '❌ You need the "Manage Server" permission to use this command.', ephemeral: true });
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
     return;
   }
 

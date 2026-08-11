@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
+const { handleEdit } = require('./handlers/edit');
 const { handleRemove } = require('./handlers/remove');
 const { handleConfig } = require('./handlers/config');
 const { handleList } = require('./handlers/list');
@@ -28,6 +29,26 @@ const data = new SlashCommandBuilder()
         opt
           .setName('user')
           .setDescription('[Admin only] Set the birthday for someone else instead of yourself')
+          .setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription("Edit your saved birthday (or, for mods, anyone's)")
+      .addIntegerOption((opt) =>
+        opt.setName('day').setDescription('Day (1-31)').setMinValue(1).setMaxValue(31).setRequired(true)
+      )
+      .addIntegerOption((opt) =>
+        opt.setName('month').setDescription('Month (1-12)').setMinValue(1).setMaxValue(12).setRequired(true)
+      )
+      .addIntegerOption((opt) =>
+        opt.setName('year').setDescription('Year of birth (optional)').setRequired(false)
+      )
+      .addUserOption((opt) =>
+        opt
+          .setName('user')
+          .setDescription('[Mod only] Edit the birthday for someone else instead of yourself')
           .setRequired(false)
       )
   )
@@ -88,6 +109,8 @@ async function execute(interaction) {
   switch (sub) {
     case 'add':
       return handleAdd(interaction);
+    case 'edit':
+      return handleEdit(interaction);
     case 'remove':
       return handleRemove(interaction);
     case 'config':

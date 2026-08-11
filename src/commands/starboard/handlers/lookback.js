@@ -25,8 +25,8 @@ async function handleLookback(interaction) {
   // we tried to defer, and every lookback would fail with a generic "an error occurred".
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageGuild)) {
-    await interaction.editReply({ content: '❌ You need the "Manage Server" permission to use this command.' });
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.editReply({ content: '❌ You need the "Administrator" permission to use this command.' });
     return;
   }
   if (!(await starboardManager.isEnabled(interaction.guildId))) {
