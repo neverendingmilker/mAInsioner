@@ -9,9 +9,9 @@ whichever is more convenient. Disabling a feature keeps its saved data, but stop
 blocks its commands until it's re-enabled.
 
 **`/commandlist`** — Mod only (Manage Roles). Reply is only visible to you. Shows a table of every command in the
-bot and who can use it: **Admin** (needs the Administrator permission), **Mod** (needs Manage Roles/Manage
-Server/Moderate Members — whichever role your server grants those to), or **Everyone**. Paginated with buttons if
-it doesn't fit on one page.
+bot, who can use it (**Admin**/**Mod**/**Everyone**), and which options each one takes — options with no brackets
+are required, `[optional]` ones aren't (pulled live from the commands themselves, so it can't drift out of date).
+Paginated with buttons if it doesn't fit on one page.
 
 ## 📺 Anime Night (`/animenight`)
 
@@ -86,7 +86,7 @@ Admin only, except `list` which also works for mods (Manage Roles). Generic vers
 
 ## ⭐ Starboard (`/starboard`)
 
-Admin only, except `list` which also works for mods (Manage Roles). Collects the most popular messages of a channel (by reaction count) and reposts them to a dedicated channel. You can set up more than one starboard, each watching its own channel and posting to its own (different) channel.
+Admin only, except `list` which is open to everyone. Collects the most popular messages of a channel (by reaction count) and reposts them to a dedicated channel. You can set up more than one starboard, each watching its own channel and posting to its own (different) channel.
 
 - **`/starboard create`** — Sets up a new starboard: give it a name, the channel to watch for reactions, the channel to post to, the minimum number of reactions needed, which emoji(s) count (one or more, or `any` to count a reaction with any emoji at all), and optionally a content-type filter (e.g. images only).
 - **`/starboard edit`** — Changes any combination of the settings above for an existing starboard. The `name` option has autocomplete.
@@ -134,13 +134,16 @@ The sticky message is reposted at the bottom of the channel after each new messa
 
 ## ⚠️ Warnings (`/warning`, `/verbal`)
 
-`give` and `edit` need Moderate Members; `roles`, `channel` and `disable` are Admin only. Keeps a running, always-up-to-date list of warnings in a channel you choose.
+Everything below Admin-only is Moderate Members. Keeps a running, always-up-to-date list of warnings in a channel you choose.
 
-- **`/warning roles`** — Admin only. Sets the two roles that can be handed out when giving a full warning.
+- **`/warn`** — Warn a user by their **ID** (works even if they've already left the server). Automatically escalates: no role yet → assigns `role_1`; already has `role_1` → assigns `role_2`; already has `role_2` → assigns nothing and tells you the team should discuss banning them in chat instead. Optional `date` to backdate it (date only, never a time).
+- **`/warning roles`** — Admin only. Sets the two escalation roles `/warn` uses.
 - **`/warning channel`** — Admin only. Sets the channel where the warnings list is posted and kept updated.
-- **`/warning give`** — Full warning: pick a user, a reason, and one of the two configured roles — the role gets assigned and the warning is logged. Optional `date` to backdate it (date only, never a time).
 - **`/warning edit`** — Edit one of **your own** past warnings/verbals (autocomplete only shows entries you personally issued) — change the reason and/or the date.
+- **`/warning update`** — Admin only. Re-renders the warnings list embed with whatever the current formatting/content logic is, without needing a new warning to trigger it.
 - **`/verbal`** — Lighter version: just a user and a reason, no role assigned. Same optional `date`.
-- **`/warning disable`** — Admin only. Turns the feature on/off for this server (also disables `/verbal`, which shares the same on/off state).
+- **`/warning disable`** — Admin only. Turns the feature on/off for this server (also disables `/warn` and `/verbal`, which share the same on/off state).
+
+The embed shows the **name of the role actually assigned** on each line instead of a generic "Warning" label (falls back to "Warning" if no role was assigned that time — already maxed out, or the user wasn't in the server). If anyone who was ever escalated to `role_2` later gets banned, they show up in a "🔨 Banned after final warning" section at the bottom (needs the bot to have the Ban Members permission; silently skipped otherwise).
 
 Everything is logged in a single embed that gets edited in place (never reposted) — titled "Warnings", showing when it was last updated, and then one block per user with every warning/verbal they've ever received. Whenever someone gets a new one, their block jumps back to the top of the list.

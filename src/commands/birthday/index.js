@@ -7,7 +7,7 @@ const { handleList } = require('./handlers/list');
 const birthdayManager = require('../../features/birthday/birthdayManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
-const handleDisable = createDisableHandler(birthdayManager, PermissionFlagsBits.ManageRoles, 'Birthday');
+const handleDisable = createDisableHandler(birthdayManager, PermissionFlagsBits.Administrator, 'Birthday');
 
 const data = new SlashCommandBuilder()
   .setName('birthday')

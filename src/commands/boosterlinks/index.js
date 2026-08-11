@@ -7,7 +7,7 @@ const { handleExemptAdd, handleExemptRemove, handleExemptList } = require('./han
 const boosterLinkManager = require('../../features/boosterlinks/boosterLinkManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
-const handleDisable = createDisableHandler(boosterLinkManager, PermissionFlagsBits.ManageRoles, 'Booster Links');
+const handleDisable = createDisableHandler(boosterLinkManager, PermissionFlagsBits.Administrator, 'Booster Links');
 
 const data = new SlashCommandBuilder()
   .setName('boosterlink')

@@ -66,11 +66,14 @@ src/
         lookback.js            (shows the channel picker/"run now" button)
         lookbackInteractions.js (handles the picker's follow-up interactions, runs the scan)
     warning/
-      index.js       (defines /warning give, roles, channel, disable + autocomplete)
+      index.js       (defines /warning edit, roles, channel, update, disable + autocomplete)
       handlers/
-        give.js
+        edit.js
         roles.js
         channel.js
+        update.js
+    warn/
+      index.js       (defines /warn, standalone command with role escalation logic)
     verbal/
       index.js       (defines /verbal, standalone command)
     commandlist/
@@ -110,7 +113,7 @@ src/
       starboardRepository.js  (SQL queries: per-guild boards + tracked posts)
       lookbackSessions.js     (in-memory state between the lookback channel picker and its follow-up)
     warning/
-      warningManager.js     (validation, role assignment, embed building/updating)
+      warningManager.js     (validation, role escalation logic, embed building incl. the banned-after-role_2 list)
       warningRepository.js  (SQL queries: per-guild config + warning entries)
   database/
     db.js           <- Turso database connection, schema for all features
@@ -220,7 +223,7 @@ Also listens on `guildMemberUpdate`, same mechanism as the booster-link feature 
 
 ## Available commands (Starboard feature)
 
-Collects popular messages (by reaction count) and reposts them to a dedicated channel. A server can have several starboards, each with its own watch channel, post channel, threshold, emoji and content-type filter — e.g. one board watching `#general` and posting to `#starboard`, and a separate one watching `#memes` and posting only images to `#best-memes`. `list` requires **Manage Roles**; every other subcommand requires **Administrator**.
+Collects popular messages (by reaction count) and reposts them to a dedicated channel. A server can have several starboards, each with its own watch channel, post channel, threshold, emoji and content-type filter — e.g. one board watching `#general` and posting to `#starboard`, and a separate one watching `#memes` and posting only images to `#best-memes`. `list` is open to everyone; every other subcommand requires **Administrator**.
 
 - `/starboard create name:<...> watch_channel:<#channel> post_channel:<#channel> threshold:<1-1000> emojis:<...> [content_type]` — creates a new starboard. `emojis` accepts one or more emojis (unicode or custom server emojis), separated by spaces or commas, e.g. `⭐` or `⭐ 🔥` — or the special value `any`, which counts a reaction with *any* emoji instead of specific ones (can't be combined with actual emojis). `watch_channel` and `post_channel` must be different channels. `content_type` is optional (see below), defaulting to "Any message".
 - `/starboard edit name:<...> [watch_channel] [post_channel] [threshold] [emojis] [content_type]` — updates any combination of an existing starboard's settings. The `name` option has autocomplete. Providing `emojis` replaces the whole list, it doesn't add to it (also accepts `any`, same rules as above).
@@ -239,13 +242,16 @@ A message qualifies for a starboard once **enough distinct people** have reacted
 
 ## Available commands (Warning feature)
 
-Moderation notes on users. Two severities: a lightweight **verbal** warning (just a logged note) and a full **warning** (logged note + assigns one of two admin-configured roles). `give` and `edit` require **Moderate Members**; `roles`, `channel` and `disable` require **Administrator**.
+Moderation notes on users. Two severities: a lightweight **verbal** warning (just a logged note) and a full **warning** (logged note + auto-assigns one of two admin-configured escalation roles). `/warn` and `/warning edit` require **Moderate Members**; `/warning roles`, `channel`, `update` and `disable` require **Administrator**.
 
-- `/warning roles role_1:<role> role_2:<role>` — **admin only**: configures the two roles selectable when issuing a full warning. The bot's own role must sit above both, since it needs to be able to assign them.
+- `/warn user_id:<...> reason:<...> [date]` — warns a user by their **ID** (right-click → Copy User ID) rather than picking them from a member list, so it also works for people who've already left the server. Escalates automatically against the two roles configured via `/warning roles`: no role yet → assigns `role_1`; already has `role_1` → assigns `role_2`; already has `role_2` → assigns nothing, logs the warning anyway, and tells the moderator the team should discuss banning this user in chat instead. If the target isn't currently a member, the warning is still logged, just without any role check/assignment. The optional `date` (`DD/MM/YY` or `DD/MM/YYYY`) backdates it instead of using today; only ever a date, never a time.
+- `/warning roles role_1:<role> role_2:<role>` — **admin only**: configures the two escalation roles `/warn` uses. The bot's own role must sit above both, since it needs to be able to assign them.
 - `/warning channel channel:<#channel>` — **admin only**: sets the channel where the warnings list is kept updated. Posting the list there for the first time happens right away.
-- `/warning give user:<@user> reason:<...> role:<...> [date]` — issues a full warning: assigns the chosen role (autocomplete offers only the two configured roles, by their current name) and logs the entry. The optional `date` (`DD/MM/YY` or `DD/MM/YYYY`) backdates it instead of using today; only ever a date, never a time.
 - `/warning edit warning:<...> [reason] [date]` — edits one of **your own** previously-issued warnings/verbals (autocomplete only ever lists entries **you** issued — not other mods'). Change the reason and/or overwrite the date.
-- `/verbal user:<@user> reason:<...> [date]` — logs a verbal warning. No role is assigned; the standalone `/verbal` command mirrors `/warning give` without the role step, and shares its enabled state and permission tier with `/warning`.
+- `/warning update` — **admin only**: re-renders the warnings list embed against the current formatting/content logic, without waiting for a new warning to trigger a refresh — useful right after an update to the bot changes what the embed looks like.
+- `/verbal user:<@user> reason:<...> [date]` — logs a verbal warning. No role is assigned; shares its enabled state and permission tier with `/warning`/`/warn`.
+
+Each line in the embed shows the **name of the role that was actually assigned** for that entry (as a role mention) instead of a generic "Warning" label; verbals still show "Verbal", and a warning that didn't result in a role change (already maxed out, or the user wasn't a member) falls back to "Warning". If anyone who was ever escalated to `role_2` is later banned from the server, they're listed in a "🔨 Banned after final warning" section at the very bottom of the embed — this is read straight from Discord's own ban list (`GuildBanManager`), so it needs the bot to have the **Ban Members** permission; if it doesn't, that section is just silently omitted rather than erroring.
 
 Both commands update a single, continuously-edited embed in the configured channel (it's never reposted, just edited in place) titled **"Warnings"**, with a `Last update: <Month> <Day>, <Year> <time>` line at the top (the time is a live Discord timestamp, so it always shows correctly in each viewer's own timezone). Below that, every user with at least one entry gets a block:
 

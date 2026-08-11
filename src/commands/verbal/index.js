@@ -28,7 +28,7 @@ async function execute(interaction) {
   const dateInput = interaction.options.getString('date') ?? undefined;
 
   try {
-    await warningManager.giveVerbal(interaction.guild, targetUser, reason, interaction.user.id, dateInput);
+    await warningManager.giveVerbal(interaction.guild, targetUser.id, reason, interaction.user.id, dateInput);
   } catch (err) {
     if (err instanceof warningManager.ValidationError) {
       await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });

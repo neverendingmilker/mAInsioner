@@ -5,7 +5,7 @@ const { handleEdit } = require('./handlers/edit');
 const verifyManager = require('../../features/verify/verifyManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
-const handleDisable = createDisableHandler(verifyManager, PermissionFlagsBits.ManageRoles, 'Verification');
+const handleDisable = createDisableHandler(verifyManager, PermissionFlagsBits.Administrator, 'Verification');
 
 const data = new SlashCommandBuilder()
   .setName('verify')

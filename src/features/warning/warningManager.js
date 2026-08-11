@@ -6,7 +6,7 @@ const { zonedTimeToUtc } = require('../../utils/timezoneDate');
 class ValidationError extends Error {}
 
 const EMBED_COLOR = 0xe74c3c;
-const MAX_DESCRIPTION_LENGTH = 4000; // stay safely under Discord's 4096-char embed description cap
+const MAX_DESCRIPTION_LENGTH = 3800; // stay safely under Discord's 4096-char embed description cap
 const REASON_MAX_LENGTH = 300;
 
 // Parses "DD/MM/YY" or "DD/MM/YYYY" into midnight of that date, in the bot's configured
@@ -82,28 +82,16 @@ async function setChannel(guild, channel) {
   await refreshEmbed(guild); // post (or re-post in the new channel) right away
 }
 
-async function getRoleChoices(guild) {
-  const cfg = await repo.getConfig(guild.id);
-  if (!cfg) return [];
-
-  const choices = [];
-  for (const roleId of [cfg.role_1_id, cfg.role_2_id]) {
-    if (!roleId) continue;
-    const role = guild.roles.cache.get(roleId) ?? (await guild.roles.fetch(roleId).catch(() => null));
-    if (role) choices.push({ name: role.name, id: role.id });
-  }
-  return choices;
-}
-
 // --- Issuing warnings ---
 
-async function giveWarning(guild, targetUser, reason, roleId, issuedBy, dateInput) {
+// Escalation ladder: no role yet -> role_1; already has role_1 -> role_2; already has
+// role_2 -> nothing left to escalate to, flag it for a human decision instead.
+// `targetUserId` doesn't need to belong to a current member — if they've left the
+// server, the warning is still logged, just without any role to check/assign.
+async function warnUser(guild, targetUserId, reason, issuedBy, dateInput) {
   const cfg = await repo.getConfig(guild.id);
   if (!cfg?.role_1_id || !cfg?.role_2_id) {
     throw new ValidationError('Configure the two assignable roles first with `/warning roles`.');
-  }
-  if (roleId !== cfg.role_1_id && roleId !== cfg.role_2_id) {
-    throw new ValidationError('That role isn\'t one of the two configured for `/warning give` — pick one from the list.');
   }
   if (!cfg.channel_id) {
     throw new ValidationError('Configure the warnings channel first with `/warning channel`.');
@@ -114,30 +102,51 @@ async function giveWarning(guild, targetUser, reason, roleId, issuedBy, dateInpu
     throw new ValidationError('Provide a reason.');
   }
 
-  const member = await guild.members.fetch(targetUser.id).catch(() => null);
+  const member = await guild.members.fetch(targetUserId).catch(() => null);
+
+  let assignedRole = null;
+  let outcome = 'assigned'; // 'assigned' | 'alreadyMaxed' | 'notInServer'
+
   if (!member) {
-    throw new ValidationError("That user doesn't seem to be a member of this server.");
+    outcome = 'notInServer';
+  } else {
+    const hasRole1 = member.roles.cache.has(cfg.role_1_id);
+    const hasRole2 = member.roles.cache.has(cfg.role_2_id);
+
+    if (hasRole2) {
+      outcome = 'alreadyMaxed';
+    } else {
+      const roleIdToAssign = hasRole1 ? cfg.role_2_id : cfg.role_1_id;
+      const role = guild.roles.cache.get(roleIdToAssign) ?? (await guild.roles.fetch(roleIdToAssign).catch(() => null));
+      if (!role) {
+        throw new ValidationError('One of the configured roles no longer exists — reconfigure with `/warning roles`.');
+      }
+      assertCanAssignRole(guild, role);
+
+      if (!member.roles.cache.has(role.id)) {
+        await member.roles.add(role).catch((err) => {
+          throw new ValidationError(`Could not assign ${role} to ${member}: ${err.message}`);
+        });
+      }
+      assignedRole = role;
+    }
   }
 
-  const role = guild.roles.cache.get(roleId) ?? (await guild.roles.fetch(roleId).catch(() => null));
-  if (!role) {
-    throw new ValidationError('The configured role no longer exists — reconfigure it with `/warning roles`.');
-  }
-  assertCanAssignRole(guild, role);
-
-  if (!member.roles.cache.has(role.id)) {
-    await member.roles.add(role).catch((err) => {
-      throw new ValidationError(`Could not assign ${role} to ${member}: ${err.message}`);
-    });
-  }
-
-  await repo.addWarning(guild.id, targetUser.id, 'warning', trimmedReason, role.id, issuedBy, dateInput ? parseWarningDate(dateInput) : undefined);
+  await repo.addWarning(
+    guild.id,
+    targetUserId,
+    'warning',
+    trimmedReason,
+    assignedRole?.id ?? null,
+    issuedBy,
+    dateInput ? parseWarningDate(dateInput) : undefined
+  );
   await refreshEmbed(guild);
 
-  return { role };
+  return { outcome, assignedRole, member };
 }
 
-async function giveVerbal(guild, targetUser, reason, issuedBy, dateInput) {
+async function giveVerbal(guild, targetUserId, reason, issuedBy, dateInput) {
   const cfg = await repo.getConfig(guild.id);
   if (!cfg?.channel_id) {
     throw new ValidationError('Configure the warnings channel first with `/warning channel`.');
@@ -148,7 +157,7 @@ async function giveVerbal(guild, targetUser, reason, issuedBy, dateInput) {
     throw new ValidationError('Provide a reason.');
   }
 
-  await repo.addWarning(guild.id, targetUser.id, 'verbal', trimmedReason, null, issuedBy, dateInput ? parseWarningDate(dateInput) : undefined);
+  await repo.addWarning(guild.id, targetUserId, 'verbal', trimmedReason, null, issuedBy, dateInput ? parseWarningDate(dateInput) : undefined);
   await refreshEmbed(guild);
 }
 
@@ -197,8 +206,19 @@ async function getOwnWarningsList(guildId, issuedBy) {
 
 // --- Embed building / posting ---
 
+// Shows the NAME of the role that was actually assigned for a given warning entry
+// (as a role mention — inert inside an embed, doesn't ping anyone), falling back to a
+// generic label for verbals or for warnings that didn't result in a role change
+// (already-maxed-out escalations, or the person wasn't in the server).
 function formatEntryLine(warning) {
-  const typeLabel = warning.type === 'verbal' ? 'Verbal' : 'Warning';
+  let typeLabel;
+  if (warning.type === 'verbal') {
+    typeLabel = 'Verbal';
+  } else if (warning.role_id) {
+    typeLabel = `<@&${warning.role_id}>`;
+  } else {
+    typeLabel = 'Warning';
+  }
   const dateTag = `<t:${Math.floor(Number(warning.created_at) / 1000)}:D>`;
   return `${typeLabel} - ${warning.reason} - ${dateTag}`;
 }
@@ -228,8 +248,29 @@ function buildDescription(allWarnings) {
   return body;
 }
 
-async function buildEmbed(guildId) {
-  const allWarnings = await repo.getAllWarnings(guildId);
+// Cross-references everyone who was ever escalated to role_2 against the server's
+// current ban list, using Discord's own ban list (GuildBanManager) — no separate
+// tracking needed on our side, it's all derived from data Discord already has.
+// Silently returns an empty list if the bot lacks the Ban Members permission.
+async function getBannedAfterFinalWarning(guild, allWarnings, role2Id) {
+  if (!role2Id) return [];
+
+  const escalatedUserIds = [...new Set(allWarnings.filter((w) => w.role_id === role2Id).map((w) => w.user_id))];
+  if (escalatedUserIds.length === 0) return [];
+
+  let bans;
+  try {
+    bans = await guild.bans.fetch();
+  } catch {
+    return []; // no Ban Members permission, or the fetch otherwise failed — skip quietly
+  }
+
+  return escalatedUserIds.filter((userId) => bans.has(userId));
+}
+
+async function buildEmbed(guild) {
+  const cfg = await repo.getConfig(guild.id);
+  const allWarnings = await repo.getAllWarnings(guild.id);
   const body = buildDescription(allWarnings);
 
   const now = new Date();
@@ -241,10 +282,14 @@ async function buildEmbed(guildId) {
   }).format(now);
   const timeTag = `<t:${Math.floor(now.getTime() / 1000)}:t>`;
 
-  return new EmbedBuilder()
-    .setTitle('Warnings')
-    .setColor(EMBED_COLOR)
-    .setDescription(`Last update: ${dateText} ${timeTag}\n\n${body}`);
+  let description = `Last update: ${dateText} ${timeTag}\n\n${body}`;
+
+  const bannedUserIds = await getBannedAfterFinalWarning(guild, allWarnings, cfg?.role_2_id);
+  if (bannedUserIds.length > 0) {
+    description += `\n\n**🔨 Banned after final warning**\n${bannedUserIds.map((id) => `<@${id}>`).join('\n')}`;
+  }
+
+  return new EmbedBuilder().setTitle('Warnings').setColor(EMBED_COLOR).setDescription(description);
 }
 
 // Edits the tracked warnings-list message in place, or posts a fresh one if there
@@ -256,7 +301,7 @@ async function refreshEmbed(guild) {
   const channel = await guild.channels.fetch(cfg.channel_id).catch(() => null);
   if (!channel || !channel.isTextBased()) return;
 
-  const embed = await buildEmbed(guild.id);
+  const embed = await buildEmbed(guild);
 
   if (cfg.embed_message_id) {
     const existing = await channel.messages.fetch(cfg.embed_message_id).catch(() => null);
@@ -279,8 +324,7 @@ module.exports = {
   setEnabled,
   setRoles,
   setChannel,
-  getRoleChoices,
-  giveWarning,
+  warnUser,
   giveVerbal,
   editWarning,
   getOwnWarningsList,

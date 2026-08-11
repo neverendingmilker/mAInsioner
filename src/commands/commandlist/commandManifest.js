@@ -118,7 +118,7 @@ const COMMAND_MANIFEST = [
       { name: 'create', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'edit', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
-      { name: 'list', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'list', tier: EVERYONE, permission: null },
       { name: 'lookback', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],
@@ -196,13 +196,25 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
+    feature: 'Warn',
+    command: '/warn',
+    subcommands: [
+      {
+        name: '(the command itself)',
+        tier: MOD,
+        permission: PermissionFlagsBits.ModerateMembers,
+        note: 'auto-escalates through role_1/role_2; shares state with /warning',
+      },
+    ],
+  },
+  {
     feature: 'Warnings',
     command: '/warning',
     subcommands: [
-      { name: 'give', tier: MOD, permission: PermissionFlagsBits.ModerateMembers },
       { name: 'edit', tier: MOD, permission: PermissionFlagsBits.ModerateMembers, note: 'own issued warnings only' },
       { name: 'roles', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'channel', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'update', tier: ADMIN, permission: PermissionFlagsBits.Administrator, note: 'refreshes the embed formatting' },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],
   },
