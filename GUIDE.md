@@ -131,7 +131,7 @@ Optionally, each starboard can restrict which kind of message qualifies at all: 
 
 ## 📌 Sticky messages (`/sticky`)
 
-Admin only, except `list` which is open to everyone. Reacts to every new message, including from other bots. By default, waits 30 seconds after new activity before reposting itself at the bottom of the channel (configurable per channel); if several messages arrive during that wait, they are all covered by the same pending repost, so it does not hop around once per message.
+Admin only, except `list` which is open to everyone. Reacts to every new message, including from other bots. It disappears immediately as soon as new activity happens, then by default waits 30 seconds before reappearing at the bottom of the channel (configurable per channel); if several messages arrive during that wait, they are all covered by the same pending repost, so it does not hop around once per message.
 
 - **`/sticky add`** — Sets (or replaces) the sticky message for a channel. The message text is typed directly as a command option, no popup window. Optional `delay` sets how long to wait after new activity before reposting (default **30 seconds**).
 - **`/sticky edit`** — Changes the text of an existing channel's sticky message. The `channel` option shows only channels that currently have a sticky (with a text preview), instead of every channel in the server. Reposts right away with the new text; optional `delay` changes the repost wait time too (keeps the current one if omitted).

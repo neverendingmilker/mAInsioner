@@ -15,21 +15,12 @@ const cache = new Map();
 // here avoids a DB round-trip on every single message sent in the server.
 const guildEnabledCache = new Map();
 
-// Channels where a repost is currently in flight. The gateway event for the
-// message we just sent via channel.send() can arrive BEFORE that call even
-// resolves (REST response and gateway event are two independent channels),
-// so comparing message.id to the cached lastMessageId alone isn't enough:
-// there's a window where the cache still holds the *previous* id. While a
-// channel is in this set, any messageCreate for it is treated as our own
-// echo and ignored, which closes that race instead of triggering a cascade
-// of self-reposts.
-const postingInProgress = new Set();
-
-// Channels with a repost already scheduled (waiting out their configured delay
-// before actually happening). Extra messages that arrive during that wait don't
-// pile up more scheduled reposts — one pending repost already covers them, since
-// it always acts on whatever the sticky's current content is when it fires.
-const repostScheduled = new Set();
+// Channels currently mid sticky-refresh-cycle — from the old message being deleted,
+// through the configured delay, to the new one being sent (including the moment right
+// after send(), since the gateway event for our own outgoing message can arrive before
+// or shortly after that call resolves). Blocks a new messageCreate from starting an
+// overlapping cycle, including one triggered by the bot's own resulting repost.
+const cycleInProgress = new Set();
 
 function buildStickyEmbed(content) {
   return new EmbedBuilder()
@@ -92,7 +83,7 @@ function listByGuild(guildId) {
 // new message id. Used both when a sticky is first created and every time
 // a scheduled repost (see handleNewMessage) fires.
 async function repostSticky(channel, sticky) {
-  postingInProgress.add(channel.id);
+  cycleInProgress.add(channel.id);
   try {
     if (sticky.lastMessageId) {
       const oldMessage = await channel.messages.fetch(sticky.lastMessageId).catch(() => null);
@@ -100,7 +91,7 @@ async function repostSticky(channel, sticky) {
 
       // Only wait when there was actually a previous sticky to remove — the very
       // first post for a channel (setSticky with no lastMessageId yet) should stay
-      // instant. While we wait, the channel is still in postingInProgress, so any
+      // instant. While we wait, the channel is still marked as mid-cycle, so any
       // messages sent in the meantime won't trigger a second, overlapping repost.
       await sleep(REPOST_GAP_MS);
     }
@@ -117,7 +108,7 @@ async function repostSticky(channel, sticky) {
 
     return newMessage;
   } finally {
-    postingInProgress.delete(channel.id);
+    cycleInProgress.delete(channel.id);
   }
 }
 
@@ -163,36 +154,58 @@ async function removeSticky(guild, channelId) {
   });
 
   cache.delete(channelId);
-  repostScheduled.delete(channelId);
+  cycleInProgress.delete(channelId);
   return true;
 }
 
-// Called from events/messageCreate.js for every message sent in the server.
-// If the channel has an active sticky and this message isn't the sticky's own
-// repost, schedules a repost after the sticky's configured delay (default 30s)
-// instead of moving it immediately — reduces how often it hops around in busy
-// channels. Further messages arriving during that wait don't add extra reposts,
-// since the one already scheduled will pick up the latest content when it fires.
+// Called from events/messageCreate.js for every message sent in the server. If the
+// channel has an active sticky and this message isn't the sticky's own repost, the old
+// sticky is deleted IMMEDIATELY (it should disappear right away on new activity), then a
+// fresh one is posted after the sticky's configured delay (default 30s) — so it's the
+// *reappearance*, not the disappearance, that's delayed. Further messages arriving
+// during that wait don't restart or pile up anything: one cycle already covers them,
+// and it always uses whatever the sticky's current content is when it fires.
 async function handleNewMessage(message) {
   const sticky = cache.get(message.channel.id);
   if (!sticky) return;
   if (!isEnabled(sticky.guildId)) return;
-  if (postingInProgress.has(message.channel.id)) return; // our own repost is still in flight for this channel
   if (message.id === sticky.lastMessageId) return; // fallback safety check, same idea but after the fact
-  if (repostScheduled.has(message.channel.id)) return; // a repost is already queued, it'll cover this too
+  if (cycleInProgress.has(message.channel.id)) return; // already mid-cycle (gone, waiting to reappear) — covers this too
 
-  repostScheduled.add(message.channel.id);
   const channel = message.channel;
+  cycleInProgress.add(channel.id);
+
+  try {
+    if (sticky.lastMessageId) {
+      const oldMessage = await channel.messages.fetch(sticky.lastMessageId).catch(() => null);
+      if (oldMessage) await oldMessage.delete().catch(() => null);
+      sticky.lastMessageId = null;
+      cache.set(channel.id, sticky);
+    }
+  } catch (err) {
+    console.error(`[sticky] Failed to remove the old sticky message in channel ${channel.id}:`, err);
+  }
+
   const delayMs = (sticky.repostDelaySeconds ?? DEFAULT_REPOST_DELAY_SECONDS) * 1000;
 
   const timer = setTimeout(async () => {
-    repostScheduled.delete(channel.id);
-    const latestSticky = cache.get(channel.id); // re-read: content/delay may have changed since scheduling
-    if (!latestSticky) return; // removed while waiting
+    try {
+      const latestSticky = cache.get(channel.id); // re-read: content/delay may have changed since scheduling
+      if (!latestSticky) return; // sticky was removed entirely while waiting
 
-    await repostSticky(channel, latestSticky).catch((err) => {
+      const newMessage = await channel.send({ embeds: [buildStickyEmbed(latestSticky.content)] });
+      latestSticky.lastMessageId = newMessage.id;
+      cache.set(channel.id, latestSticky);
+
+      await db.execute({
+        sql: 'UPDATE sticky_messages SET last_message_id = ?, updated_at = ? WHERE guild_id = ? AND channel_id = ?',
+        args: [newMessage.id, Date.now(), latestSticky.guildId, channel.id],
+      });
+    } catch (err) {
       console.error(`[sticky] Failed to repost sticky message in channel ${channel.id}:`, err);
-    });
+    } finally {
+      cycleInProgress.delete(channel.id);
+    }
   }, delayMs);
   timer.unref?.();
 }
