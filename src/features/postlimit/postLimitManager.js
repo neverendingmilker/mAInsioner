@@ -4,9 +4,9 @@ const { parseDurationToSeconds, formatSeconds } = require('../../utils/duration'
 
 class ValidationError extends Error {}
 
-// Auto-deleting fallback channel notice, used only when a DM to the offender fails
-// (e.g. they have DMs closed) — kept brief so it doesn't linger and clutter the channel.
-const FALLBACK_NOTICE_LIFETIME_MS = 8000;
+// Auto-deleting notice posted in the channel to let the offender know why their message
+// was removed — kept brief and short-lived so it doesn't linger and clutter the channel.
+const NOTICE_LIFETIME_MS = 8000;
 
 async function isEnabled(guildId) {
   return repo.isEnabled(guildId);
@@ -79,25 +79,14 @@ async function checkAndEnforce(message) {
   await message.delete().catch(() => {});
 
   const nextAllowedAt = Math.floor((lastAllowed + cooldownSeconds * 1000) / 1000);
-  const dmText =
-    `⏳ Your message in **${message.guild.name}** / #${message.channel.name} was removed: that channel only allows one ` +
-    `message every ${formatSeconds(cooldownSeconds)} per person. You can post there again <t:${nextAllowedAt}:R>.`;
-
-  const dmSent = await message.author
-    .send(dmText)
-    .then(() => true)
-    .catch(() => false);
-
-  if (!dmSent) {
-    const notice = await message.channel
-      .send({
-        content: `⏳ ${message.author}, you can only post here once every ${formatSeconds(cooldownSeconds)} — try again <t:${nextAllowedAt}:R>.`,
-        allowedMentions: { users: [message.author.id] },
-      })
-      .catch(() => null);
-    if (notice) {
-      setTimeout(() => notice.delete().catch(() => {}), FALLBACK_NOTICE_LIFETIME_MS).unref?.();
-    }
+  const notice = await message.channel
+    .send({
+      content: `⏳ ${message.author}, you can only post here once every ${formatSeconds(cooldownSeconds)} — try again <t:${nextAllowedAt}:R>.`,
+      allowedMentions: { users: [message.author.id] },
+    })
+    .catch(() => null);
+  if (notice) {
+    setTimeout(() => notice.delete().catch(() => {}), NOTICE_LIFETIME_MS).unref?.();
   }
 
   return true;

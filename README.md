@@ -290,14 +290,14 @@ A small passive fun feature: whenever anyone says a chosen word in one of its ch
 
 ## Available commands (Post Limit feature)
 
-Limits how often each person can post in a channel — for cooldowns longer than Discord's own slowmode (capped at 6 hours), or when you want it enforced consistently regardless of Discord's per-channel setting. Discord doesn't offer a way to pre-approve a message before it's sent, so this works by deleting the message immediately after it's posted if the person is still on cooldown; their timestamp isn't touched by a blocked attempt, so repeatedly trying doesn't reset or extend the cooldown. Moderators (Manage Messages or Administrator permission) are always exempt — no separate configurable exempt-role list. All subcommands require the **Administrator** permission.
+Limits how often each person can post in a channel — for cooldowns longer than Discord's own slowmode (capped at 6 hours), or when you want it enforced consistently regardless of Discord's per-channel setting. Each channel gets its own independent duration. Discord doesn't offer a way to pre-approve a message before it's sent, so this works by deleting the message immediately after it's posted if the person is still on cooldown; their timestamp isn't touched by a blocked attempt, so repeatedly trying doesn't reset or extend the cooldown. Moderators (Manage Messages or Administrator permission) are always exempt — no separate configurable exempt-role list. All subcommands require the **Administrator** permission.
 
 - `/postlimit add channel:<#channel> duration:<...>` — sets (or replaces) the limit for a channel. `duration` is a number followed by `s`/`m`/`h`/`d` (e.g. `12h`, `1d`, `3d`), minimum 1 minute.
 - `/postlimit remove channel:<#channel>` — removes the limit from a channel.
 - `/postlimit list` — shows every channel with a limit configured, and what it is.
 - `/postlimit disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:PostLimit` controls the same setting.
 
-When someone is blocked, their message is deleted and they get a DM explaining which channel, the cooldown, and a live Discord relative timestamp (`<t:...:R>`) for when they can post again. If their DMs are closed, a short notice is posted in the channel instead and auto-deletes itself after a few seconds, so it doesn't linger.
+When someone is blocked, their message is deleted and a short notice is posted in the channel (mentioning them) with a live Discord relative timestamp (`<t:...:R>`) for when they can post again — no DMs sent. The notice auto-deletes itself after a few seconds, so it doesn't linger.
 
 ## Hosting
 

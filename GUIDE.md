@@ -86,7 +86,7 @@ Admin only, except `list` which also works for mods (Manage Roles). Generic vers
 
 ## ⏳ Post Limit (`/postlimit`)
 
-Admin only. Limits how often each person can post in a channel — for cooldowns longer than Discord's own slowmode (capped at 6h), or when you want it enforced consistently regardless of Discord's setting. Violating messages are deleted immediately; the person gets a DM explaining why and when they can post again (falls back to a short, auto-deleting notice in the channel if their DMs are closed). Moderators (Manage Messages or Administrator) are always exempt.
+Admin only. Limits how often each person can post in a channel — for cooldowns longer than Discord's own slowmode (capped at 6h), or when you want it enforced consistently regardless of Discord's setting. Each channel has its own independent duration. Violating messages are deleted immediately, with a short, auto-deleting notice posted in the channel explaining when the person can post again (no DMs). Moderators (Manage Messages or Administrator) are always exempt.
 
 - **`/postlimit add`** — Sets (or replaces) the limit for a channel: a duration like `12h`, `1d`, `3d` (minimum 1 minute).
 - **`/postlimit remove`** — Removes the limit from a channel.
