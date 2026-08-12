@@ -38,6 +38,19 @@ async function handleLookback(interaction) {
     topN: interaction.options.getInteger('top') ?? undefined,
   };
 
+  // Date-based scans aren't capped the same way as the default limit-based ones (up to
+  // 20,000 messages, see LOOKBACK_YEAR_HARD_CAP) and can genuinely take longer than the
+  // interaction token's ~15-minute lifetime on a busy channel — mostly from the many
+  // Discord API calls needed to check who reacted on each message. Give an early heads
+  // up for those, so the person knows to expect a wait and a DM rather than seeing
+  // Discord's client eventually show the interaction as "failed" with no explanation.
+  const isPotentiallyLongScan = options.sinceYearStart || options.sinceDateInput !== undefined;
+  if (isPotentiallyLongScan) {
+    await interaction.editReply({
+      content: `🔍 Started the lookback for **${name}**. This can take a while for a large date range — I'll DM you the results once it's done.`,
+    });
+  }
+
   let stats;
   try {
     stats = await starboardManager.runLookback(interaction.guild, options.name, options);
@@ -86,9 +99,15 @@ async function handleLookback(interaction) {
   // A very long scan can outlast the interaction token's 15-minute lifetime — by this
   // point the actual work above is already done and saved either way, so a failed
   // reply here just means the summary itself couldn't be delivered, not that the scan
-  // failed silently.
-  await interaction.editReply({ content: summary }).catch((err) => {
+  // failed silently. Fall back to a DM so the person still finds out it finished,
+  // instead of being left wondering whether it ever completed.
+  await interaction.editReply({ content: summary }).catch(async (err) => {
     console.warn('[starboard] Lookback finished but the summary reply could not be sent (interaction likely expired):', err.message);
+    await interaction.user
+      .send(`(Your \`/starboard lookback\` in **${interaction.guild.name}** took a while, so here's the result via DM.)\n\n${summary}`)
+      .catch((dmErr) => {
+        console.warn('[starboard] Could not DM the lookback summary either (DMs likely closed):', dmErr.message);
+      });
   });
 }
 

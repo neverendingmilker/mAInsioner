@@ -376,8 +376,19 @@ async function syncStarboardPost(guild, board, message, count) {
 
 // Counts distinct (non-bot, non-author) users who reacted to the ORIGINAL message with
 // any of the board's configured emojis. Doesn't touch the starboard post — just a count.
-async function countOriginalReactions(board, message) {
+// `minNeeded` is how much THIS function's result alone needs to reach for the message's
+// overall total to qualify (board.threshold minus any repost boost already known) — lets
+// the caller skip the expensive part entirely when it's not needed:
+//   - minNeeded <= 0: the repost boost alone already meets the threshold, no need to
+//     look at the original reactions at all.
+//   - otherwise, the raw (pre-dedup) reaction counts Discord already includes on the
+//     message are a guaranteed UPPER BOUND on the true qualifying count (dedup/exclusion
+//     can only ever reduce it) — if even that can't reach minNeeded, there's no need to
+//     fetch the actual list of who reacted, which is one Discord API call per matching
+//     reaction and by far the most expensive part of checking each message.
+async function countOriginalReactions(board, message, minNeeded = board.threshold) {
   if (!matchesContentType(message, board.content_type)) return 0;
+  if (minNeeded <= 0) return 0;
 
   const emojiTokens = JSON.parse(board.emojis);
   const matchingReactions =
@@ -386,6 +397,9 @@ async function countOriginalReactions(board, message) {
       : [...message.reactions.cache.values()].filter((r) =>
           emojiTokens.map(emojiKeyFromToken).includes(emojiKeyFromReactionEmoji(r.emoji))
         );
+
+  const upperBound = matchingReactions.reduce((sum, r) => sum + r.count, 0);
+  if (upperBound < minNeeded) return 0;
 
   const userIds = new Set();
   for (const reaction of matchingReactions) {
@@ -422,15 +436,16 @@ async function countRepostBoost(repostMessage) {
   return count;
 }
 
-// Counts a board's total for one message (original-channel reactions + starboard-repost
-// boost, if it's already been posted) and syncs the post accordingly.
 // Computes a message's full current count (reactions on the original + any boost from
 // people re-starring its already-posted repost) without touching the DB/starboard post —
 // shared by the normal live-sync path and the lookback "top N" selection, which needs to
 // know every candidate's count before deciding who actually gets posted.
 async function computeFullCount(guild, board, message) {
-  const originalCount = await countOriginalReactions(board, message);
-
+  // Repost boost is checked FIRST (a single cheap DB lookup, versus one Discord API call
+  // per matching reaction below) so countOriginalReactions can know exactly how much it
+  // still needs to find, and skip fetching reaction users entirely for messages that
+  // obviously can't reach that regardless — this is the single biggest cost in a lookback
+  // scan across a large channel, where the vast majority of messages don't qualify.
   const existingPost = await repo.getPost(board.id, message.id);
   let repostBoost = 0;
   if (existingPost) {
@@ -441,6 +456,7 @@ async function computeFullCount(guild, board, message) {
     if (repostMessage) repostBoost = await countRepostBoost(repostMessage);
   }
 
+  const originalCount = await countOriginalReactions(board, message, board.threshold - repostBoost);
   return originalCount + repostBoost;
 }
 
