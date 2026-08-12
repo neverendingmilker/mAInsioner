@@ -55,11 +55,12 @@ src/
         remove.js
         list.js
     reactioncode/
-      index.js       (defines /reactioncode add, remove, setdigit, removedigit, list, disable + autocomplete)
+      index.js       (defines /reactioncode add, remove, setdigit, setdigits, removedigit, list, disable + autocomplete)
       handlers/
         add.js
         remove.js
         setdigit.js
+        setdigits.js
         removedigit.js
         list.js
     reactionlimit/
@@ -358,6 +359,7 @@ In a chosen channel: post an image, then a follow-up message that's only digits 
 
 - `/reactioncode add channel:<#channel>` — sets up a channel for reaction codes. Doesn't configure any digit mappings on its own — pair it with `setdigit` calls afterward.
 - `/reactioncode setdigit channel:<...> digit:<0-9> emoji:<...>` — maps one digit to one emoji for a channel; call it once per digit you want available (up to 10, one per digit 0-9). Re-running it for an already-mapped digit replaces that mapping. `channel` is autocompleted, only showing channels already set up for this feature.
+- `/reactioncode setdigits channel:<...> mapping:<"digit=emoji,digit=emoji,...">` — maps several digits in one call instead of one `setdigit` per digit — comma-separated `digit=emoji` pairs, e.g. `mapping:"1=🔥,2=⭐,9=💯"`. Every pair is parsed and validated before any of them are saved, so a single typo doesn't leave the channel's mapping half-applied.
 - `/reactioncode removedigit channel:<...> digit:<...>` — removes a single digit's mapping, leaving the others intact. Both `channel` and `digit` are autocompleted (`digit` only lists digits that channel actually has mapped).
 - `/reactioncode remove channel:<...>` — removes reaction codes from a channel entirely, including every digit mapping for it. `channel` is autocompleted, only showing configured channels.
 - `/reactioncode list` — shows every channel set up for this feature and its current digit → emoji mappings.

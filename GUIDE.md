@@ -108,6 +108,7 @@ Admin only. In a chosen channel: post an image, then a follow-up message that's 
 
 - **`/reactioncode add`** — Sets up a channel for reaction codes (doesn't map any digits yet — do that next).
 - **`/reactioncode setdigit`** — Maps a single digit (0-9) to an emoji for a channel; run it once per digit you want to use.
+- **`/reactioncode setdigits`** — Maps several digits at once: `digit=emoji` pairs separated by commas, e.g. `1=🔥,2=⭐,9=💯`. Validates every pair before saving any of them, so a typo doesn't leave the mapping half-set.
 - **`/reactioncode removedigit`** — Removes one digit's mapping.
 - **`/reactioncode remove`** — Removes reaction codes (and every digit mapping) from a channel.
 - **`/reactioncode list`** — Shows every channel set up for this, and its current digit → emoji mappings.

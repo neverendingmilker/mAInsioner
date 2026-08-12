@@ -2,6 +2,7 @@ const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('disco
 const { handleAdd } = require('./handlers/add');
 const { handleRemove } = require('./handlers/remove');
 const { handleSetDigit } = require('./handlers/setdigit');
+const { handleSetDigits } = require('./handlers/setdigits');
 const { handleRemoveDigit } = require('./handlers/removedigit');
 const { handleList } = require('./handlers/list');
 const reactionCodeManager = require('../../features/reactioncode/reactionCodeManager');
@@ -50,6 +51,24 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
+      .setName('setdigits')
+      .setDescription('[Admin] Maps several digits to emojis at once, comma-separated')
+      .addStringOption((opt) =>
+        opt
+          .setName('channel')
+          .setDescription('Which channel (start typing to see configured ones)')
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('mapping')
+          .setDescription('digit=emoji pairs separated by commas, e.g. "1=🔥,2=⭐,9=💯"')
+          .setRequired(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
       .setName('removedigit')
       .setDescription("[Admin] Removes one digit's mapping for a channel")
       .addStringOption((opt) =>
@@ -94,6 +113,8 @@ async function execute(interaction) {
       return handleRemove(interaction);
     case 'setdigit':
       return handleSetDigit(interaction);
+    case 'setdigits':
+      return handleSetDigits(interaction);
     case 'removedigit':
       return handleRemoveDigit(interaction);
     case 'list':

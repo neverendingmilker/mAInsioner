@@ -33,16 +33,63 @@ async function listChannels(guildId) {
   return repo.getAllChannels(guildId);
 }
 
-async function setDigit(guildId, channelId, digit, emoji) {
+function assertValidDigit(digit) {
   if (!/^\d$/.test(digit)) {
-    throw new ValidationError('"digit" must be a single digit, 0-9.');
+    throw new ValidationError(`"${digit}" isn't valid — a digit must be a single character, 0-9.`);
   }
+}
+
+function assertValidEmoji(emoji) {
   const customEmojiPattern = /^<a?:\w{2,32}:\d{17,20}>$/;
   const looksLikeUnicodeEmoji = !customEmojiPattern.test(emoji) && /[^\x00-\x7F]/.test(emoji);
   if (!customEmojiPattern.test(emoji) && !looksLikeUnicodeEmoji) {
     throw new ValidationError(`"${emoji}" doesn't look like a valid emoji.`);
   }
+}
+
+async function setDigit(guildId, channelId, digit, emoji) {
+  assertValidDigit(digit);
+  assertValidEmoji(emoji);
   await repo.setDigit(guildId, channelId, digit, emoji);
+}
+
+// Accepts several "digit=emoji" pairs separated by commas in one go, e.g.
+// "1=🔥,2=⭐,9=💯" — parses and validates every pair BEFORE saving any of them, so a
+// single typo doesn't leave the mapping half-applied.
+async function setDigits(guildId, channelId, mappingInput) {
+  const pairs = mappingInput
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  if (pairs.length === 0) {
+    throw new ValidationError('Provide at least one "digit=emoji" pair, e.g. "1=🔥,2=⭐,9=💯".');
+  }
+
+  const parsed = [];
+  const seenDigits = new Set();
+  for (const pair of pairs) {
+    const eqIndex = pair.indexOf('=');
+    if (eqIndex === -1) {
+      throw new ValidationError(`"${pair}" isn't valid — use the format digit=emoji, e.g. "1=🔥".`);
+    }
+    const digit = pair.slice(0, eqIndex).trim();
+    const emoji = pair.slice(eqIndex + 1).trim();
+
+    assertValidDigit(digit);
+    assertValidEmoji(emoji);
+    if (seenDigits.has(digit)) {
+      throw new ValidationError(`Digit "${digit}" is listed more than once.`);
+    }
+    seenDigits.add(digit);
+    parsed.push({ digit, emoji });
+  }
+
+  for (const { digit, emoji } of parsed) {
+    await repo.setDigit(guildId, channelId, digit, emoji);
+  }
+
+  return parsed;
 }
 
 async function removeDigit(guildId, channelId, digit) {
@@ -120,6 +167,7 @@ module.exports = {
   removeChannel,
   listChannels,
   setDigit,
+  setDigits,
   removeDigit,
   getDigitMap,
   handleMessage,
