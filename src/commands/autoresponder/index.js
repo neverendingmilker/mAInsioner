@@ -50,14 +50,6 @@ const data = new SlashCommandBuilder()
           .setDescription('Only react if the message links an X/Twitter post (incl. fxtwitter/vxtwitter/fixvx variants)')
           .setRequired(false)
       )
-      .addIntegerOption((opt) =>
-        opt
-          .setName('react_to_second_of_pair_within')
-          .setDescription('Exception: only react to the 2nd of 2 messages within N seconds (off by default; allows other bots)')
-          .setMinValue(1)
-          .setMaxValue(autoresponderManager.MAX_PAIR_WINDOW_SECONDS)
-          .setRequired(false)
-      )
       .addStringOption((opt) =>
         opt
           .setName('redirect_to_bot_id')

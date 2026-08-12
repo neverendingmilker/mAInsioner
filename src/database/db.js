@@ -232,7 +232,6 @@ async function createTables() {
         require_attachment INTEGER NOT NULL DEFAULT 0,
         require_video_link INTEGER NOT NULL DEFAULT 0,
         require_x_link INTEGER NOT NULL DEFAULT 0,
-        pair_within_seconds INTEGER,
         redirect_bot_id TEXT,
         redirect_window_seconds INTEGER,
         created_by TEXT,
@@ -328,8 +327,11 @@ async function migrate() {
       await client.execute(`ALTER TABLE autoresponder_channels ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
     }
   }
-  if (!autoresponderColumnNames.includes('pair_within_seconds')) {
-    await client.execute('ALTER TABLE autoresponder_channels ADD COLUMN pair_within_seconds INTEGER');
+  // "Pair mode" (react to the 2nd of two rapid messages) was replaced by the more
+  // targeted "redirect mode" — drop the now-unused column from any database that still
+  // has it.
+  if (autoresponderColumnNames.includes('pair_within_seconds')) {
+    await client.execute('ALTER TABLE autoresponder_channels DROP COLUMN pair_within_seconds');
   }
   if (!autoresponderColumnNames.includes('redirect_bot_id')) {
     await client.execute('ALTER TABLE autoresponder_channels ADD COLUMN redirect_bot_id TEXT');

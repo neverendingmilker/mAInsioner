@@ -24,7 +24,6 @@ async function handleAdd(interaction) {
     videoLink: interaction.options.getBoolean('require_video_link') ?? false,
     xLink: interaction.options.getBoolean('require_x_link') ?? false,
   };
-  const pairWithinSeconds = interaction.options.getInteger('react_to_second_of_pair_within') ?? null;
   const redirectBotId = interaction.options.getString('redirect_to_bot_id') ?? null;
   const redirectWindowSeconds = interaction.options.getInteger('redirect_window_seconds') ?? null;
 
@@ -35,7 +34,6 @@ async function handleAdd(interaction) {
       channel,
       emojisInput,
       contentFilter,
-      pairWithinSeconds,
       redirectBotId,
       redirectWindowSeconds,
       interaction.user.id
@@ -48,16 +46,12 @@ async function handleAdd(interaction) {
     throw err;
   }
 
-  const pairNote = result.pairWithinSeconds
-    ? ` Only reacts to the **second** message of a pair posted less than **${result.pairWithinSeconds}s** apart (other bots' messages count too in this mode; solo messages get no reaction).`
-    : '';
-
   const redirectNote = result.redirectBotId
     ? ` If <@${result.redirectBotId}> posts here within **${result.redirectWindowSeconds}s**, the reaction goes on its message instead — otherwise the original poster gets it as a fallback.`
     : '';
 
   await interaction.reply({
-    content: `✅ I'll now react with ${result.emojis.join(' ')} to ${describeFilter(result.contentFilter)} in ${channel} (including its threads).${pairNote}${redirectNote}`,
+    content: `✅ I'll now react with ${result.emojis.join(' ')} to ${describeFilter(result.contentFilter)} in ${channel} (including its threads).${redirectNote}`,
     ephemeral: true,
   });
 }
