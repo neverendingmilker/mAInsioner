@@ -306,7 +306,7 @@ Limits how often each person can post in a channel — for cooldowns longer than
 - `/postlimit list` — shows every channel with a limit configured, and what it is.
 - `/postlimit disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:PostLimit` controls the same setting.
 
-When someone is blocked, their message is deleted and a short notice is posted in the channel (mentioning them) with a live Discord relative timestamp (`<t:...:R>`) for when they can post again — no DMs sent. The notice auto-deletes itself after a few seconds, so it doesn't linger.
+When someone is blocked, their message is deleted and a short notice is posted in the channel (mentioning them) with a live Discord relative timestamp (`<t:...:R>`) for when they can post again — no DMs sent. The notice auto-deletes itself after 20 seconds, so it doesn't linger.
 
 ## Hosting
 

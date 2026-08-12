@@ -6,7 +6,7 @@ class ValidationError extends Error {}
 
 // Auto-deleting notice posted in the channel to let the offender know why their message
 // was removed — kept brief and short-lived so it doesn't linger and clutter the channel.
-const NOTICE_LIFETIME_MS = 8000;
+const NOTICE_LIFETIME_MS = 20000;
 
 async function isEnabled(guildId) {
   return repo.isEnabled(guildId);
