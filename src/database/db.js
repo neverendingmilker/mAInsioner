@@ -201,6 +201,25 @@ async function createTables() {
         issued_by TEXT,
         created_at INTEGER NOT NULL
       )`,
+      `CREATE TABLE IF NOT EXISTS post_limit_guild_config (
+        guild_id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS post_limit_channels (
+        guild_id TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        cooldown_seconds INTEGER NOT NULL,
+        created_by TEXT,
+        created_at INTEGER,
+        PRIMARY KEY (guild_id, channel_id)
+      )`,
+      `CREATE TABLE IF NOT EXISTS post_limit_last_message (
+        guild_id TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        last_message_at INTEGER NOT NULL,
+        PRIMARY KEY (guild_id, channel_id, user_id)
+      )`,
       `CREATE TABLE IF NOT EXISTS goosepizza_config (
         guild_id TEXT PRIMARY KEY,
         enabled INTEGER NOT NULL DEFAULT 1

@@ -1,0 +1,33 @@
+const { PermissionFlagsBits } = require('discord.js');
+const postLimitManager = require('../../../features/postlimit/postLimitManager');
+const { formatSeconds } = require('../../../utils/duration');
+
+async function handleAdd(interaction) {
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
+    return;
+  }
+
+  const channel = interaction.options.getChannel('channel');
+  const duration = interaction.options.getString('duration');
+
+  let result;
+  try {
+    result = await postLimitManager.setLimit(interaction.guildId, channel, duration, interaction.user.id);
+  } catch (err) {
+    if (err instanceof postLimitManager.ValidationError) {
+      await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });
+      return;
+    }
+    throw err;
+  }
+
+  await interaction.reply({
+    content:
+      `✅ ${channel}: each person can now only post there once every **${formatSeconds(result.cooldownSeconds)}**. ` +
+      `Moderators (Manage Messages/Administrator) are always exempt.`,
+    ephemeral: true,
+  });
+}
+
+module.exports = { handleAdd };
