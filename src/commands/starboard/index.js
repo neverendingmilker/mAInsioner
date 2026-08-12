@@ -161,14 +161,6 @@ const data = new SlashCommandBuilder()
           .setMaxValue(1000)
           .setRequired(false)
       )
-      .addIntegerOption((opt) =>
-        opt
-          .setName('top')
-          .setDescription('Only post the top N qualifying messages by count (ties at the cutoff are all included too)')
-          .setMinValue(1)
-          .setMaxValue(starboardManager.MAX_LOOKBACK_TOP_N)
-          .setRequired(false)
-      )
   )
   .addSubcommand(buildDisableSubcommand());
 
