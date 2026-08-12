@@ -47,49 +47,44 @@ function assertValidEmoji(emoji) {
   }
 }
 
-async function setDigit(guildId, channelId, digit, emoji) {
-  assertValidDigit(digit);
-  assertValidEmoji(emoji);
-  await repo.setDigit(guildId, channelId, digit, emoji);
-}
-
-// Accepts several "digit=emoji" pairs separated by commas in one go, e.g.
-// "1=🔥,2=⭐,9=💯" — parses and validates every pair BEFORE saving any of them, so a
-// single typo doesn't leave the mapping half-applied.
-async function setDigits(guildId, channelId, mappingInput) {
-  const pairs = mappingInput
+// `digit` and `emoji` can each be a single value, or several separated by commas — when
+// several, they're paired up by position (1st digit with 1st emoji, 2nd with 2nd, ...),
+// so both lists must be the same length. Every pair is validated before anything is
+// saved, so a single bad entry doesn't leave the mapping half-applied.
+async function setDigit(guildId, channelId, digitInput, emojiInput) {
+  const digits = digitInput
     .split(',')
-    .map((p) => p.trim())
+    .map((d) => d.trim())
+    .filter(Boolean);
+  const emojis = emojiInput
+    .split(',')
+    .map((e) => e.trim())
     .filter(Boolean);
 
-  if (pairs.length === 0) {
-    throw new ValidationError('Provide at least one "digit=emoji" pair, e.g. "1=🔥,2=⭐,9=💯".');
+  if (digits.length === 0 || emojis.length === 0) {
+    throw new ValidationError('Provide at least one digit and one emoji.');
+  }
+  if (digits.length !== emojis.length) {
+    throw new ValidationError(
+      `Got ${digits.length} digit(s) but ${emojis.length} emoji(s) — when listing several, give the same number of each so they can be paired up.`
+    );
   }
 
-  const parsed = [];
   const seenDigits = new Set();
-  for (const pair of pairs) {
-    const eqIndex = pair.indexOf('=');
-    if (eqIndex === -1) {
-      throw new ValidationError(`"${pair}" isn't valid — use the format digit=emoji, e.g. "1=🔥".`);
+  for (let i = 0; i < digits.length; i++) {
+    assertValidDigit(digits[i]);
+    assertValidEmoji(emojis[i]);
+    if (seenDigits.has(digits[i])) {
+      throw new ValidationError(`Digit "${digits[i]}" is listed more than once.`);
     }
-    const digit = pair.slice(0, eqIndex).trim();
-    const emoji = pair.slice(eqIndex + 1).trim();
-
-    assertValidDigit(digit);
-    assertValidEmoji(emoji);
-    if (seenDigits.has(digit)) {
-      throw new ValidationError(`Digit "${digit}" is listed more than once.`);
-    }
-    seenDigits.add(digit);
-    parsed.push({ digit, emoji });
+    seenDigits.add(digits[i]);
   }
 
-  for (const { digit, emoji } of parsed) {
-    await repo.setDigit(guildId, channelId, digit, emoji);
+  for (let i = 0; i < digits.length; i++) {
+    await repo.setDigit(guildId, channelId, digits[i], emojis[i]);
   }
 
-  return parsed;
+  return digits.map((digit, i) => ({ digit, emoji: emojis[i] }));
 }
 
 async function removeDigit(guildId, channelId, digit) {
@@ -167,7 +162,6 @@ module.exports = {
   removeChannel,
   listChannels,
   setDigit,
-  setDigits,
   removeDigit,
   getDigitMap,
   handleMessage,

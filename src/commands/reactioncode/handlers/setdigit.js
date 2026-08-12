@@ -11,8 +11,9 @@ async function handleSetDigit(interaction) {
   const digit = interaction.options.getString('digit');
   const emoji = interaction.options.getString('emoji');
 
+  let mappings;
   try {
-    await reactionCodeManager.setDigit(interaction.guildId, channelId, digit, emoji);
+    mappings = await reactionCodeManager.setDigit(interaction.guildId, channelId, digit, emoji);
   } catch (err) {
     if (err instanceof reactionCodeManager.ValidationError) {
       await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });
@@ -21,7 +22,11 @@ async function handleSetDigit(interaction) {
     throw err;
   }
 
-  await interaction.reply({ content: `✅ Digit **${digit}** now maps to ${emoji} in <#${channelId}>.`, ephemeral: true });
+  const summary = mappings.map((m) => `\`${m.digit}\` → ${m.emoji}`).join('  ');
+  await interaction.reply({
+    content: `✅ Set ${mappings.length} mapping${mappings.length === 1 ? '' : 's'} for <#${channelId}>: ${summary}`,
+    ephemeral: true,
+  });
 }
 
 module.exports = { handleSetDigit };

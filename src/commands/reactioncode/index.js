@@ -2,7 +2,6 @@ const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('disco
 const { handleAdd } = require('./handlers/add');
 const { handleRemove } = require('./handlers/remove');
 const { handleSetDigit } = require('./handlers/setdigit');
-const { handleSetDigits } = require('./handlers/setdigits');
 const { handleRemoveDigit } = require('./handlers/removedigit');
 const { handleList } = require('./handlers/list');
 const reactionCodeManager = require('../../features/reactioncode/reactionCodeManager');
@@ -38,21 +37,7 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('setdigit')
-      .setDescription('[Admin] Maps a digit (0-9) to an emoji for a channel')
-      .addStringOption((opt) =>
-        opt
-          .setName('channel')
-          .setDescription('Which channel (start typing to see configured ones)')
-          .setRequired(true)
-          .setAutocomplete(true)
-      )
-      .addStringOption((opt) => opt.setName('digit').setDescription('A single digit, 0-9').setMinLength(1).setMaxLength(1).setRequired(true))
-      .addStringOption((opt) => opt.setName('emoji').setDescription('The emoji this digit maps to').setRequired(true))
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('setdigits')
-      .setDescription('[Admin] Maps several digits to emojis at once, comma-separated')
+      .setDescription('[Admin] Maps digit(s) to emoji(s) for a channel — comma-separate both to set several at once')
       .addStringOption((opt) =>
         opt
           .setName('channel')
@@ -62,8 +47,14 @@ const data = new SlashCommandBuilder()
       )
       .addStringOption((opt) =>
         opt
-          .setName('mapping')
-          .setDescription('digit=emoji pairs separated by commas, e.g. "1=🔥,2=⭐,9=💯"')
+          .setName('digit')
+          .setDescription('A digit (0-9), or several separated by commas, e.g. "7,8,9"')
+          .setRequired(true)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('emoji')
+          .setDescription('The matching emoji(s), same order/count as "digit", e.g. "🟢,🟡,🔴"')
           .setRequired(true)
       )
   )
@@ -113,8 +104,6 @@ async function execute(interaction) {
       return handleRemove(interaction);
     case 'setdigit':
       return handleSetDigit(interaction);
-    case 'setdigits':
-      return handleSetDigits(interaction);
     case 'removedigit':
       return handleRemoveDigit(interaction);
     case 'list':
