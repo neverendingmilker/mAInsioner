@@ -12,26 +12,6 @@ const MAX_REDIRECT_WINDOW_SECONDS = 30;
 // gets a reaction, which is an acceptable, self-correcting edge case.
 const pendingRedirects = new Map();
 
-// Serializes handleMessage per channel. Discord delivers messageCreate events for a
-// guild in order, but our own handler is async and does several awaited DB calls
-// before reaching here (postlimit, sticky, goosepizza, then autoresponder) — two
-// messages sent moments apart can interleave and finish those earlier steps in either
-// order, so without this a fast-replying bot's message could reach the redirect check
-// BEFORE the human message that was supposed to start the wait for it, always missing
-// it and falling back. Chaining onto a per-channel queue guarantees messages are
-// actually handled in the order they were sent, not the order their processing happens
-// to finish.
-const channelQueues = new Map();
-
-function runInChannelOrder(channelId, task) {
-  const previous = channelQueues.get(channelId) ?? Promise.resolve();
-  const next = previous.then(task, task);
-  // Keep the stored tail always-settled so a single failure doesn't wedge the queue for
-  // that channel, and so old settled promises don't accumulate in memory forever.
-  channelQueues.set(channelId, next.catch(() => {}));
-  return next;
-}
-
 async function isEnabled(guildId) {
   return repo.isEnabled(guildId);
 }
@@ -195,10 +175,6 @@ async function resolveConfig(guildId, message) {
 //                   original. If the window expires without it posting, the original
 //                   message gets the reaction as a fallback.
 async function handleMessage(message) {
-  return runInChannelOrder(message.channelId, () => handleMessageInOrder(message));
-}
-
-async function handleMessageInOrder(message) {
   if (!(await repo.isEnabled(message.guild.id))) return;
 
   const config = await resolveConfig(message.guild.id, message);
