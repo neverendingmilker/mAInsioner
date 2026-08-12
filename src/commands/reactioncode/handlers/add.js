@@ -8,7 +8,16 @@ async function handleAdd(interaction) {
   }
 
   const channel = interaction.options.getChannel('channel');
-  await reactionCodeManager.addChannel(interaction.guildId, channel, interaction.user.id);
+
+  try {
+    await reactionCodeManager.addChannel(interaction.guild, channel, interaction.user.id);
+  } catch (err) {
+    if (err instanceof reactionCodeManager.ValidationError) {
+      await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });
+      return;
+    }
+    throw err;
+  }
 
   await interaction.reply({
     content:

@@ -1,3 +1,4 @@
+const { PermissionFlagsBits } = require('discord.js');
 const repo = require('./reactionCodeRepository');
 
 class ValidationError extends Error {}
@@ -18,10 +19,34 @@ async function setEnabled(guildId, enabled) {
   await repo.setEnabled(guildId, enabled);
 }
 
+// Deleting the code message means deleting someone ELSE's message (the channel's
+// owner), which needs Manage Messages specifically — Add Reactions/View
+// Channel/Read Message History alone (enough for the reaction-swapping part) isn't
+// sufficient for that. Checked up front so a missing permission shows up immediately
+// as a clear error instead of a reaction working fine while the delete silently fails.
+function assertCanManageChannel(guild, channel) {
+  const botMember = guild.members.me;
+  const perms = channel.permissionsFor(botMember);
+  if (
+    !perms?.has([
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.ReadMessageHistory,
+      PermissionFlagsBits.AddReactions,
+      PermissionFlagsBits.ManageMessages,
+    ])
+  ) {
+    throw new ValidationError(
+      `I need "View Channel", "Read Message History", "Add Reactions" and "Manage Messages" permissions in ${channel} ` +
+        `(Manage Messages is specifically needed to delete the digit-code messages, which aren't posted by the bot).`
+    );
+  }
+}
+
 // --- Configuration ---
 
-async function addChannel(guildId, channel, createdBy) {
-  await repo.addChannel(guildId, channel.id, createdBy);
+async function addChannel(guild, channel, createdBy) {
+  assertCanManageChannel(guild, channel);
+  await repo.addChannel(guild.id, channel.id, createdBy);
 }
 
 async function removeChannel(guildId, channelId) {
