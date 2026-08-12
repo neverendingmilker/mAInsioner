@@ -42,12 +42,12 @@ const data = new SlashCommandBuilder()
     sub
       .setName('edit')
       .setDescription("[Admin] Edit an existing channel's sticky message text")
-      .addChannelOption((opt) =>
+      .addStringOption((opt) =>
         opt
           .setName('channel')
-          .setDescription('Channel whose sticky message to edit')
-          .addChannelTypes(...STICKY_CHANNEL_TYPES)
+          .setDescription('Which sticky to edit (start typing to see active ones)')
           .setRequired(true)
+          .setAutocomplete(true)
       )
       .addStringOption((opt) =>
         opt
@@ -103,4 +103,30 @@ async function execute(interaction) {
   }
 }
 
-module.exports = { data, execute };
+// Powers the "channel" option's autocomplete on /sticky edit: only shows channels that
+// currently have an active sticky, with a short content preview, instead of every
+// channel in the server.
+async function autocomplete(interaction) {
+  const focused = interaction.options.getFocused(true);
+  if (focused.name !== 'channel') {
+    await interaction.respond([]);
+    return;
+  }
+
+  const stickies = stickyManager.listByGuild(interaction.guildId);
+  const query = focused.value.toLowerCase();
+
+  const choices = stickies
+    .map((s) => {
+      const channel = interaction.guild.channels.cache.get(s.channelId);
+      const label = channel ? `#${channel.name}` : s.channelId;
+      const preview = s.content.length > 40 ? `${s.content.slice(0, 40)}…` : s.content;
+      return { name: `${label} — ${preview}`, value: s.channelId };
+    })
+    .filter((c) => c.name.toLowerCase().includes(query))
+    .slice(0, 25);
+
+  await interaction.respond(choices);
+}
+
+module.exports = { data, execute, autocomplete };

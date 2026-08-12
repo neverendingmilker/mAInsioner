@@ -14,6 +14,33 @@ module.exports = {
       return;
     }
 
+    if (interaction.isModalSubmit() && interaction.customId.startsWith('sticky:edit-modal:')) {
+      try {
+        const channelId = interaction.customId.slice('sticky:edit-modal:'.length);
+        const stickyManager = require('../features/sticky/stickyManager');
+        const content = interaction.fields.getTextInputValue('content');
+
+        const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+        if (!channel) {
+          await interaction.reply({ content: "⚠️ That channel doesn't seem to exist anymore.", ephemeral: true });
+          return;
+        }
+
+        await interaction.deferReply({ ephemeral: true });
+        await stickyManager.setSticky(channel, content, interaction.user.id);
+        await interaction.editReply({ content: `✅ Sticky message updated in ${channel} — reposted right away with the new text.` });
+      } catch (err) {
+        console.error('Error handling sticky edit modal submit:', err);
+        const errorReply = { content: '⚠️ An error occurred while updating the sticky message.', ephemeral: true };
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp(errorReply).catch(() => null);
+        } else {
+          await interaction.reply(errorReply).catch(() => null);
+        }
+      }
+      return;
+    }
+
     if (interaction.isStringSelectMenu() && interaction.customId.startsWith('vfedit:select:')) {
       try {
         const { handleEditSelect } = require('../commands/verify/handlers/editInteractions');

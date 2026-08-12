@@ -152,6 +152,13 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
+    feature: 'Sticky: Edit (right-click)',
+    command: 'Sticky: Edit',
+    subcommands: [
+      { name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator, note: 'right-click a message -> Apps; opens a modal' },
+    ],
+  },
+  {
     feature: 'Sticky: Remove (right-click)',
     command: 'Sticky: Remove',
     subcommands: [

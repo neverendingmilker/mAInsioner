@@ -7,15 +7,21 @@ async function handleEdit(interaction) {
     return;
   }
 
-  const channel = interaction.options.getChannel('channel');
+  const channelId = interaction.options.getString('channel');
   const content = interaction.options.getString('message');
 
-  const existing = stickyManager.getStickyByChannel(channel.id);
+  const existing = stickyManager.getStickyByChannel(channelId);
   if (!existing) {
     await interaction.reply({
-      content: `⚠️ ${channel} doesn't have a sticky message yet — use \`/sticky add\` to set one up.`,
+      content: "⚠️ That channel doesn't have a sticky message yet — use `/sticky add` to set one up.",
       ephemeral: true,
     });
+    return;
+  }
+
+  const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
+  if (!channel) {
+    await interaction.reply({ content: "⚠️ That channel doesn't seem to exist anymore.", ephemeral: true });
     return;
   }
 

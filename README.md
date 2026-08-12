@@ -95,6 +95,8 @@ src/
       commandManifest.js  (hand-maintained data: feature -> subcommands -> access tier + actual permission, plus the mod role ID)
     stickyContextAdd/
       index.js       (message context menu: right-click a message -> Apps -> "Sticky: Add")
+    stickyContextEdit/
+      index.js       (message context menu: right-click a message -> Apps -> "Sticky: Edit"; shows a modal pre-filled with the current text)
     stickyContextRemove/
       index.js       (message context menu: right-click a message -> Apps -> "Sticky: Remove")
     shared/

@@ -116,10 +116,11 @@ Optionally, each starboard can restrict which kind of message qualifies at all: 
 Admin only, except `list` which is open to everyone.
 
 - **`/sticky add`** — Sets (or replaces) the sticky message for a channel. The message text is typed directly as a command option, no popup window.
-- **`/sticky edit`** — Changes the text of an existing channel's sticky message (only works if one is already set up — use `add` first otherwise). Reposts right away with the new text.
+- **`/sticky edit`** — Changes the text of an existing channel's sticky message. The `channel` option shows only channels that currently have a sticky (with a text preview), instead of every channel in the server. Reposts right away with the new text.
 - **`/sticky remove`** — Removes the sticky message from a channel.
 - **`/sticky list`** — Shows every sticky message configured in the server.
 - **Right-click a message → Apps → "Sticky: Add"** — same as `/sticky add`, but uses that message's own text instead of retyping it.
+- **Right-click a message → Apps → "Sticky: Edit"** — opens a popup pre-filled with that channel's current sticky text; edit it and submit to update.
 - **Right-click a message → Apps → "Sticky: Remove"** — removes whatever sticky is configured for that channel (the message you clicked doesn't matter, it's just a quick entry point).
 - **`/sticky disable`** — Admin only. Turns the feature on/off for this server.
 
