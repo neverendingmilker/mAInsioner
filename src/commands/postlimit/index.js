@@ -32,12 +32,12 @@ const data = new SlashCommandBuilder()
     sub
       .setName('remove')
       .setDescription('[Admin] Removes the post limit from a channel')
-      .addChannelOption((opt) =>
+      .addStringOption((opt) =>
         opt
           .setName('channel')
-          .setDescription('The channel')
-          .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.PublicThread, ChannelType.PrivateThread)
+          .setDescription('Which post limit to remove (start typing to see configured ones)')
           .setRequired(true)
+          .setAutocomplete(true)
       )
   )
   .addSubcommand((sub) => sub.setName('list').setDescription('[Admin] Lists every channel with a post limit configured'))
@@ -72,4 +72,29 @@ async function execute(interaction) {
   }
 }
 
-module.exports = { data, execute };
+// Powers the "channel" option's autocomplete on /postlimit remove: only shows channels
+// that currently have a limit configured, with the cooldown shown, instead of every
+// channel in the server.
+async function autocomplete(interaction) {
+  const focused = interaction.options.getFocused(true);
+  if (focused.name !== 'channel') {
+    await interaction.respond([]);
+    return;
+  }
+
+  const limits = await postLimitManager.listLimits(interaction.guildId);
+  const query = focused.value.toLowerCase();
+
+  const choices = limits
+    .map((l) => {
+      const channel = interaction.guild.channels.cache.get(l.channelId);
+      const label = channel ? `#${channel.name}` : l.channelId;
+      return { name: `${label} — one every ${l.cooldownLabel}`, value: l.channelId };
+    })
+    .filter((c) => c.name.toLowerCase().includes(query))
+    .slice(0, 25);
+
+  await interaction.respond(choices);
+}
+
+module.exports = { data, execute, autocomplete };

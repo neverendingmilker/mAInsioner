@@ -18,7 +18,7 @@ Paginated with buttons if it doesn't fit on one page.
 Admin only. Auto-reacts with one or more emojis to **every** message in a chosen channel by default — no trigger word needed (for that, see GoosePizza instead). Applies to the channel's threads too (e.g. a forum's individual posts, or "rooms" under a shared parent channel). Each channel can have its own emoji set, and optionally an extra filter to only react to certain kinds of content.
 
 - **`/autoresponder add`** — Sets (or replaces) the autoresponder for a channel: one or more emojis, separated by spaces or commas. Three optional filters (off by default, reacts to everything): only react if the message has an **attachment** (image/gif/video), only if it **links a video** (YouTube and similar), only if it **links an X/Twitter post** (including fxtwitter/vxtwitter/fixvx/fixupx mirrors). Turn on more than one and it reacts if the message matches *any* of them. There's also an optional **redirect mode** (`redirect_to_bot_id` + `redirect_window_seconds`): waits for a *specific* bot to post in the same channel within the window; if it does, the reaction goes on **its** message instead of the original poster's. If that bot doesn't post in time, the original message gets the reaction as a fallback. Useful when a specific bot reliably reposts the "real" content (an image, a fixed embed, ...) shortly after someone's message. Matches the bot both by its normal user ID and by webhook ID, since many "repost"/"embed fixer" bots post through a Discord webhook rather than as a live bot — in that case Discord's own "author" on the message is a per-webhook placeholder, not the bot's actual account, so both are checked. This bot's own messages are never reacted to, in any mode.
-- **`/autoresponder remove`** — Removes the autoresponder from a channel.
+- **`/autoresponder remove`** — Removes the autoresponder from a channel; the `channel` option shows only channels that currently have one (with a preview), instead of every channel in the server.
 - **`/autoresponder list`** — Shows every channel with an autoresponder configured, its emojis, and any active filter/pair/redirect mode.
 - **`/autoresponder disable`** — Turns the feature on/off for this server.
 
@@ -98,7 +98,7 @@ Admin only, except `list` which also works for mods (Manage Roles). Generic vers
 Admin only. Limits how often each person can post in a channel — for cooldowns longer than Discord's own slowmode (capped at 6h), or when you want it enforced consistently regardless of Discord's setting. Each channel has its own independent duration. Violating messages are deleted immediately, with a short, auto-deleting notice posted in the channel explaining when the person can post again (no DMs). Moderators (Manage Messages or Administrator) are always exempt.
 
 - **`/postlimit add`** — Sets (or replaces) the limit for a channel: a duration like `12h`, `1d`, `3d` (minimum 1 minute).
-- **`/postlimit remove`** — Removes the limit from a channel.
+- **`/postlimit remove`** — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, instead of every channel in the server.
 - **`/postlimit list`** — Shows every channel with a limit configured, and what it is.
 - **`/postlimit disable`** — Turns the feature on/off for this server.
 
@@ -107,7 +107,7 @@ Admin only. Limits how often each person can post in a channel — for cooldowns
 Admin only. Limits each person to a fixed **5 reactions per thread** in a chosen channel's threads (forum channels or regular text channels with threads) — no configurable count, this feature just does that one thing. Once someone hits 5 in a thread, any further reaction they add there gets silently removed; removing one of their own earlier reactions frees up a slot again. Optionally excludes reactions on each thread's starter/first message from the count. Moderators (Manage Messages or Administrator) are always exempt.
 
 - **`/reactionlimit add`** — Sets (or replaces) the limit for a channel's threads. Optional `ignore_first_post` (default off) excludes the thread's starter message from the count.
-- **`/reactionlimit remove`** — Removes the limit from a channel.
+- **`/reactionlimit remove`** — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, instead of every channel in the server.
 - **`/reactionlimit list`** — Shows every channel with a limit configured.
 - **`/reactionlimit disable`** — Turns the feature on/off for this server.
 

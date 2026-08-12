@@ -7,15 +7,15 @@ async function handleRemove(interaction) {
     return;
   }
 
-  const channel = interaction.options.getChannel('channel');
-  const removedCount = await postLimitManager.removeLimit(interaction.guildId, channel.id);
+  const channelId = interaction.options.getString('channel');
+  const removedCount = await postLimitManager.removeLimit(interaction.guildId, channelId);
 
   if (removedCount === 0) {
-    await interaction.reply({ content: `⚠️ ${channel} doesn't have a post limit configured.`, ephemeral: true });
+    await interaction.reply({ content: "⚠️ That channel doesn't have a post limit configured.", ephemeral: true });
     return;
   }
 
-  await interaction.reply({ content: `✅ Post limit removed from ${channel}.`, ephemeral: true });
+  await interaction.reply({ content: `✅ Post limit removed from <#${channelId}>.`, ephemeral: true });
 }
 
 module.exports = { handleRemove };

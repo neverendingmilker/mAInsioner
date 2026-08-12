@@ -34,8 +34,12 @@ const data = new SlashCommandBuilder()
     sub
       .setName('remove')
       .setDescription('[Admin] Removes the reaction limit from a channel')
-      .addChannelOption((opt) =>
-        opt.setName('channel').setDescription('The channel').addChannelTypes(...REACTIONLIMIT_CHANNEL_TYPES).setRequired(true)
+      .addStringOption((opt) =>
+        opt
+          .setName('channel')
+          .setDescription('Which reaction limit to remove (start typing to see configured ones)')
+          .setRequired(true)
+          .setAutocomplete(true)
       )
   )
   .addSubcommand((sub) => sub.setName('list').setDescription('[Admin] Lists every channel with a reaction limit configured'))
@@ -70,4 +74,29 @@ async function execute(interaction) {
   }
 }
 
-module.exports = { data, execute };
+// Powers the "channel" option's autocomplete on /reactionlimit remove: only shows
+// channels that currently have a limit configured, instead of every channel in the
+// server.
+async function autocomplete(interaction) {
+  const focused = interaction.options.getFocused(true);
+  if (focused.name !== 'channel') {
+    await interaction.respond([]);
+    return;
+  }
+
+  const channels = await reactionLimitManager.listChannels(interaction.guildId);
+  const query = focused.value.toLowerCase();
+
+  const choices = channels
+    .map((c) => {
+      const channel = interaction.guild.channels.cache.get(c.channelId);
+      const label = channel ? `#${channel.name}` : c.channelId;
+      return { name: `${label}${c.ignoreFirstPost ? ' (starter excluded)' : ''}`, value: c.channelId };
+    })
+    .filter((c) => c.name.toLowerCase().includes(query))
+    .slice(0, 25);
+
+  await interaction.respond(choices);
+}
+
+module.exports = { data, execute, autocomplete };
