@@ -12,6 +12,7 @@ const FEATURES = {
   goosepizza: { label: 'GoosePizza', manager: require('../../features/goosepizza/goosepizzaManager') },
   incident: { label: 'Incident Counter', manager: require('../../features/incident/incidentManager') },
   postlimit: { label: 'Post Limit', manager: require('../../features/postlimit/postLimitManager') },
+  reactioncode: { label: 'Reaction Code', manager: require('../../features/reactioncode/reactionCodeManager') },
   reactionlimit: { label: 'Reaction Limit', manager: require('../../features/reactionlimit/reactionLimitManager') },
   rolelink: { label: 'Role Links', manager: require('../../features/rolelinks/roleLinkManager') },
   starboard: { label: 'Starboard', manager: require('../../features/starboard/starboardManager') },

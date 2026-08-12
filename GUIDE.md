@@ -102,6 +102,17 @@ Admin only. Limits how often each person can post in a channel — for cooldowns
 - **`/postlimit list`** — Shows every channel with a limit configured, and what it is.
 - **`/postlimit disable`** — Turns the feature on/off for this server.
 
+## 🔢 Reaction Code (`/reactioncode`)
+
+Admin only. In a chosen channel: post an image, then a follow-up message that's *only digits* (up to 9 of them), and each digit gets decoded into the emoji it's mapped to — those become the new reactions on the image (replacing whatever the bot had reacted with before), and the digit-only message is deleted. A digit with no mapping is silently skipped; repeated digits only add their emoji once. If there's no image waiting when a digit code shows up, it's left alone.
+
+- **`/reactioncode add`** — Sets up a channel for reaction codes (doesn't map any digits yet — do that next).
+- **`/reactioncode setdigit`** — Maps a single digit (0-9) to an emoji for a channel; run it once per digit you want to use.
+- **`/reactioncode removedigit`** — Removes one digit's mapping.
+- **`/reactioncode remove`** — Removes reaction codes (and every digit mapping) from a channel.
+- **`/reactioncode list`** — Shows every channel set up for this, and its current digit → emoji mappings.
+- **`/reactioncode disable`** — Turns the feature on/off for this server.
+
 ## 🖐️ Reaction Limit (`/reactionlimit`)
 
 Admin only. Limits each person to a fixed **5 reactions per thread** in a chosen channel's threads (forum channels or regular text channels with threads) — no configurable count, this feature just does that one thing. Once someone hits 5 in a thread, any further reaction they add there gets silently removed; removing one of their own earlier reactions frees up a slot again. Optionally excludes reactions on each thread's starter/first message from the count. Moderators (Manage Messages or Administrator) are always exempt.

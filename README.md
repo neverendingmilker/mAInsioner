@@ -54,6 +54,14 @@ src/
         add.js
         remove.js
         list.js
+    reactioncode/
+      index.js       (defines /reactioncode add, remove, setdigit, removedigit, list, disable + autocomplete)
+      handlers/
+        add.js
+        remove.js
+        setdigit.js
+        removedigit.js
+        list.js
     reactionlimit/
       index.js       (defines /reactionlimit add, remove, list, disable)
       handlers/
@@ -143,6 +151,9 @@ src/
     postlimit/
       postLimitManager.js     (validation, exemption check, passive per-message enforcement)
       postLimitRepository.js  (SQL queries: per-channel limits + per-user last-allowed-message tracking)
+    reactioncode/
+      reactionCodeManager.js     (validation, digit->emoji decoding, tracks each channel's most recent image, swaps its reactions and deletes the code message)
+      reactionCodeRepository.js  (SQL queries: per-channel setup + per-digit emoji mappings)
     reactionlimit/
       reactionLimitManager.js     (validation, exemption check, per-thread reaction counting/enforcement)
       reactionLimitRepository.js  (SQL queries: per-channel config + per-user-per-thread running count)
@@ -340,6 +351,17 @@ Auto-reacts with one or more emojis to a chosen channel's messages, including me
 - `/autoresponder disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:Autoresponder` controls the same setting.
 
 Reactions are added in the order the emojis were given, and each one is applied independently — if one fails (e.g. a custom emoji the bot no longer has access to), the rest still go through.
+
+## Available commands (Reaction Code feature)
+
+In a chosen channel: post an image, then a follow-up message that's only digits (up to 9 of them, `require_attachment`-style detection via `image/*` content type on an attachment — video attachments don't count here, unlike Autoresponder's broader "media" check), and each digit gets decoded through that channel's digit→emoji mapping into a reaction. Those decoded emojis become the image's new reactions — every reaction the bot itself had previously added there is removed first — and the digit-only message is deleted right after. A digit with no mapping configured is silently skipped rather than erroring; repeated digits in the code only add their emoji once (Discord reactions are inherently deduplicated anyway). If a digit-only message shows up with no image posted since the channel was last "reset" (i.e. nothing pending), it's left alone — there's nothing to apply it to. Which image is "pending" is tracked in memory per channel, so a restart just means the very next code typed won't find anything to apply to until a new image is posted; harmless and self-correcting. All subcommands require the **Administrator** permission.
+
+- `/reactioncode add channel:<#channel>` — sets up a channel for reaction codes. Doesn't configure any digit mappings on its own — pair it with `setdigit` calls afterward.
+- `/reactioncode setdigit channel:<...> digit:<0-9> emoji:<...>` — maps one digit to one emoji for a channel; call it once per digit you want available (up to 10, one per digit 0-9). Re-running it for an already-mapped digit replaces that mapping. `channel` is autocompleted, only showing channels already set up for this feature.
+- `/reactioncode removedigit channel:<...> digit:<...>` — removes a single digit's mapping, leaving the others intact. Both `channel` and `digit` are autocompleted (`digit` only lists digits that channel actually has mapped).
+- `/reactioncode remove channel:<...>` — removes reaction codes from a channel entirely, including every digit mapping for it. `channel` is autocompleted, only showing configured channels.
+- `/reactioncode list` — shows every channel set up for this feature and its current digit → emoji mappings.
+- `/reactioncode disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:ReactionCode` controls the same setting.
 
 ## Available commands (Reaction Limit feature)
 
