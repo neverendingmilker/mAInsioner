@@ -138,6 +138,7 @@ const COMMAND_MANIFEST = [
     command: '/sticky',
     subcommands: [
       { name: 'add', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'edit', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'list', tier: EVERYONE, permission: null },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },

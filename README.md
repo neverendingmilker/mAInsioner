@@ -83,6 +83,13 @@ src/
       index.js       (defines /warn, standalone command with role escalation logic)
     verbal/
       index.js       (defines /verbal, standalone command)
+    sticky/
+      index.js       (defines /sticky add, edit, remove, list, disable)
+      handlers/
+        add.js
+        edit.js
+        remove.js
+        list.js
     commandlist/
       index.js            (defines /commandlist, a paginated table of every command + who can use it)
       commandManifest.js  (hand-maintained data: feature -> subcommands -> access tier + actual permission, plus the mod role ID)

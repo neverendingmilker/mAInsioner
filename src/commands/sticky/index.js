@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
+const { handleEdit } = require('./handlers/edit');
 const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
 const stickyManager = require('../../features/sticky/stickyManager');
@@ -39,6 +40,25 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
+      .setName('edit')
+      .setDescription("[Admin] Edit an existing channel's sticky message text")
+      .addChannelOption((opt) =>
+        opt
+          .setName('channel')
+          .setDescription('Channel whose sticky message to edit')
+          .addChannelTypes(...STICKY_CHANNEL_TYPES)
+          .setRequired(true)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('message')
+          .setDescription('The new message content')
+          .setMaxLength(4000)
+          .setRequired(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
       .setName('remove')
       .setDescription('[Admin] Remove the sticky message from a channel')
       .addChannelOption((opt) =>
@@ -72,6 +92,8 @@ async function execute(interaction) {
   switch (sub) {
     case 'add':
       return handleAdd(interaction);
+    case 'edit':
+      return handleEdit(interaction);
     case 'remove':
       return handleRemove(interaction);
     case 'list':
