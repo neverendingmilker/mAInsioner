@@ -26,8 +26,13 @@ module.exports = {
           return;
         }
 
+        // Preserve whatever repost delay was already configured — this modal only
+        // edits the text, same as the "channel" option being omitted on /sticky edit.
+        const existing = stickyManager.getStickyByChannel(channelId);
+        const delaySeconds = existing?.repostDelaySeconds ?? stickyManager.DEFAULT_REPOST_DELAY_SECONDS;
+
         await interaction.deferReply({ ephemeral: true });
-        await stickyManager.setSticky(channel, content, interaction.user.id);
+        await stickyManager.setSticky(channel, content, interaction.user.id, delaySeconds);
         await interaction.editReply({ content: `✅ Sticky message updated in ${channel} — reposted right away with the new text.` });
       } catch (err) {
         console.error('Error handling sticky edit modal submit:', err);

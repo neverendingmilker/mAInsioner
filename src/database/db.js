@@ -87,6 +87,7 @@ async function createTables() {
         channel_id TEXT NOT NULL,
         content TEXT NOT NULL,
         last_message_id TEXT,
+        repost_delay_seconds INTEGER NOT NULL DEFAULT 30,
         created_by TEXT NOT NULL,
         updated_at INTEGER NOT NULL,
         PRIMARY KEY (guild_id, channel_id)
@@ -282,6 +283,14 @@ async function migrate() {
   await client.execute(
     'UPDATE birthday_guild_config SET remove_after_seconds = 86400 WHERE remove_after_seconds IS NULL'
   );
+
+  // sticky_messages shipped without "repost_delay_seconds" at first — every sticky
+  // reposted immediately when triggered. Upgrades any database created before this.
+  const stickyColumns = await client.execute('PRAGMA table_info(sticky_messages)');
+  const stickyColumnNames = stickyColumns.rows.map((row) => row.name);
+  if (!stickyColumnNames.includes('repost_delay_seconds')) {
+    await client.execute('ALTER TABLE sticky_messages ADD COLUMN repost_delay_seconds INTEGER NOT NULL DEFAULT 30');
+  }
 
   const verifyColumns = await client.execute('PRAGMA table_info(verify_role_config)');
   const verifyColumnNames = verifyColumns.rows.map((row) => row.name);

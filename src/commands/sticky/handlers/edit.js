@@ -1,5 +1,6 @@
 const { PermissionFlagsBits } = require('discord.js');
 const stickyManager = require('../../../features/sticky/stickyManager');
+const { parseDurationToSeconds, formatSeconds } = require('../../../utils/duration');
 
 async function handleEdit(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -9,6 +10,7 @@ async function handleEdit(interaction) {
 
   const channelId = interaction.options.getString('channel');
   const content = interaction.options.getString('message');
+  const delayInput = interaction.options.getString('delay');
 
   const existing = stickyManager.getStickyByChannel(channelId);
   if (!existing) {
@@ -17,6 +19,17 @@ async function handleEdit(interaction) {
       ephemeral: true,
     });
     return;
+  }
+
+  // Keep the current delay unless a new one was explicitly given.
+  let delaySeconds = existing.repostDelaySeconds ?? stickyManager.DEFAULT_REPOST_DELAY_SECONDS;
+  if (delayInput) {
+    try {
+      delaySeconds = parseDurationToSeconds(delayInput);
+    } catch (err) {
+      await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });
+      return;
+    }
   }
 
   const channel = await interaction.guild.channels.fetch(channelId).catch(() => null);
@@ -39,10 +52,10 @@ async function handleEdit(interaction) {
 
   await interaction.deferReply({ ephemeral: true });
 
-  await stickyManager.setSticky(channel, content, interaction.user.id);
+  await stickyManager.setSticky(channel, content, interaction.user.id, delaySeconds);
 
   await interaction.editReply({
-    content: `✅ Sticky message updated in ${channel} — reposted right away with the new text.`,
+    content: `✅ Sticky message updated in ${channel} — reposted right away with the new text. Future reposts will wait **${formatSeconds(delaySeconds)}** after new activity.`,
   });
 }
 

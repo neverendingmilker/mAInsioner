@@ -37,6 +37,12 @@ const data = new SlashCommandBuilder()
           .setMaxLength(4000)
           .setRequired(true)
       )
+      .addStringOption((opt) =>
+        opt
+          .setName('delay')
+          .setDescription('How long to wait after new activity before reposting (default: 30s) — e.g. 30s, 1m, 2m')
+          .setRequired(false)
+      )
   )
   .addSubcommand((sub) =>
     sub
@@ -55,6 +61,12 @@ const data = new SlashCommandBuilder()
           .setDescription('The new message content')
           .setMaxLength(4000)
           .setRequired(true)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('delay')
+          .setDescription('New repost delay (optional — keeps the current one if omitted) — e.g. 30s, 1m, 2m')
+          .setRequired(false)
       )
   )
   .addSubcommand((sub) =>
