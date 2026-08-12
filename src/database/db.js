@@ -232,6 +232,7 @@ async function createTables() {
         require_attachment INTEGER NOT NULL DEFAULT 0,
         require_video_link INTEGER NOT NULL DEFAULT 0,
         require_x_link INTEGER NOT NULL DEFAULT 0,
+        pair_within_seconds INTEGER,
         created_by TEXT,
         created_at INTEGER,
         PRIMARY KEY (guild_id, channel_id)
@@ -324,6 +325,9 @@ async function migrate() {
     if (!autoresponderColumnNames.includes(col)) {
       await client.execute(`ALTER TABLE autoresponder_channels ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
     }
+  }
+  if (!autoresponderColumnNames.includes('pair_within_seconds')) {
+    await client.execute('ALTER TABLE autoresponder_channels ADD COLUMN pair_within_seconds INTEGER');
   }
 
   const verifyColumns = await client.execute('PRAGMA table_info(verify_role_config)');

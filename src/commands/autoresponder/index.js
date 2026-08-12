@@ -10,6 +10,7 @@ const handleDisable = createDisableHandler(autoresponderManager, PermissionFlags
 const AUTORESPONDER_CHANNEL_TYPES = [
   ChannelType.GuildText,
   ChannelType.GuildAnnouncement,
+  ChannelType.GuildForum,
   ChannelType.PublicThread,
   ChannelType.PrivateThread,
   ChannelType.AnnouncementThread,
@@ -17,7 +18,7 @@ const AUTORESPONDER_CHANNEL_TYPES = [
 
 const data = new SlashCommandBuilder()
   .setName('autoresponder')
-  .setDescription('Auto-reacts with one or more emojis to every message in a channel')
+  .setDescription("Auto-reacts with one or more emojis to a channel's messages (including its threads)")
   .addSubcommand((sub) =>
     sub
       .setName('add')
@@ -47,6 +48,14 @@ const data = new SlashCommandBuilder()
         opt
           .setName('require_x_link')
           .setDescription('Only react if the message links an X/Twitter post (incl. fxtwitter/vxtwitter/fixvx variants)')
+          .setRequired(false)
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName('react_to_second_of_pair_within')
+          .setDescription('Exception: only react to the 2nd of 2 messages within N seconds (off by default; allows other bots)')
+          .setMinValue(1)
+          .setMaxValue(autoresponderManager.MAX_PAIR_WINDOW_SECONDS)
           .setRequired(false)
       )
   )

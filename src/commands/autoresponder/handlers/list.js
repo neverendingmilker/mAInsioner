@@ -11,6 +11,10 @@ function describeFilter(contentFilter) {
   return tags.length > 0 ? ` (only: ${tags.join(', ')})` : '';
 }
 
+function describePairMode(pairWithinSeconds) {
+  return pairWithinSeconds ? ` · pair mode: 2nd of pair within ${pairWithinSeconds}s` : '';
+}
+
 async function handleList(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
@@ -24,7 +28,9 @@ async function handleList(interaction) {
     return;
   }
 
-  const lines = channels.map((c) => `<#${c.channelId}> — ${c.emojis.join(' ')}${describeFilter(c.contentFilter)}`);
+  const lines = channels.map(
+    (c) => `<#${c.channelId}> — ${c.emojis.join(' ')}${describeFilter(c.contentFilter)}${describePairMode(c.pairWithinSeconds)}`
+  );
   const embed = new EmbedBuilder().setColor(EMBED_COLOR).setTitle('Autoresponders').setDescription(lines.join('\n'));
 
   await interaction.reply({ embeds: [embed], ephemeral: true });

@@ -4,6 +4,13 @@ const repo = require('./autoresponderRepository');
 class ValidationError extends Error {}
 
 const MAX_EMOJIS = 10;
+const MAX_PAIR_WINDOW_SECONDS = 30;
+
+// Timestamp of the last message seen in each channel/thread that has at least one
+// autoresponder with "pair mode" enabled — kept in memory only (losing it on a restart
+// just means the very next message after a restart is never treated as "the second of a
+// pair", which is a harmless, self-correcting edge case).
+const lastMessageTimestamps = new Map();
 
 async function isEnabled(guildId) {
   return repo.isEnabled(guildId);
@@ -91,11 +98,14 @@ function assertCanReactInChannel(guild, channel) {
 
 // --- Configuration ---
 
-async function setChannel(guild, channel, emojisInput, contentFilter, createdBy) {
+async function setChannel(guild, channel, emojisInput, contentFilter, pairWithinSeconds, createdBy) {
   const emojis = parseEmojis(emojisInput);
+  if (pairWithinSeconds != null && (!Number.isInteger(pairWithinSeconds) || pairWithinSeconds < 1 || pairWithinSeconds > MAX_PAIR_WINDOW_SECONDS)) {
+    throw new ValidationError(`The pair window must be a whole number of seconds between 1 and ${MAX_PAIR_WINDOW_SECONDS}.`);
+  }
   assertCanReactInChannel(guild, channel);
-  await repo.setChannel(guild.id, channel.id, emojis, contentFilter, createdBy);
-  return { emojis, contentFilter };
+  await repo.setChannel(guild.id, channel.id, emojis, contentFilter, pairWithinSeconds ?? null, createdBy);
+  return { emojis, contentFilter, pairWithinSeconds: pairWithinSeconds ?? null };
 }
 
 async function removeChannel(guildId, channelId) {
@@ -113,15 +123,50 @@ function extractReactableEmoji(emojiString) {
   return customMatch ? customMatch[1] : emojiString;
 }
 
-// Called from messageCreate for every new guild message. If this channel has an
-// autoresponder configured, reacts with every configured emoji, in order.
+// Looks up the autoresponder for a message's channel — checked directly first, and if
+// the message is inside a thread, falls back to the thread's PARENT channel, so a
+// config set on a forum/text channel also applies to reactions posted in its threads
+// (e.g. each "room" thread under a shared parent).
+async function resolveConfig(guildId, message) {
+  const direct = await repo.getChannel(guildId, message.channelId);
+  if (direct) return direct;
+
+  if (message.channel?.isThread?.()) {
+    return repo.getChannel(guildId, message.channel.parentId);
+  }
+  return null;
+}
+
+// Called from messageCreate for every new guild message. If this channel (or the parent
+// of the thread it's in) has an autoresponder configured, reacts with every configured
+// emoji, in order — provided the message also passes the content filter (if any) and,
+// in "pair mode", arrived within the configured window of the previous message there.
 async function handleMessage(message) {
-  if (message.author?.bot) return;
   if (!(await repo.isEnabled(message.guild.id))) return;
 
-  const config = await repo.getChannel(message.guild.id, message.channelId);
+  const config = await resolveConfig(message.guild.id, message);
   if (!config) return;
+
+  const isPairMode = config.pairWithinSeconds != null;
+
+  // Normal mode still ignores every bot (including this one) — unchanged default
+  // behavior. Pair mode explicitly allows OTHER bots' messages, since that's usually
+  // who posts the "second" message of a rapid pair; this bot's own messages are still
+  // excluded either way, to avoid ever reacting to itself.
+  if (message.author?.bot) {
+    if (!isPairMode || message.author.id === message.client.user.id) return;
+  }
+
   if (!matchesContentFilter(message, config.contentFilter)) return;
+
+  if (isPairMode) {
+    const previousTimestamp = lastMessageTimestamps.get(message.channelId);
+    lastMessageTimestamps.set(message.channelId, message.createdTimestamp);
+
+    const isSecondOfPair =
+      previousTimestamp != null && message.createdTimestamp - previousTimestamp < config.pairWithinSeconds * 1000;
+    if (!isSecondOfPair) return; // a solo message, or the first of a pair — no reaction in this mode
+  }
 
   for (const emoji of config.emojis) {
     await message.react(extractReactableEmoji(emoji)).catch((err) => {
@@ -132,6 +177,7 @@ async function handleMessage(message) {
 
 module.exports = {
   ValidationError,
+  MAX_PAIR_WINDOW_SECONDS,
   isEnabled,
   setEnabled,
   setChannel,

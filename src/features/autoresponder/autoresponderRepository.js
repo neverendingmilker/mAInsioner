@@ -24,16 +24,17 @@ async function setEnabled(guildId, enabled) {
 
 // --- Per-channel emoji configuration ---
 
-async function setChannel(guildId, channelId, emojis, contentFilter, createdBy) {
+async function setChannel(guildId, channelId, emojis, contentFilter, pairWithinSeconds, createdBy) {
   await db.ready;
   await db.client.execute({
-    sql: `INSERT INTO autoresponder_channels (guild_id, channel_id, emojis, require_attachment, require_video_link, require_x_link, created_by, created_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    sql: `INSERT INTO autoresponder_channels (guild_id, channel_id, emojis, require_attachment, require_video_link, require_x_link, pair_within_seconds, created_by, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(guild_id, channel_id) DO UPDATE SET
             emojis = excluded.emojis,
             require_attachment = excluded.require_attachment,
             require_video_link = excluded.require_video_link,
             require_x_link = excluded.require_x_link,
+            pair_within_seconds = excluded.pair_within_seconds,
             created_by = excluded.created_by,
             created_at = excluded.created_at`,
     args: [
@@ -43,6 +44,7 @@ async function setChannel(guildId, channelId, emojis, contentFilter, createdBy) 
       contentFilter.attachment ? 1 : 0,
       contentFilter.videoLink ? 1 : 0,
       contentFilter.xLink ? 1 : 0,
+      pairWithinSeconds ?? null,
       createdBy,
       Date.now(),
     ],
@@ -67,6 +69,7 @@ function mapRow(row) {
       videoLink: Number(row.require_video_link) === 1,
       xLink: Number(row.require_x_link) === 1,
     },
+    pairWithinSeconds: row.pair_within_seconds != null ? Number(row.pair_within_seconds) : null,
   };
 }
 

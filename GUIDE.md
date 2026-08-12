@@ -15,11 +15,11 @@ Paginated with buttons if it doesn't fit on one page.
 
 ## 🤖 Autoresponder (`/autoresponder`)
 
-Admin only. Auto-reacts with one or more emojis to **every** message in a chosen channel by default — no trigger word needed (for that, see GoosePizza instead). Each channel can have its own emoji set, and optionally an extra filter to only react to certain kinds of content.
+Admin only. Auto-reacts with one or more emojis to **every** message in a chosen channel by default — no trigger word needed (for that, see GoosePizza instead). Applies to the channel's threads too (e.g. a forum's individual posts, or "rooms" under a shared parent channel). Each channel can have its own emoji set, and optionally an extra filter to only react to certain kinds of content.
 
-- **`/autoresponder add`** — Sets (or replaces) the autoresponder for a channel: one or more emojis, separated by spaces or commas. Three optional filters (off by default, reacts to everything): only react if the message has an **attachment** (image/gif/video), only if it **links a video** (YouTube and similar), only if it **links an X/Twitter post** (including fxtwitter/vxtwitter/fixvx/fixupx mirrors). Turn on more than one and it reacts if the message matches *any* of them.
+- **`/autoresponder add`** — Sets (or replaces) the autoresponder for a channel: one or more emojis, separated by spaces or commas. Three optional filters (off by default, reacts to everything): only react if the message has an **attachment** (image/gif/video), only if it **links a video** (YouTube and similar), only if it **links an X/Twitter post** (including fxtwitter/vxtwitter/fixvx/fixupx mirrors). Turn on more than one and it reacts if the message matches *any* of them. There's also a special **pair mode** (`react_to_second_of_pair_within`, in seconds): instead of the normal behavior, it only reacts to the *second* of two messages posted less than N seconds apart, and ignores solo messages entirely — handy when something (usually another bot) posts in two quick messages and you only want the reaction on the second one. Pair mode also lets other bots' messages get reacted to (normally all bots are ignored); this bot's own messages are still never reacted to either way.
 - **`/autoresponder remove`** — Removes the autoresponder from a channel.
-- **`/autoresponder list`** — Shows every channel with an autoresponder configured, its emojis, and any active filter.
+- **`/autoresponder list`** — Shows every channel with an autoresponder configured, its emojis, and any active filter or pair mode.
 - **`/autoresponder disable`** — Turns the feature on/off for this server.
 
 ## 📺 Anime Night (`/animenight`)
