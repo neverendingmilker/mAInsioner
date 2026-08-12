@@ -41,9 +41,16 @@ async function runAndReport(interaction, options, extraChannels) {
       ? ` ⚠️ **${stats.errors}** message${stats.errors === 1 ? '' : 's'} couldn't be checked due to an error — you can safely run this again to retry them.`
       : '';
 
+  const topNNote =
+    stats.topN !== undefined
+      ? ` Only the **top ${stats.topN}** by count were posted (**${stats.candidatesFound}** qualified in total, **${stats.posted}** actually posted${
+          stats.posted > stats.topN ? ' — ties at the cutoff were all included' : ''
+        }).`
+      : '';
+
   const summary =
     `✅ Lookback finished. Scanned **${stats.scanned}** messages ${scope}${channelsNote}${filterNote}${overrideNote} — ` +
-    `**${stats.qualified}** newly made it onto the starboard.${inaccessibleNote}${errorNote}`;
+    `**${stats.qualified}** newly made it onto the starboard.${topNNote}${inaccessibleNote}${errorNote}`;
 
   // A very long scan can outlast the interaction token's 15-minute lifetime — by this
   // point the actual work above is already done and saved either way, so a failed

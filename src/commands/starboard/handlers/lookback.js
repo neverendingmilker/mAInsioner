@@ -55,6 +55,7 @@ async function handleLookback(interaction) {
     contentType: interaction.options.getString('content_type') ?? undefined,
     emojisInput: interaction.options.getString('emojis') ?? undefined,
     threshold: interaction.options.getInteger('threshold') ?? undefined,
+    topN: interaction.options.getInteger('top') ?? undefined,
   };
 
   const channelSelect = new ChannelSelectMenuBuilder()

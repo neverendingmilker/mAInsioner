@@ -424,7 +424,11 @@ async function countRepostBoost(repostMessage) {
 
 // Counts a board's total for one message (original-channel reactions + starboard-repost
 // boost, if it's already been posted) and syncs the post accordingly.
-async function countAndSync(guild, board, message) {
+// Computes a message's full current count (reactions on the original + any boost from
+// people re-starring its already-posted repost) without touching the DB/starboard post —
+// shared by the normal live-sync path and the lookback "top N" selection, which needs to
+// know every candidate's count before deciding who actually gets posted.
+async function computeFullCount(guild, board, message) {
   const originalCount = await countOriginalReactions(board, message);
 
   const existingPost = await repo.getPost(board.id, message.id);
@@ -437,7 +441,12 @@ async function countAndSync(guild, board, message) {
     if (repostMessage) repostBoost = await countRepostBoost(repostMessage);
   }
 
-  return syncStarboardPost(guild, board, message, originalCount + repostBoost);
+  return originalCount + repostBoost;
+}
+
+async function countAndSync(guild, board, message) {
+  const count = await computeFullCount(guild, board, message);
+  return syncStarboardPost(guild, board, message, count);
 }
 
 // Called on every messageReactionAdd/Remove for a message in a channel that at least
@@ -514,6 +523,7 @@ const MESSAGE_FETCH_PAGE_SIZE = 100; // Discord's own per-call cap
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const DISCORD_EPOCH_MS = 1420070400000n; // 2015-01-01T00:00:00.000Z
 const MAX_LOOKBACK_CHANNELS = 5; // 1 primary watch channel + up to 4 extras
+const MAX_LOOKBACK_TOP_N = 100;
 
 // Builds a Discord snowflake for a given UTC instant. Not a real object's ID — just a
 // synthetic cursor Discord's API accepts as a `before` value, letting a scan start from
@@ -624,6 +634,30 @@ async function scanChannelForLookback(guild, scanBoard, channel, fetchOptions, s
   }
 }
 
+// Same scan as above, but for "top N" mode: computes each qualifying message's count and
+// collects it as a candidate instead of posting immediately — nothing is posted until
+// every scanned channel has been checked and the actual top N (across all of them) is
+// known, since the ranking has to be global, not per-channel.
+async function scanChannelForCandidates(guild, scanBoard, channel, fetchOptions, stats, candidates) {
+  const messages = await fetchMessagesUntil(channel, fetchOptions);
+  messages.reverse();
+
+  for (const message of messages) {
+    if (message.author?.bot) continue;
+    stats.scanned++;
+
+    try {
+      const count = await computeFullCount(guild, scanBoard, message);
+      if (count >= scanBoard.threshold) {
+        candidates.push({ message, count });
+      }
+    } catch (err) {
+      stats.errors++;
+      console.error(`[starboard] Lookback error on message ${message.id} (board "${scanBoard.name}"):`, err);
+    }
+  }
+}
+
 // Scans a starboard's watch channel (and, optionally, extra channels) for messages that
 // already qualify but haven't been picked up yet — the most recent `limit` messages by
 // default, or a date-bounded window using `sinceDateInput`/`sinceYearStart` (start) and
@@ -643,6 +677,7 @@ async function runLookback(
     emojisInput,
     threshold,
     extraChannels = [],
+    topN,
   } = {}
 ) {
   const board = await repo.getByName(guild.id, name);
@@ -657,6 +692,9 @@ async function runLookback(
   }
   if (extraChannels.length > MAX_LOOKBACK_CHANNELS - 1) {
     throw new ValidationError(`You can scan at most ${MAX_LOOKBACK_CHANNELS} channels in one lookback.`);
+  }
+  if (topN !== undefined && (!Number.isInteger(topN) || topN < 1 || topN > MAX_LOOKBACK_TOP_N)) {
+    throw new ValidationError(`"top" must be a whole number between 1 and ${MAX_LOOKBACK_TOP_N}.`);
   }
 
   // All value-only validation happens up front, before any Discord/DB calls beyond the
@@ -722,10 +760,46 @@ async function runLookback(
     contentType: scanBoard.content_type,
     emojis: JSON.parse(scanBoard.emojis),
     threshold: scanBoard.threshold,
+    topN,
   };
 
-  for (const channel of channels) {
-    await scanChannelForLookback(guild, scanBoard, channel, fetchOptions, stats);
+  if (topN !== undefined) {
+    // "Top N" mode: nothing gets posted until every channel has been scanned and counted,
+    // since the ranking has to be decided across all of them together, not per-channel.
+    const candidates = [];
+    for (const channel of channels) {
+      await scanChannelForCandidates(guild, scanBoard, channel, fetchOptions, stats, candidates);
+    }
+
+    // Highest count first; a stable sort keeps ties in the order they were scanned
+    // (oldest-first), which is as good a tiebreaker as any.
+    candidates.sort((a, b) => b.count - a.count);
+
+    // Ties AT the cutoff are all included, so this can post more than topN messages if
+    // several are tied for the last spot — e.g. asking for the top 10 with three-way tie
+    // for 10th place posts all 12.
+    let selected = candidates;
+    if (candidates.length > topN) {
+      const cutoffCount = candidates[topN - 1].count;
+      selected = candidates.filter((c) => c.count >= cutoffCount);
+    }
+
+    for (const { message, count } of selected) {
+      try {
+        const result = await syncStarboardPost(guild, scanBoard, message, count);
+        if (result === 'created') stats.qualified++;
+      } catch (err) {
+        stats.errors++;
+        console.error(`[starboard] Lookback error posting message ${message.id} (board "${scanBoard.name}"):`, err);
+      }
+    }
+
+    stats.candidatesFound = candidates.length;
+    stats.posted = selected.length;
+  } else {
+    for (const channel of channels) {
+      await scanChannelForLookback(guild, scanBoard, channel, fetchOptions, stats);
+    }
   }
 
   return stats;
@@ -738,6 +812,7 @@ module.exports = {
   LOOKBACK_DEFAULT_LIMIT,
   LOOKBACK_MAX_LIMIT,
   MAX_LOOKBACK_CHANNELS,
+  MAX_LOOKBACK_TOP_N,
   isEnabled,
   setEnabled,
   create,
