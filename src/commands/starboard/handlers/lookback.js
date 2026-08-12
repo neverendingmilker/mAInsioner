@@ -1,22 +1,5 @@
-const {
-  PermissionFlagsBits,
-  MessageFlags,
-  ActionRowBuilder,
-  ChannelSelectMenuBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  ChannelType,
-} = require('discord.js');
+const { PermissionFlagsBits, MessageFlags } = require('discord.js');
 const starboardManager = require('../../../features/starboard/starboardManager');
-const lookbackSessions = require('../../../features/starboard/lookbackSessions');
-
-const PICKER_CHANNEL_TYPES = [
-  ChannelType.GuildText,
-  ChannelType.GuildAnnouncement,
-  ChannelType.PublicThread,
-  ChannelType.PrivateThread,
-  ChannelType.AnnouncementThread,
-];
 
 async function handleLookback(interaction) {
   // Ack the interaction FIRST, before any DB/Discord work below. Discord only gives 3
@@ -43,9 +26,6 @@ async function handleLookback(interaction) {
     return;
   }
 
-  // Everything besides the channel(s) to scan is known already — stash it, then let the
-  // person pick which channel(s) via a proper searchable list of the server's channels
-  // (a native Discord select menu), instead of guessing channel names into text options.
   const options = {
     name,
     limit: interaction.options.getInteger('limit') ?? starboardManager.LOOKBACK_DEFAULT_LIMIT,
@@ -58,26 +38,58 @@ async function handleLookback(interaction) {
     topN: interaction.options.getInteger('top') ?? undefined,
   };
 
-  const channelSelect = new ChannelSelectMenuBuilder()
-    .setCustomId('starboard:lookback:channels')
-    .setPlaceholder(`Optionally pick up to ${starboardManager.MAX_LOOKBACK_CHANNELS - 1} extra channels to also scan`)
-    .addChannelTypes(...PICKER_CHANNEL_TYPES)
-    .setMinValues(0)
-    .setMaxValues(starboardManager.MAX_LOOKBACK_CHANNELS - 1);
+  let stats;
+  try {
+    stats = await starboardManager.runLookback(interaction.guild, options.name, options);
+  } catch (err) {
+    if (err instanceof starboardManager.ValidationError) {
+      await interaction.editReply({ content: `⚠️ ${err.message}` });
+      return;
+    }
+    console.error('[starboard] Lookback failed unexpectedly:', err);
+    await interaction.editReply({ content: `⚠️ Something went wrong while scanning: ${err.message}` }).catch(() => null);
+    return;
+  }
 
-  const runButton = new ButtonBuilder()
-    .setCustomId('starboard:lookback:run')
-    .setLabel("Run now (just this starboard's own channel)")
-    .setStyle(ButtonStyle.Primary);
+  const startBound = options.sinceDateInput ? `since ${options.sinceDateInput}` : options.sinceYearStart ? 'since January 1st' : null;
+  const endBound = options.untilDateInput ? `until ${options.untilDateInput}` : null;
+  const scope = startBound || endBound ? [startBound, endBound].filter(Boolean).join(' ') : `across the last ${options.limit} messages`;
 
-  const sent = await interaction.editReply({
-    content:
-      `Starboard **${name}**'s own watch channel is always scanned. Want to also scan other channels? ` +
-      'Pick them from the list below, or just run it now with the default channel only.',
-    components: [new ActionRowBuilder().addComponents(channelSelect), new ActionRowBuilder().addComponents(runButton)],
+  const filterNote = ` (filter: **${starboardManager.CONTENT_TYPES[stats.contentType]}**`;
+  const overrideNote =
+    options.emojisInput !== undefined || options.threshold !== undefined
+      ? `, emojis: **${starboardManager.formatEmojisForDisplay(stats.emojis)}**, threshold: **${stats.threshold}**)`
+      : ')';
+
+  const inaccessibleNote =
+    stats.inaccessibleChannelIds.length > 0
+      ? ` ⚠️ Couldn't access ${stats.inaccessibleChannelIds.length === 1 ? 'channel' : 'channels'}: ${stats.inaccessibleChannelIds
+          .map((id) => `<#${id}>`)
+          .join(', ')}.`
+      : '';
+  const errorNote =
+    stats.errors > 0
+      ? ` ⚠️ **${stats.errors}** message${stats.errors === 1 ? '' : 's'} couldn't be checked due to an error — you can safely run this again to retry them.`
+      : '';
+
+  const topNNote =
+    stats.topN !== undefined
+      ? ` Only the **top ${stats.topN}** by count were posted (**${stats.candidatesFound}** qualified in total, **${stats.posted}** actually posted${
+          stats.posted > stats.topN ? ' — ties at the cutoff were all included' : ''
+        }).`
+      : '';
+
+  const summary =
+    `✅ Lookback finished. Scanned **${stats.scanned}** messages ${scope}${filterNote}${overrideNote} — ` +
+    `**${stats.qualified}** newly made it onto the starboard.${topNNote}${inaccessibleNote}${errorNote}`;
+
+  // A very long scan can outlast the interaction token's 15-minute lifetime — by this
+  // point the actual work above is already done and saved either way, so a failed
+  // reply here just means the summary itself couldn't be delivered, not that the scan
+  // failed silently.
+  await interaction.editReply({ content: summary }).catch((err) => {
+    console.warn('[starboard] Lookback finished but the summary reply could not be sent (interaction likely expired):', err.message);
   });
-
-  lookbackSessions.create(sent.id, options);
 }
 
 module.exports = { handleLookback };
