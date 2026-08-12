@@ -50,6 +50,37 @@ function parseEmojis(input) {
   return deduped;
 }
 
+// --- Content filter matching ---
+
+// Video link patterns — mainly YouTube, the platform the person actually asked for.
+const VIDEO_LINK_PATTERN = /https?:\/\/(www\.|m\.)?(youtube\.com\/(watch|shorts|live)|youtu\.be\/)/i;
+
+// x.com/Twitter links, including the common "fx"-style mirror domains people use to get
+// working embeds (fxtwitter, vxtwitter, fixvx, fixupx, and their twitter.com equivalents).
+const X_LINK_PATTERN =
+  /https?:\/\/(www\.)?(x\.com|twitter\.com|fxtwitter\.com|fixupx\.com|vxtwitter\.com|fixvx\.com)\//i;
+
+function hasMediaAttachment(message) {
+  return message.attachments.some((a) => a.contentType?.startsWith('image/') || a.contentType?.startsWith('video/'));
+}
+
+function hasVideoLink(message) {
+  return VIDEO_LINK_PATTERN.test(message.content);
+}
+
+function hasXLink(message) {
+  return X_LINK_PATTERN.test(message.content);
+}
+
+// No criteria enabled means "no filter" — matches everything, same as before this
+// feature existed. Otherwise matches if the message satisfies ANY enabled criterion.
+function matchesContentFilter(message, contentFilter) {
+  const { attachment, videoLink, xLink } = contentFilter;
+  if (!attachment && !videoLink && !xLink) return true;
+
+  return (attachment && hasMediaAttachment(message)) || (videoLink && hasVideoLink(message)) || (xLink && hasXLink(message));
+}
+
 function assertCanReactInChannel(guild, channel) {
   const botMember = guild.members.me;
   const perms = channel.permissionsFor(botMember);
@@ -60,11 +91,11 @@ function assertCanReactInChannel(guild, channel) {
 
 // --- Configuration ---
 
-async function setChannel(guild, channel, emojisInput, createdBy) {
+async function setChannel(guild, channel, emojisInput, contentFilter, createdBy) {
   const emojis = parseEmojis(emojisInput);
   assertCanReactInChannel(guild, channel);
-  await repo.setChannel(guild.id, channel.id, emojis, createdBy);
-  return { emojis };
+  await repo.setChannel(guild.id, channel.id, emojis, contentFilter, createdBy);
+  return { emojis, contentFilter };
 }
 
 async function removeChannel(guildId, channelId) {
@@ -90,6 +121,7 @@ async function handleMessage(message) {
 
   const config = await repo.getChannel(message.guild.id, message.channelId);
   if (!config) return;
+  if (!matchesContentFilter(message, config.contentFilter)) return;
 
   for (const emoji of config.emojis) {
     await message.react(extractReactableEmoji(emoji)).catch((err) => {

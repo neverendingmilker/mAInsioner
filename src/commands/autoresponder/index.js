@@ -31,6 +31,24 @@ const data = new SlashCommandBuilder()
           .setDescription('One or more emojis to react with, separated by spaces or commas (e.g. "🍕 🔥")')
           .setRequired(true)
       )
+      .addBooleanOption((opt) =>
+        opt
+          .setName('require_attachment')
+          .setDescription('Only react if the message has an image/gif/video attachment (default: off, reacts to everything)')
+          .setRequired(false)
+      )
+      .addBooleanOption((opt) =>
+        opt
+          .setName('require_video_link')
+          .setDescription('Only react if the message links a video (e.g. YouTube) — combinable with the other filters')
+          .setRequired(false)
+      )
+      .addBooleanOption((opt) =>
+        opt
+          .setName('require_x_link')
+          .setDescription('Only react if the message links an X/Twitter post (incl. fxtwitter/vxtwitter/fixvx variants)')
+          .setRequired(false)
+      )
   )
   .addSubcommand((sub) =>
     sub

@@ -3,6 +3,14 @@ const autoresponderManager = require('../../../features/autoresponder/autorespon
 
 const EMBED_COLOR = 0x9b59b6;
 
+function describeFilter(contentFilter) {
+  const tags = [];
+  if (contentFilter.attachment) tags.push('attachment');
+  if (contentFilter.videoLink) tags.push('video link');
+  if (contentFilter.xLink) tags.push('X/Twitter link');
+  return tags.length > 0 ? ` (only: ${tags.join(', ')})` : '';
+}
+
 async function handleList(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
@@ -16,7 +24,7 @@ async function handleList(interaction) {
     return;
   }
 
-  const lines = channels.map((c) => `<#${c.channelId}> — ${c.emojis.join(' ')}`);
+  const lines = channels.map((c) => `<#${c.channelId}> — ${c.emojis.join(' ')}${describeFilter(c.contentFilter)}`);
   const embed = new EmbedBuilder().setColor(EMBED_COLOR).setTitle('Autoresponders').setDescription(lines.join('\n'));
 
   await interaction.reply({ embeds: [embed], ephemeral: true });

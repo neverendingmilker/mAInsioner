@@ -24,16 +24,28 @@ async function setEnabled(guildId, enabled) {
 
 // --- Per-channel emoji configuration ---
 
-async function setChannel(guildId, channelId, emojis, createdBy) {
+async function setChannel(guildId, channelId, emojis, contentFilter, createdBy) {
   await db.ready;
   await db.client.execute({
-    sql: `INSERT INTO autoresponder_channels (guild_id, channel_id, emojis, created_by, created_at)
-          VALUES (?, ?, ?, ?, ?)
+    sql: `INSERT INTO autoresponder_channels (guild_id, channel_id, emojis, require_attachment, require_video_link, require_x_link, created_by, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(guild_id, channel_id) DO UPDATE SET
             emojis = excluded.emojis,
+            require_attachment = excluded.require_attachment,
+            require_video_link = excluded.require_video_link,
+            require_x_link = excluded.require_x_link,
             created_by = excluded.created_by,
             created_at = excluded.created_at`,
-    args: [guildId, channelId, JSON.stringify(emojis), createdBy, Date.now()],
+    args: [
+      guildId,
+      channelId,
+      JSON.stringify(emojis),
+      contentFilter.attachment ? 1 : 0,
+      contentFilter.videoLink ? 1 : 0,
+      contentFilter.xLink ? 1 : 0,
+      createdBy,
+      Date.now(),
+    ],
   });
 }
 
@@ -47,7 +59,15 @@ async function removeChannel(guildId, channelId) {
 }
 
 function mapRow(row) {
-  return { channelId: row.channel_id, emojis: JSON.parse(row.emojis) };
+  return {
+    channelId: row.channel_id,
+    emojis: JSON.parse(row.emojis),
+    contentFilter: {
+      attachment: Number(row.require_attachment) === 1,
+      videoLink: Number(row.require_video_link) === 1,
+      xLink: Number(row.require_x_link) === 1,
+    },
+  };
 }
 
 async function getChannel(guildId, channelId) {

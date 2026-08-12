@@ -229,6 +229,9 @@ async function createTables() {
         guild_id TEXT NOT NULL,
         channel_id TEXT NOT NULL,
         emojis TEXT NOT NULL,
+        require_attachment INTEGER NOT NULL DEFAULT 0,
+        require_video_link INTEGER NOT NULL DEFAULT 0,
+        require_x_link INTEGER NOT NULL DEFAULT 0,
         created_by TEXT,
         created_at INTEGER,
         PRIMARY KEY (guild_id, channel_id)
@@ -290,6 +293,18 @@ async function migrate() {
   const stickyColumnNames = stickyColumns.rows.map((row) => row.name);
   if (!stickyColumnNames.includes('repost_delay_seconds')) {
     await client.execute('ALTER TABLE sticky_messages ADD COLUMN repost_delay_seconds INTEGER NOT NULL DEFAULT 30');
+  }
+
+  // autoresponder_channels shipped without the optional content filter columns at
+  // first — every autoresponder reacted to every message regardless of content.
+  // Upgrades any database created before this; existing rows default to "no filter"
+  // (all 0), preserving their current react-to-everything behavior.
+  const autoresponderColumns = await client.execute('PRAGMA table_info(autoresponder_channels)');
+  const autoresponderColumnNames = autoresponderColumns.rows.map((row) => row.name);
+  for (const col of ['require_attachment', 'require_video_link', 'require_x_link']) {
+    if (!autoresponderColumnNames.includes(col)) {
+      await client.execute(`ALTER TABLE autoresponder_channels ADD COLUMN ${col} INTEGER NOT NULL DEFAULT 0`);
+    }
   }
 
   const verifyColumns = await client.execute('PRAGMA table_info(verify_role_config)');

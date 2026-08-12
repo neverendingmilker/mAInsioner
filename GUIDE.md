@@ -15,11 +15,11 @@ Paginated with buttons if it doesn't fit on one page.
 
 ## 🤖 Autoresponder (`/autoresponder`)
 
-Admin only. Auto-reacts with one or more emojis to **every** message in a chosen channel — no trigger word needed (for that, see GoosePizza instead). Each channel can have its own emoji set.
+Admin only. Auto-reacts with one or more emojis to **every** message in a chosen channel by default — no trigger word needed (for that, see GoosePizza instead). Each channel can have its own emoji set, and optionally an extra filter to only react to certain kinds of content.
 
-- **`/autoresponder add`** — Sets (or replaces) the autoresponder for a channel: one or more emojis, separated by spaces or commas.
+- **`/autoresponder add`** — Sets (or replaces) the autoresponder for a channel: one or more emojis, separated by spaces or commas. Three optional filters (off by default, reacts to everything): only react if the message has an **attachment** (image/gif/video), only if it **links a video** (YouTube and similar), only if it **links an X/Twitter post** (including fxtwitter/vxtwitter/fixvx/fixupx mirrors). Turn on more than one and it reacts if the message matches *any* of them.
 - **`/autoresponder remove`** — Removes the autoresponder from a channel.
-- **`/autoresponder list`** — Shows every channel with an autoresponder configured, and which emojis.
+- **`/autoresponder list`** — Shows every channel with an autoresponder configured, its emojis, and any active filter.
 - **`/autoresponder disable`** — Turns the feature on/off for this server.
 
 ## 📺 Anime Night (`/animenight`)

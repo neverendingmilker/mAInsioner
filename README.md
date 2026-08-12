@@ -120,7 +120,7 @@ src/
       animeNightManager.js     (validation, title/date parsing, sessions, sorting)
       animeNightRepository.js  (SQL queries)
     autoresponder/
-      autoresponderManager.js     (validation, multi-emoji parsing, passive per-message reaction)
+      autoresponderManager.js     (validation, multi-emoji parsing, optional content-type filter matching, passive per-message reaction)
       autoresponderRepository.js  (SQL queries: per-channel emoji config + enabled toggle)
     verify/
       verifyManager.js     (validation and rules)
@@ -323,11 +323,11 @@ When someone is blocked, their message is deleted and a short notice is posted i
 
 ## Available commands (Autoresponder feature)
 
-Auto-reacts with one or more emojis to **every** message in a chosen channel — no trigger word, unlike GoosePizza which only fires on a specific word. Each channel gets its own independent set of emojis. All subcommands require the **Administrator** permission.
+Auto-reacts with one or more emojis to a chosen channel's messages — no trigger word, unlike GoosePizza which only fires on a specific word. Each channel gets its own independent set of emojis and, optionally, its own content filter. All subcommands require the **Administrator** permission.
 
-- `/autoresponder add channel:<#channel> emojis:<...>` — sets (or replaces) the autoresponder for a channel. `emojis` accepts one or more unicode/custom server emojis, separated by spaces or commas (e.g. `🍕 🔥 ⭐`), up to 10 per channel; duplicates are silently deduped.
+- `/autoresponder add channel:<#channel> emojis:<...> [require_attachment] [require_video_link] [require_x_link]` — sets (or replaces) the autoresponder for a channel. `emojis` accepts one or more unicode/custom server emojis, separated by spaces or commas (e.g. `🍕 🔥 ⭐`), up to 10 per channel; duplicates are silently deduped. The three boolean filters are all optional and off by default (reacts to every message, same as before this option existed): `require_attachment` matches messages with an image/gif/video attachment; `require_video_link` matches messages containing a video link (YouTube — `youtube.com/watch|shorts|live` and `youtu.be`); `require_x_link` matches messages linking an X/Twitter post, including the common embed-fixing mirror domains (`fxtwitter.com`, `vxtwitter.com`, `fixvx.com`, `fixupx.com`) alongside `x.com`/`twitter.com` themselves. Enabling more than one filter is an **OR**, not an AND — the message only needs to match one of the enabled filters to get a reaction.
 - `/autoresponder remove channel:<#channel>` — removes the autoresponder from a channel.
-- `/autoresponder list` — shows every channel with an autoresponder configured, and which emojis.
+- `/autoresponder list` — shows every channel with an autoresponder configured, its emojis, and which filter(s) (if any) are active.
 - `/autoresponder disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:Autoresponder` controls the same setting.
 
 Reactions are added in the order the emojis were given, and each one is applied independently — if one fails (e.g. a custom emoji the bot no longer has access to), the rest still go through.
