@@ -1,6 +1,24 @@
 const { PermissionFlagsBits } = require('discord.js');
 const suggestionManager = require('../../../features/suggestion/suggestionManager');
 
+// Shared core: given an already-resolved suggestion row, applies the decision. Used by
+// both the /suggestion approve|reject slash commands (which look it up by number) and
+// the "Suggestion: Approve"/"Suggestion: Reject" context menu commands (which look it
+// up by the message that was right-clicked).
+async function applyDecision(interaction, suggestion, status, pastTense) {
+  if (suggestion.status !== 'pending') {
+    await interaction.reply({
+      content: `⚠️ Suggestion **#${suggestion.number}** has already been decided.`,
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await suggestionManager.setStatus(interaction.guild, suggestion.number, status, interaction.user.id);
+
+  await interaction.reply({ content: `✅ Suggestion **#${suggestion.number}** ${pastTense}.`, ephemeral: true });
+}
+
 async function decide(interaction, status, verb, pastTense) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({ content: `⚠️ You need admin permissions to ${verb} suggestions.`, ephemeral: true });
@@ -15,17 +33,7 @@ async function decide(interaction, status, verb, pastTense) {
     return;
   }
 
-  if (suggestion.status !== 'pending') {
-    await interaction.reply({
-      content: `⚠️ Suggestion **#${number}** has already been decided.`,
-      ephemeral: true,
-    });
-    return;
-  }
-
-  await suggestionManager.setStatus(interaction.guild, number, status, interaction.user.id);
-
-  await interaction.reply({ content: `✅ Suggestion **#${number}** ${pastTense}.`, ephemeral: true });
+  await applyDecision(interaction, suggestion, status, pastTense);
 }
 
 async function handleApprove(interaction) {
@@ -36,4 +44,4 @@ async function handleReject(interaction) {
   return decide(interaction, 'denied', 'reject', 'rejected');
 }
 
-module.exports = { handleApprove, handleReject };
+module.exports = { handleApprove, handleReject, applyDecision };

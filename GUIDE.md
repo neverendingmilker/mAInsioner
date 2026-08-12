@@ -132,7 +132,7 @@ The sticky message is reposted at the bottom of the channel after each new messa
 - **`/suggestion edit`** — Edits one of your own pending suggestions.
 - **`/suggestion remove`** — Removes your own pending suggestion. If you have more than one pending, you must give the `number`. An admin can instead remove **any** suggestion by number.
 - **`/suggestion list`** — Shows every suggestion still waiting for a decision.
-- **`/suggestion approve`** / **`/suggestion reject`** — Admin only. Decides a suggestion. Admins can also decide by reacting to the suggestion's own message.
+- **`/suggestion approve`** / **`/suggestion reject`** — Admin only. Decides a suggestion. Admins can also decide by reacting to the suggestion's own message, or via **right-click a suggestion's message → Apps → "Suggestion: Approve"/"Suggestion: Reject"** (resolves which suggestion it is from the message itself, no number needed).
 - **`/suggestion channel`** — Admin only. Sets where suggestions get posted; omit the channel to remove the current one.
 - **`/suggestion disable`** — Admin only. Turns the feature on/off for this server.
 

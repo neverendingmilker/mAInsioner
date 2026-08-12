@@ -180,6 +180,20 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
+    feature: 'Suggestion: Approve (right-click)',
+    command: 'Suggestion: Approve',
+    subcommands: [
+      { name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator, note: 'right-click a suggestion message -> Apps' },
+    ],
+  },
+  {
+    feature: 'Suggestion: Reject (right-click)',
+    command: 'Suggestion: Reject',
+    subcommands: [
+      { name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator, note: 'right-click a suggestion message -> Apps' },
+    ],
+  },
+  {
     feature: 'Verbal',
     command: '/verbal',
     subcommands: [

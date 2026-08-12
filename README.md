@@ -99,6 +99,10 @@ src/
       index.js       (message context menu: right-click a message -> Apps -> "Sticky: Edit"; shows a modal pre-filled with the current text)
     stickyContextRemove/
       index.js       (message context menu: right-click a message -> Apps -> "Sticky: Remove")
+    suggestionContextApprove/
+      index.js       (message context menu: right-click a suggestion's posted message -> Apps -> "Suggestion: Approve")
+    suggestionContextReject/
+      index.js       (message context menu: right-click a suggestion's posted message -> Apps -> "Suggestion: Reject")
     shared/
       disableSubcommand.js  (shared "disable" subcommand builder + handler factory, used by every feature command below)
   features/         <- "Business logic" layer: one folder per feature
