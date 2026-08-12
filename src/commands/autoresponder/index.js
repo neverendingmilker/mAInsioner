@@ -58,6 +58,20 @@ const data = new SlashCommandBuilder()
           .setMaxValue(autoresponderManager.MAX_PAIR_WINDOW_SECONDS)
           .setRequired(false)
       )
+      .addStringOption((opt) =>
+        opt
+          .setName('redirect_to_bot_id')
+          .setDescription('Exception: if this bot posts within the window below, react to IT instead of the original poster')
+          .setRequired(false)
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName('redirect_window_seconds')
+          .setDescription('How long to wait for redirect_to_bot_id before falling back to the original message')
+          .setMinValue(1)
+          .setMaxValue(autoresponderManager.MAX_REDIRECT_WINDOW_SECONDS)
+          .setRequired(false)
+      )
   )
   .addSubcommand((sub) =>
     sub

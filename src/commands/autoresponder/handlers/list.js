@@ -15,6 +15,10 @@ function describePairMode(pairWithinSeconds) {
   return pairWithinSeconds ? ` · pair mode: 2nd of pair within ${pairWithinSeconds}s` : '';
 }
 
+function describeRedirectMode(redirectBotId, redirectWindowSeconds) {
+  return redirectBotId ? ` · redirect mode: to <@${redirectBotId}> within ${redirectWindowSeconds}s` : '';
+}
+
 async function handleList(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
@@ -29,7 +33,8 @@ async function handleList(interaction) {
   }
 
   const lines = channels.map(
-    (c) => `<#${c.channelId}> — ${c.emojis.join(' ')}${describeFilter(c.contentFilter)}${describePairMode(c.pairWithinSeconds)}`
+    (c) =>
+      `<#${c.channelId}> — ${c.emojis.join(' ')}${describeFilter(c.contentFilter)}${describePairMode(c.pairWithinSeconds)}${describeRedirectMode(c.redirectBotId, c.redirectWindowSeconds)}`
   );
   const embed = new EmbedBuilder().setColor(EMBED_COLOR).setTitle('Autoresponders').setDescription(lines.join('\n'));
 

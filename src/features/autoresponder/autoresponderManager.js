@@ -5,12 +5,19 @@ class ValidationError extends Error {}
 
 const MAX_EMOJIS = 10;
 const MAX_PAIR_WINDOW_SECONDS = 30;
+const MAX_REDIRECT_WINDOW_SECONDS = 30;
 
 // Timestamp of the last message seen in each channel/thread that has at least one
 // autoresponder with "pair mode" enabled — kept in memory only (losing it on a restart
 // just means the very next message after a restart is never treated as "the second of a
 // pair", which is a harmless, self-correcting edge case).
 const lastMessageTimestamps = new Map();
+
+// Channels/threads currently waiting to see if the configured "redirect" bot posts
+// within its window — channelId -> { timer, originalMessage, config }. Also in-memory
+// only: losing a pending entry on a restart just means that one original message never
+// gets a reaction, which is an acceptable, self-correcting edge case.
+const pendingRedirects = new Map();
 
 async function isEnabled(guildId) {
   return repo.isEnabled(guildId);
@@ -98,14 +105,41 @@ function assertCanReactInChannel(guild, channel) {
 
 // --- Configuration ---
 
-async function setChannel(guild, channel, emojisInput, contentFilter, pairWithinSeconds, createdBy) {
+async function setChannel(guild, channel, emojisInput, contentFilter, pairWithinSeconds, redirectBotId, redirectWindowSeconds, createdBy) {
   const emojis = parseEmojis(emojisInput);
+
   if (pairWithinSeconds != null && (!Number.isInteger(pairWithinSeconds) || pairWithinSeconds < 1 || pairWithinSeconds > MAX_PAIR_WINDOW_SECONDS)) {
     throw new ValidationError(`The pair window must be a whole number of seconds between 1 and ${MAX_PAIR_WINDOW_SECONDS}.`);
   }
+
+  if ((redirectBotId != null) !== (redirectWindowSeconds != null)) {
+    throw new ValidationError('Provide both a redirect bot ID and a redirect window, or neither.');
+  }
+  if (redirectBotId != null) {
+    if (!/^\d{17,20}$/.test(redirectBotId)) {
+      throw new ValidationError('That doesn\'t look like a valid bot ID (right-click the bot → "Copy User ID").');
+    }
+    if (
+      !Number.isInteger(redirectWindowSeconds) ||
+      redirectWindowSeconds < 1 ||
+      redirectWindowSeconds > MAX_REDIRECT_WINDOW_SECONDS
+    ) {
+      throw new ValidationError(`The redirect window must be a whole number of seconds between 1 and ${MAX_REDIRECT_WINDOW_SECONDS}.`);
+    }
+  }
+  if (pairWithinSeconds != null && redirectBotId != null) {
+    throw new ValidationError('Pair mode and redirect mode can\'t both be set on the same channel — pick one.');
+  }
+
   assertCanReactInChannel(guild, channel);
-  await repo.setChannel(guild.id, channel.id, emojis, contentFilter, pairWithinSeconds ?? null, createdBy);
-  return { emojis, contentFilter, pairWithinSeconds: pairWithinSeconds ?? null };
+  await repo.setChannel(guild.id, channel.id, emojis, contentFilter, pairWithinSeconds ?? null, redirectBotId ?? null, redirectWindowSeconds ?? null, createdBy);
+  return {
+    emojis,
+    contentFilter,
+    pairWithinSeconds: pairWithinSeconds ?? null,
+    redirectBotId: redirectBotId ?? null,
+    redirectWindowSeconds: redirectWindowSeconds ?? null,
+  };
 }
 
 async function removeChannel(guildId, channelId) {
@@ -123,6 +157,14 @@ function extractReactableEmoji(emojiString) {
   return customMatch ? customMatch[1] : emojiString;
 }
 
+async function reactWithConfiguredEmojis(message, config) {
+  for (const emoji of config.emojis) {
+    await message.react(extractReactableEmoji(emoji)).catch((err) => {
+      console.warn(`[autoresponder] Could not react with ${emoji} in guild ${message.guild.id}:`, err.message);
+    });
+  }
+}
+
 // Looks up the autoresponder for a message's channel — checked directly first, and if
 // the message is inside a thread, falls back to the thread's PARENT channel, so a
 // config set on a forum/text channel also applies to reactions posted in its threads
@@ -138,9 +180,17 @@ async function resolveConfig(guildId, message) {
 }
 
 // Called from messageCreate for every new guild message. If this channel (or the parent
-// of the thread it's in) has an autoresponder configured, reacts with every configured
-// emoji, in order — provided the message also passes the content filter (if any) and,
-// in "pair mode", arrived within the configured window of the previous message there.
+// of the thread it's in) has an autoresponder configured, reacts with the configured
+// emoji(s) — the exact target message and timing depend on which mode is set:
+//
+//   normal mode   — reacts to every message that passes the content filter (if any).
+//   pair mode     — only reacts to a message that arrived within the configured window
+//                   of the previous one in that channel; solo messages get nothing.
+//   redirect mode — reacts to nothing right away. Instead, waits up to the configured
+//                   window for the specific "redirect" bot to post in the same channel;
+//                   if it does, the reaction goes on ITS message instead of the
+//                   original. If the window expires without it posting, the original
+//                   message gets the reaction as a fallback.
 async function handleMessage(message) {
   if (!(await repo.isEnabled(message.guild.id))) return;
 
@@ -148,16 +198,46 @@ async function handleMessage(message) {
   if (!config) return;
 
   const isPairMode = config.pairWithinSeconds != null;
+  const isRedirectMode = config.redirectBotId != null;
 
-  // Normal mode still ignores every bot (including this one) — unchanged default
-  // behavior. Pair mode explicitly allows OTHER bots' messages, since that's usually
-  // who posts the "second" message of a rapid pair; this bot's own messages are still
-  // excluded either way, to avoid ever reacting to itself.
+  // In redirect mode, a message from the specific redirect bot resolves any pending
+  // wait for this channel — react to IT instead of the original, and skip everything
+  // else below (a redirect-bot message with nothing pending gets no reaction on its
+  // own; it only ever substitutes for a waiting original).
+  if (isRedirectMode && message.author?.id === config.redirectBotId) {
+    const pending = pendingRedirects.get(message.channelId);
+    if (pending) {
+      clearTimeout(pending.timer);
+      pendingRedirects.delete(message.channelId);
+      await reactWithConfiguredEmojis(message, config);
+    }
+    return;
+  }
+
+  // Normal/pair mode both ignore every bot (including this one) — pair mode is the one
+  // exception that allows OTHER bots' messages through, since that's usually who posts
+  // the "second" message of a rapid pair. This bot's own messages are always excluded.
   if (message.author?.bot) {
     if (!isPairMode || message.author.id === message.client.user.id) return;
   }
 
   if (!matchesContentFilter(message, config.contentFilter)) return;
+
+  if (isRedirectMode) {
+    const existing = pendingRedirects.get(message.channelId);
+    if (existing) clearTimeout(existing.timer);
+
+    const timer = setTimeout(() => {
+      pendingRedirects.delete(message.channelId);
+      reactWithConfiguredEmojis(message, config).catch((err) => {
+        console.error(`[autoresponder] Failed to react to fallback message in guild ${message.guild.id}:`, err);
+      });
+    }, config.redirectWindowSeconds * 1000);
+    timer.unref?.();
+
+    pendingRedirects.set(message.channelId, { timer, originalMessage: message });
+    return;
+  }
 
   if (isPairMode) {
     const previousTimestamp = lastMessageTimestamps.get(message.channelId);
@@ -168,16 +248,13 @@ async function handleMessage(message) {
     if (!isSecondOfPair) return; // a solo message, or the first of a pair — no reaction in this mode
   }
 
-  for (const emoji of config.emojis) {
-    await message.react(extractReactableEmoji(emoji)).catch((err) => {
-      console.warn(`[autoresponder] Could not react with ${emoji} in guild ${message.guild.id}:`, err.message);
-    });
-  }
+  await reactWithConfiguredEmojis(message, config);
 }
 
 module.exports = {
   ValidationError,
   MAX_PAIR_WINDOW_SECONDS,
+  MAX_REDIRECT_WINDOW_SECONDS,
   isEnabled,
   setEnabled,
   setChannel,
