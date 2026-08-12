@@ -1,4 +1,5 @@
 const starboardManager = require('../features/starboard/starboardManager');
+const reactionLimitManager = require('../features/reactionlimit/reactionLimitManager');
 
 module.exports = {
   name: 'messageReactionRemove',
@@ -25,6 +26,10 @@ module.exports = {
 
     await starboardManager.handleStarboardPostReactionChange(reaction, message.guild).catch((err) => {
       console.error('[starboard] Error handling reaction remove on a starboard repost:', err);
+    });
+
+    await reactionLimitManager.handleReactionRemove(reaction, user, message.guild).catch((err) => {
+      console.error('[reactionlimit] Error handling reaction remove:', err);
     });
   },
 };

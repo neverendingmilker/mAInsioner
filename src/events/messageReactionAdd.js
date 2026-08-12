@@ -1,6 +1,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 const suggestionManager = require('../features/suggestion/suggestionManager');
 const starboardManager = require('../features/starboard/starboardManager');
+const reactionLimitManager = require('../features/reactionlimit/reactionLimitManager');
 
 // Handles the suggestion decide-by-react shortcut (admin reacts check00/wrong00 on a
 // suggestion message). Any other emoji is simply not a match here and does nothing.
@@ -55,6 +56,10 @@ module.exports = {
 
     await starboardManager.handleStarboardPostReactionChange(reaction, message.guild).catch((err) => {
       console.error('[starboard] Error handling reaction add on a starboard repost:', err);
+    });
+
+    await reactionLimitManager.handleReactionAdd(reaction, user, message.guild).catch((err) => {
+      console.error('[reactionlimit] Error handling reaction add:', err);
     });
   },
 };

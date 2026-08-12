@@ -54,6 +54,12 @@ src/
         add.js
         remove.js
         list.js
+    reactionlimit/
+      index.js       (defines /reactionlimit add, remove, list, disable)
+      handlers/
+        add.js
+        remove.js
+        list.js
     boosterlinks/
       index.js       (defines /boosterlink add, remove, edit, list, exempt add/remove/list, disable)
       handlers/
@@ -138,6 +144,9 @@ src/
     postlimit/
       postLimitManager.js     (validation, exemption check, passive per-message enforcement)
       postLimitRepository.js  (SQL queries: per-channel limits + per-user last-allowed-message tracking)
+    reactionlimit/
+      reactionLimitManager.js     (validation, exemption check, per-thread reaction counting/enforcement)
+      reactionLimitRepository.js  (SQL queries: per-channel config + per-user-per-thread running count)
     boosterlinks/
       boosterLinkManager.js     (validation + auto-removal logic, feature on/off toggle)
       boosterLinkRepository.js  (SQL queries: links + per-guild enabled flag)
@@ -331,6 +340,15 @@ Auto-reacts with one or more emojis to a chosen channel's messages — no trigge
 - `/autoresponder disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:Autoresponder` controls the same setting.
 
 Reactions are added in the order the emojis were given, and each one is applied independently — if one fails (e.g. a custom emoji the bot no longer has access to), the rest still go through.
+
+## Available commands (Reaction Limit feature)
+
+Limits each person to a fixed **5 reactions per thread** in a chosen channel's threads (works on forum channels and regular text channels with threads) — a deliberately narrow feature that only does this one thing, no configurable count. Once someone reaches 5 counted reactions in a thread, any further reaction they add there is removed immediately; removing one of their own earlier reactions frees up a slot again (the running count lives in the database, not derived from Discord's own state, so it stays correct even across restarts). Moderators (Manage Messages or Administrator permission) are always exempt — no separate configurable exempt-role list. All subcommands require the **Administrator** permission.
+
+- `/reactionlimit add channel:<#channel> [ignore_first_post:true|false]` — sets (or replaces) the limit for a channel's threads. `ignore_first_post` (default `false`) excludes reactions on each thread's starter/first message from the count entirely — handy for e.g. a forum where the opening post is meant to collect votes/reactions freely, while still capping reaction spam in the replies underneath it.
+- `/reactionlimit remove channel:<#channel>` — removes the limit from a channel.
+- `/reactionlimit list` — shows every channel with a limit configured.
+- `/reactionlimit disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:ReactionLimit` controls the same setting.
 
 ## Hosting
 

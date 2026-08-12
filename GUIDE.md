@@ -102,6 +102,15 @@ Admin only. Limits how often each person can post in a channel — for cooldowns
 - **`/postlimit list`** — Shows every channel with a limit configured, and what it is.
 - **`/postlimit disable`** — Turns the feature on/off for this server.
 
+## 🖐️ Reaction Limit (`/reactionlimit`)
+
+Admin only. Limits each person to a fixed **5 reactions per thread** in a chosen channel's threads (forum channels or regular text channels with threads) — no configurable count, this feature just does that one thing. Once someone hits 5 in a thread, any further reaction they add there gets silently removed; removing one of their own earlier reactions frees up a slot again. Optionally excludes reactions on each thread's starter/first message from the count. Moderators (Manage Messages or Administrator) are always exempt.
+
+- **`/reactionlimit add`** — Sets (or replaces) the limit for a channel's threads. Optional `ignore_first_post` (default off) excludes the thread's starter message from the count.
+- **`/reactionlimit remove`** — Removes the limit from a channel.
+- **`/reactionlimit list`** — Shows every channel with a limit configured.
+- **`/reactionlimit disable`** — Turns the feature on/off for this server.
+
 ## ⭐ Starboard (`/starboard`)
 
 Admin only, except `list` which is open to everyone. Collects the most popular messages of a channel (by reaction count) and reposts them to a dedicated channel. You can set up more than one starboard, each watching its own channel and posting to its own (different) channel.

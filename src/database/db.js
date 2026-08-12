@@ -236,6 +236,25 @@ async function createTables() {
         created_at INTEGER,
         PRIMARY KEY (guild_id, channel_id)
       )`,
+      `CREATE TABLE IF NOT EXISTS reactionlimit_guild_config (
+        guild_id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS reactionlimit_channels (
+        guild_id TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        ignore_first_post INTEGER NOT NULL DEFAULT 0,
+        created_by TEXT,
+        created_at INTEGER,
+        PRIMARY KEY (guild_id, channel_id)
+      )`,
+      `CREATE TABLE IF NOT EXISTS reactionlimit_thread_counts (
+        guild_id TEXT NOT NULL,
+        thread_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        count INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (guild_id, thread_id, user_id)
+      )`,
       `CREATE TABLE IF NOT EXISTS goosepizza_config (
         guild_id TEXT PRIMARY KEY,
         enabled INTEGER NOT NULL DEFAULT 1

@@ -121,6 +121,16 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
+    feature: 'Reaction Limit',
+    command: '/reactionlimit',
+    subcommands: [
+      { name: 'add', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'list', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+    ],
+  },
+  {
     feature: 'Role Links',
     command: '/rolelink',
     subcommands: [
