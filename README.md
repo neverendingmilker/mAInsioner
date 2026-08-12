@@ -20,6 +20,12 @@ src/
         list.js
         last.js
         edit.js
+    autoresponder/
+      index.js       (defines /autoresponder add, remove, list, disable)
+      handlers/
+        add.js
+        remove.js
+        list.js
     verify/
       index.js       (defines /verify config, sub, domme, maledom)
       handlers/
@@ -113,6 +119,9 @@ src/
     animenight/
       animeNightManager.js     (validation, title/date parsing, sessions, sorting)
       animeNightRepository.js  (SQL queries)
+    autoresponder/
+      autoresponderManager.js     (validation, multi-emoji parsing, passive per-message reaction)
+      autoresponderRepository.js  (SQL queries: per-channel emoji config + enabled toggle)
     verify/
       verifyManager.js     (validation and rules)
       verifyRepository.js  (SQL queries)
@@ -311,6 +320,17 @@ Limits how often each person can post in a channel — for cooldowns longer than
 - `/postlimit disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:PostLimit` controls the same setting.
 
 When someone is blocked, their message is deleted and a short notice is posted in the channel (mentioning them) with a live Discord relative timestamp (`<t:...:R>`) for when they can post again — no DMs sent. The notice auto-deletes itself after 20 seconds, so it doesn't linger.
+
+## Available commands (Autoresponder feature)
+
+Auto-reacts with one or more emojis to **every** message in a chosen channel — no trigger word, unlike GoosePizza which only fires on a specific word. Each channel gets its own independent set of emojis. All subcommands require the **Administrator** permission.
+
+- `/autoresponder add channel:<#channel> emojis:<...>` — sets (or replaces) the autoresponder for a channel. `emojis` accepts one or more unicode/custom server emojis, separated by spaces or commas (e.g. `🍕 🔥 ⭐`), up to 10 per channel; duplicates are silently deduped.
+- `/autoresponder remove channel:<#channel>` — removes the autoresponder from a channel.
+- `/autoresponder list` — shows every channel with an autoresponder configured, and which emojis.
+- `/autoresponder disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:Autoresponder` controls the same setting.
+
+Reactions are added in the order the emojis were given, and each one is applied independently — if one fails (e.g. a custom emoji the bot no longer has access to), the rest still go through.
 
 ## Hosting
 

@@ -13,6 +13,15 @@ bot, who can use it (**Admin**/**Mod**/**Everyone**), and which options each one
 are required, `[optional]` ones aren't (pulled live from the commands themselves, so it can't drift out of date).
 Paginated with buttons if it doesn't fit on one page.
 
+## 🤖 Autoresponder (`/autoresponder`)
+
+Admin only. Auto-reacts with one or more emojis to **every** message in a chosen channel — no trigger word needed (for that, see GoosePizza instead). Each channel can have its own emoji set.
+
+- **`/autoresponder add`** — Sets (or replaces) the autoresponder for a channel: one or more emojis, separated by spaces or commas.
+- **`/autoresponder remove`** — Removes the autoresponder from a channel.
+- **`/autoresponder list`** — Shows every channel with an autoresponder configured, and which emojis.
+- **`/autoresponder disable`** — Turns the feature on/off for this server.
+
 ## 📺 Anime Night (`/animenight`)
 
 - **`/animenight add`** — Admin only. Adds one or more anime watched in a session (e.g. "Naruto, Bleach").

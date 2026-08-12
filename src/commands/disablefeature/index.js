@@ -5,6 +5,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 // Adding a new toggleable feature to the bot just means adding one line here.
 const FEATURES = {
   animenight: { label: 'Anime Night', manager: require('../../features/animenight/animeNightManager') },
+  autoresponder: { label: 'Autoresponder', manager: require('../../features/autoresponder/autoresponderManager') },
   birthday: { label: 'Birthday', manager: require('../../features/birthday/birthdayManager') },
   boosterlink: { label: 'Booster Links', manager: require('../../features/boosterlinks/boosterLinkManager') },
   comboroles: { label: 'Combined Role Search', manager: require('../../features/comboroles/comboRolesManager') },
