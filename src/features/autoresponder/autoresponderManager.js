@@ -188,12 +188,6 @@ async function handleMessage(message) {
   // the bot application's own id. Checking both covers either setup.
   const isFromRedirectBot = isRedirectMode && (message.author?.id === config.redirectBotId || message.webhookId === config.redirectBotId);
 
-  if (isRedirectMode) {
-    console.log(
-      `[autoresponder] guild=${message.guild.id} channel=${message.channelId} msg=${message.id} author=${message.author?.id} webhookId=${message.webhookId ?? 'none'} bot=${message.author?.bot} — redirectBotId=${config.redirectBotId} isFromRedirectBot=${isFromRedirectBot}`
-    );
-  }
-
   // In redirect mode, a message from the specific redirect bot resolves any pending
   // wait for this channel — react to IT instead of the original, and skip everything
   // else below (a redirect-bot message with nothing pending gets no reaction on its
@@ -203,10 +197,7 @@ async function handleMessage(message) {
     if (pending) {
       clearTimeout(pending.timer);
       pendingRedirects.delete(message.channelId);
-      console.log(`[autoresponder] Redirect matched — reacting to the bot's message ${message.id} instead of ${pending.originalMessage.id}`);
       await reactWithConfiguredEmojis(message, config);
-    } else {
-      console.log(`[autoresponder] Redirect bot posted but nothing was pending for channel ${message.channelId} — no reaction`);
     }
     return;
   }
@@ -222,7 +213,6 @@ async function handleMessage(message) {
 
     const timer = setTimeout(() => {
       pendingRedirects.delete(message.channelId);
-      console.log(`[autoresponder] Redirect window expired for message ${message.id} in channel ${message.channelId} — falling back to the original poster`);
       reactWithConfiguredEmojis(message, config).catch((err) => {
         console.error(`[autoresponder] Failed to react to fallback message in guild ${message.guild.id}:`, err);
       });
@@ -230,7 +220,6 @@ async function handleMessage(message) {
     timer.unref?.();
 
     pendingRedirects.set(message.channelId, { timer, originalMessage: message });
-    console.log(`[autoresponder] Waiting up to ${config.redirectWindowSeconds}s for redirect bot ${config.redirectBotId} in channel ${message.channelId} (original message ${message.id})`);
     return;
   }
 
