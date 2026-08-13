@@ -31,6 +31,7 @@ const data = new SlashCommandBuilder()
         opt
           .setName('watch_channel')
           .setDescription('Channel(s)/categories to watch, comma-separated, or "all" for everything except exclude_channels')
+          .setAutocomplete(true)
           .setRequired(true)
       )
       .addChannelOption((opt) =>
@@ -65,6 +66,7 @@ const data = new SlashCommandBuilder()
         opt
           .setName('exclude_channels')
           .setDescription('Only used when watch_channel is "all": channel(s)/categories to leave out, comma-separated')
+          .setAutocomplete(true)
           .setRequired(false)
       )
   )
@@ -79,6 +81,7 @@ const data = new SlashCommandBuilder()
         opt
           .setName('watch_channel')
           .setDescription('New channel(s)/categories to watch, comma-separated, or "all" (replaces the current set)')
+          .setAutocomplete(true)
           .setRequired(false)
       )
       .addChannelOption((opt) =>
@@ -108,6 +111,7 @@ const data = new SlashCommandBuilder()
         opt
           .setName('exclude_channels')
           .setDescription('Only used when watch_channel is "all": channel(s)/categories to leave out, comma-separated')
+          .setAutocomplete(true)
           .setRequired(false)
       )
   )
@@ -211,8 +215,46 @@ async function execute(interaction) {
 }
 
 // Powers the "name" option's autocomplete on /starboard edit, remove and lookback.
+// Suggests channels AND categories matching whatever's being typed after the last comma
+// in a "channel_a,channel_b,..." style field — selecting a suggestion appends it to
+// whatever was already typed, instead of replacing the whole thing, so autocomplete can
+// be used to build up a list one entry at a time. Discord caps a suggestion's `value` at
+// 100 characters, which limits how many channel mentions can realistically fit — past
+// that point the rest still needs to be typed by hand (an ID or #mention both work).
+function buildChannelListSuggestions(guild, currentValue) {
+  const parts = currentValue.split(',');
+  const lastPart = parts[parts.length - 1].trim().toLowerCase();
+  const priorParts = parts
+    .slice(0, -1)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const candidates = [...guild.channels.cache.values()].filter(
+    (c) => (c.isTextBased() || c.type === ChannelType.GuildCategory) && c.name.toLowerCase().includes(lastPart)
+  );
+
+  const suggestions = [];
+  for (const channel of candidates) {
+    const isCategory = channel.type === ChannelType.GuildCategory;
+    const value = [...priorParts, `<#${channel.id}>`].join(',');
+    if (value.length > 100) continue; // would make an invalid/truncated suggestion — skip it
+    suggestions.push({
+      name: (isCategory ? `📁 ${channel.name} (category)` : `#${channel.name}`).slice(0, 100),
+      value,
+    });
+    if (suggestions.length >= 25) break;
+  }
+  return suggestions;
+}
+
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
+
+  if (focused.name === 'watch_channel' || focused.name === 'exclude_channels') {
+    await interaction.respond(buildChannelListSuggestions(interaction.guild, focused.value));
+    return;
+  }
+
   if (focused.name !== 'name') {
     await interaction.respond([]);
     return;
