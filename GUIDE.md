@@ -75,7 +75,11 @@ Admin only. A little passive fun feature: whenever anyone says a chosen word in 
 
 ## 🔐 MFA Roles (`/mfaroles`)
 
-Admin only. A quick security-audit command: lists every role in the server that has at least one permission Discord requires 2FA for (if the server ever turns on "Require 2FA for moderator actions"). This is Discord's own fixed list — not everything people assume counts as a "mod permission" is actually on it (View Audit Log, Manage Emojis and Stickers, and timeouts, for example, are not). Checks both server-wide role permissions and per-channel role overrides (flagged separately as "Channel overrides"), since a role quietly granted a 2FA-gated permission on just one channel is easy to miss otherwise. Member-specific (not role-based) overwrites aren't checked.
+Admin only. A quick security-audit command: lists every role in the server that has at least one permission Discord requires 2FA for (if the server ever turns on "Require 2FA for moderator actions"). This is Discord's own fixed list — not everything people assume counts as a "mod permission" is actually on it (View Audit Log, Manage Emojis and Stickers, and timeouts, for example, are not). Checks both server-wide role permissions and per-channel role overrides (flagged separately as "Channel overrides"), since a role quietly granted a 2FA-gated permission on just one channel is easy to miss otherwise. Optional `ignore_bots:true` skips bots' own auto-created roles. Member-specific (not role-based) overwrites aren't checked here — see `/modaccess` for that.
+
+## 🛡️ Mod Access (`/modaccess`)
+
+Admin only. A broader companion to `/mfaroles`: same idea, but also flags permissions commonly *thought of* as moderator-level that Discord's 2FA rule doesn't actually cover (View Audit Log, Manage Nicknames, Manage Expressions, Timeout Members). It also catches per-channel overrides granted directly to an **individual person**, not just roles — those show up as their own entries (👤) separate from the role list (🎭). Same `ignore_bots:true` option as `/mfaroles`, which here also skips bot accounts with an individual channel override.
 
 ## 🪧 Incident (`/incident`)
 
@@ -102,8 +106,8 @@ Admin only, except `list` which also works for mods (Manage Roles). Generic vers
 
 Admin only. Limits how often each person can post in a channel — for cooldowns longer than Discord's own slowmode (capped at 6h), or when you want it enforced consistently regardless of Discord's setting. Each channel has its own independent duration. Violating messages are deleted immediately, with a short, auto-deleting notice posted in the channel explaining when the person can post again (no DMs). Moderators (Manage Messages or Administrator) are always exempt.
 
-- **`/slowmode add`** — Sets (or replaces) the limit for a channel: a duration like `12h`, `1d`, `3d` (minimum 1 minute).
-- **`/slowmode remove`** — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, instead of every channel in the server.
+- **`/slowmode add`** — Sets (or replaces) the limit for a channel: a duration like `12h`, `1d`, `3d` (minimum 1 minute). Mod (Manage Messages) or Admin.
+- **`/slowmode remove`** — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, instead of every channel in the server. Mod (Manage Messages) or Admin.
 - **`/slowmode list`** — Shows every channel with a limit configured, and what it is.
 - **`/slowmode disable`** — Turns the feature on/off for this server.
 
@@ -123,7 +127,7 @@ Admin only. In a chosen channel: post an image, then a follow-up message that's 
 Admin only. Limits each person to a fixed **5 reactions per thread** in a chosen channel's threads (forum channels or regular text channels with threads) — no configurable count, this feature just does that one thing. Once someone hits 5 in a thread, any further reaction they add there gets silently removed; removing one of their own earlier reactions frees up a slot again. Optionally excludes reactions on each thread's starter/first message from the count. Moderators (Manage Messages or Administrator) are always exempt.
 
 - **`/reactionlimit add`** — Sets (or replaces) the limit for a channel's threads. Optional `ignore_first_post` (default off) excludes the thread's starter message from the count.
-- **`/reactionlimit remove`** — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, instead of every channel in the server.
+- **`/reactionlimit remove`** — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, with the limit shown right in the suggestion, instead of every channel in the server.
 - **`/reactionlimit edit`** — Changes the settings for an already-configured channel; anything not provided keeps its current value. Same `channel` autocomplete as `remove`.
 - **`/reactionlimit list`** — Shows every channel with a limit configured.
 - **`/reactionlimit disable`** — Turns the feature on/off for this server.

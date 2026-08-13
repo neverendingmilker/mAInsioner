@@ -13,7 +13,7 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('add')
-      .setDescription('[Admin] Set (or replace) the post limit for a channel')
+      .setDescription('[Mod] Set (or replace) the post limit for a channel')
       .addChannelOption((opt) =>
         opt
           .setName('channel')
@@ -33,7 +33,7 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('remove')
-      .setDescription('[Admin] Removes the post limit from a channel')
+      .setDescription('[Mod] Removes the post limit from a channel')
       .addStringOption((opt) =>
         opt
           .setName('channel')

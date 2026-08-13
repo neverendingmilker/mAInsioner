@@ -3,8 +3,8 @@ const slowModeManager = require('../../../features/slowmode/slowModeManager');
 const { formatSeconds } = require('../../../utils/duration');
 
 async function handleAdd(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageMessages) && !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '❌ You need the "Manage Messages" or "Administrator" permission to use this command.', ephemeral: true });
     return;
   }
 

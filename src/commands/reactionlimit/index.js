@@ -112,7 +112,10 @@ async function autocomplete(interaction) {
     .map((c) => {
       const channel = interaction.guild.channels.cache.get(c.channelId);
       const label = channel ? `#${channel.name}` : c.channelId;
-      return { name: `${label}${c.ignoreFirstPost ? ' (starter excluded)' : ''}`, value: c.channelId };
+      return {
+        name: `${label} — limit: ${reactionLimitManager.REACTION_LIMIT}/thread${c.ignoreFirstPost ? ' (starter excluded)' : ''}`,
+        value: c.channelId,
+      };
     })
     .filter((c) => c.name.toLowerCase().includes(query))
     .slice(0, 25);

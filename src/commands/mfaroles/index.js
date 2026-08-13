@@ -24,7 +24,10 @@ const MAX_CHANNELS_SHOWN_PER_ROLE = 10;
 
 const data = new SlashCommandBuilder()
   .setName('mfaroles')
-  .setDescription('[Admin] Lists roles that have permissions requiring 2FA for moderation');
+  .setDescription('[Admin] Lists roles that have permissions requiring 2FA for moderation')
+  .addBooleanOption((opt) =>
+    opt.setName('ignore_bots').setDescription("Skip bots' own auto-created roles and their overrides (default: false)").setRequired(false)
+  );
 
 async function execute(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -32,7 +35,11 @@ async function execute(interaction) {
     return;
   }
 
-  const roles = [...interaction.guild.roles.cache.values()].sort((a, b) => b.position - a.position);
+  const ignoreBots = interaction.options.getBoolean('ignore_bots') ?? false;
+
+  const roles = [...interaction.guild.roles.cache.values()]
+    .filter((r) => !ignoreBots || !r.tags?.botId)
+    .sort((a, b) => b.position - a.position);
 
   // Base (server-wide) permissions, from each role's own settings.
   const baseHeldByRoleId = new Map(); // roleId -> string[] of labels
@@ -51,6 +58,7 @@ async function execute(interaction) {
     if (!channel.permissionOverwrites) continue;
     for (const overwrite of channel.permissionOverwrites.cache.values()) {
       if (overwrite.type !== OverwriteType.Role) continue;
+      if (ignoreBots && interaction.guild.roles.cache.get(overwrite.id)?.tags?.botId) continue;
       const baseHeld = new Set(baseHeldByRoleId.get(overwrite.id) ?? []);
       const grantedHere = MFA_PERMISSIONS.filter((p) => overwrite.allow.has(p.flag) && !baseHeld.has(p.label));
       if (grantedHere.length === 0) continue;
