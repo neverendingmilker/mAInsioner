@@ -1,5 +1,5 @@
 const { PermissionFlagsBits } = require('discord.js');
-const postLimitManager = require('../../../features/postlimit/postLimitManager');
+const slowModeManager = require('../../../features/slowmode/slowModeManager');
 
 async function handleRemove(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -8,7 +8,7 @@ async function handleRemove(interaction) {
   }
 
   const channelId = interaction.options.getString('channel');
-  const removedCount = await postLimitManager.removeLimit(interaction.guildId, channelId);
+  const removedCount = await slowModeManager.removeLimit(interaction.guildId, channelId);
 
   if (removedCount === 0) {
     await interaction.reply({ content: "⚠️ That channel doesn't have a post limit configured.", ephemeral: true });

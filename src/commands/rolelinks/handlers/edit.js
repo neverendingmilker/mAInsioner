@@ -9,8 +9,13 @@ async function handleEdit(interaction) {
     return;
   }
 
-  const role1 = interaction.options.getRole('role1');
-  const role2 = interaction.options.getRole('role2');
+  const [role1Id, role2Id] = interaction.options.getString('link').split(':');
+  const role1 = interaction.guild.roles.cache.get(role1Id);
+  const role2 = interaction.guild.roles.cache.get(role2Id);
+  if (!role1 || !role2) {
+    await interaction.reply({ content: "⚠️ One of that link's roles doesn't seem to exist anymore.", ephemeral: true });
+    return;
+  }
   const newRole1 = interaction.options.getRole('new_role1') ?? role1;
   const newRole2 = interaction.options.getRole('new_role2') ?? role2;
   const newBidirectional = interaction.options.getBoolean('viceversa');

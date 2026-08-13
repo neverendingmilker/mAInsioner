@@ -10,8 +10,13 @@ async function handleRemove(interaction) {
     return;
   }
 
-  const roleA = interaction.options.getRole('role1');
-  const roleB = interaction.options.getRole('role2');
+  const [roleAId, roleBId] = interaction.options.getString('link').split(':');
+  const roleA = interaction.guild.roles.cache.get(roleAId);
+  const roleB = interaction.guild.roles.cache.get(roleBId);
+  if (!roleA || !roleB) {
+    await interaction.reply({ content: "⚠️ One of that link's roles doesn't seem to exist anymore.", ephemeral: true });
+    return;
+  }
 
   const removedCount = await roleLinkManager.unlink(interaction.guildId, roleA.id, roleB.id);
 

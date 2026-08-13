@@ -2,13 +2,13 @@ const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('disco
 const { handleAdd } = require('./handlers/add');
 const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
-const postLimitManager = require('../../features/postlimit/postLimitManager');
+const slowModeManager = require('../../features/slowmode/slowModeManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
-const handleDisable = createDisableHandler(postLimitManager, PermissionFlagsBits.Administrator, 'Post Limit');
+const handleDisable = createDisableHandler(slowModeManager, PermissionFlagsBits.Administrator, 'Slowmode');
 
 const data = new SlashCommandBuilder()
-  .setName('postlimit')
+  .setName('slowmode')
   .setDescription('Limits how often each person can post in a channel (beyond Discord\'s 6h slowmode cap)')
   .addSubcommand((sub) =>
     sub
@@ -52,7 +52,7 @@ async function execute(interaction) {
     return handleDisable(interaction);
   }
 
-  if (!(await postLimitManager.isEnabled(interaction.guildId))) {
+  if (!(await slowModeManager.isEnabled(interaction.guildId))) {
     await interaction.reply({
       content: '⚠️ The post limit feature is currently disabled in this server. An admin can re-enable it with `/disablefeature`.',
       ephemeral: true,
@@ -72,7 +72,7 @@ async function execute(interaction) {
   }
 }
 
-// Powers the "channel" option's autocomplete on /postlimit remove: only shows channels
+// Powers the "channel" option's autocomplete on /slowmode remove: only shows channels
 // that currently have a limit configured, with the cooldown shown, instead of every
 // channel in the server.
 async function autocomplete(interaction) {
@@ -82,7 +82,7 @@ async function autocomplete(interaction) {
     return;
   }
 
-  const limits = await postLimitManager.listLimits(interaction.guildId);
+  const limits = await slowModeManager.listLimits(interaction.guildId);
   const query = focused.value.toLowerCase();
 
   const choices = limits

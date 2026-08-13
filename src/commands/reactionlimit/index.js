@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
 const { handleRemove } = require('./handlers/remove');
+const { handleEdit } = require('./handlers/edit');
 const { handleList } = require('./handlers/list');
 const reactionLimitManager = require('../../features/reactionlimit/reactionLimitManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
@@ -31,6 +32,24 @@ const data = new SlashCommandBuilder()
       )
   )
   .addSubcommand(buildDisableSubcommand())
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription("[Admin] Change the reaction limit settings for a channel's threads")
+      .addStringOption((opt) =>
+        opt
+          .setName('channel')
+          .setDescription('Which reaction limit to edit (start typing to see configured ones)')
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addBooleanOption((opt) =>
+        opt
+          .setName('ignore_first_post')
+          .setDescription("Don't count reactions on each thread's starter message (optional)")
+          .setRequired(false)
+      )
+  )
   .addSubcommand((sub) => sub.setName('list').setDescription('[Admin] Lists every channel with a reaction limit configured'))
   .addSubcommand((sub) =>
     sub
@@ -67,6 +86,8 @@ async function execute(interaction) {
       return handleAdd(interaction);
     case 'remove':
       return handleRemove(interaction);
+    case 'edit':
+      return handleEdit(interaction);
     case 'list':
       return handleList(interaction);
     default:
@@ -74,9 +95,9 @@ async function execute(interaction) {
   }
 }
 
-// Powers the "channel" option's autocomplete on /reactionlimit remove: only shows
-// channels that currently have a limit configured, instead of every channel in the
-// server.
+// Powers the "channel" option's autocomplete on /reactionlimit edit and remove: only
+// shows channels that currently have a limit configured, instead of every channel in
+// the server.
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
   if (focused.name !== 'channel') {

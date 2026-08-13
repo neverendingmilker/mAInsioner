@@ -7,12 +7,13 @@ async function handleRemove(interaction) {
     return;
   }
 
-  const entryId = interaction.options.getString('entry');
+  const sessionDate = interaction.options.getString('session');
 
   try {
-    const removed = await animeNightManager.removeAnime(interaction.guildId, entryId);
+    const removed = await animeNightManager.removeSession(interaction.guildId, sessionDate);
     const displayDate = animeNightManager.formatDisplayDate(removed.date);
-    await interaction.reply({ content: `🗑️ Removed **${removed.title}** from **${displayDate}**.` });
+    const list = removed.titles.map((title) => `• ${title}`).join('\n');
+    await interaction.reply({ content: `🗑️ Removed the whole session from **${displayDate}** (${removed.titles.length} anime):\n${list}` });
   } catch (err) {
     if (err instanceof animeNightManager.ValidationError) {
       await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });

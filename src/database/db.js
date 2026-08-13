@@ -212,11 +212,11 @@ async function createTables() {
         issued_by TEXT,
         created_at INTEGER NOT NULL
       )`,
-      `CREATE TABLE IF NOT EXISTS post_limit_guild_config (
+      `CREATE TABLE IF NOT EXISTS slowmode_guild_config (
         guild_id TEXT PRIMARY KEY,
         enabled INTEGER NOT NULL DEFAULT 1
       )`,
-      `CREATE TABLE IF NOT EXISTS post_limit_channels (
+      `CREATE TABLE IF NOT EXISTS slowmode_channels (
         guild_id TEXT NOT NULL,
         channel_id TEXT NOT NULL,
         cooldown_seconds INTEGER NOT NULL,
@@ -224,7 +224,7 @@ async function createTables() {
         created_at INTEGER,
         PRIMARY KEY (guild_id, channel_id)
       )`,
-      `CREATE TABLE IF NOT EXISTS post_limit_last_message (
+      `CREATE TABLE IF NOT EXISTS slowmode_last_message (
         guild_id TEXT NOT NULL,
         channel_id TEXT NOT NULL,
         user_id TEXT NOT NULL,
@@ -285,6 +285,36 @@ async function createTables() {
         emoji TEXT NOT NULL,
         PRIMARY KEY (guild_id, channel_id, digit)
       )`,
+      `CREATE TABLE IF NOT EXISTS highlight_config (
+        guild_id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS highlight_words (
+        guild_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        word TEXT NOT NULL,
+        created_at INTEGER,
+        PRIMARY KEY (guild_id, user_id, word)
+      )`,
+      `CREATE TABLE IF NOT EXISTS highlight_ignored_channels (
+        guild_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        PRIMARY KEY (guild_id, user_id, channel_id)
+      )`,
+      `CREATE TABLE IF NOT EXISTS highlight_ignored_users (
+        guild_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        ignored_user_id TEXT NOT NULL,
+        PRIMARY KEY (guild_id, user_id, ignored_user_id)
+      )`,
+      `CREATE TABLE IF NOT EXISTS highlight_last_notified (
+        guild_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        notified_at INTEGER NOT NULL,
+        PRIMARY KEY (guild_id, user_id, channel_id)
+      )`,
       `CREATE TABLE IF NOT EXISTS goosepizza_config (
         guild_id TEXT PRIMARY KEY,
         enabled INTEGER NOT NULL DEFAULT 1
@@ -329,6 +359,19 @@ async function migrate() {
     await client.execute('DROP TABLE IF EXISTS reactioncode_guild_config');
     await client.execute('DROP TABLE IF EXISTS reactioncode_channels');
     await client.execute('DROP TABLE IF EXISTS reactioncode_digits');
+  }
+
+  // Same idea: Post Limit was renamed to Slowmode.
+  const oldSlowmodeTables = await client.execute(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('post_limit_guild_config', 'post_limit_channels', 'post_limit_last_message')"
+  );
+  if (oldSlowmodeTables.rows.length > 0) {
+    await client.execute('INSERT OR IGNORE INTO slowmode_guild_config SELECT * FROM post_limit_guild_config');
+    await client.execute('INSERT OR IGNORE INTO slowmode_channels SELECT * FROM post_limit_channels');
+    await client.execute('INSERT OR IGNORE INTO slowmode_last_message SELECT * FROM post_limit_last_message');
+    await client.execute('DROP TABLE IF EXISTS post_limit_guild_config');
+    await client.execute('DROP TABLE IF EXISTS post_limit_channels');
+    await client.execute('DROP TABLE IF EXISTS post_limit_last_message');
   }
 
   const columns = await client.execute('PRAGMA table_info(birthday_guild_config)');

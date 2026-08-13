@@ -35,7 +35,7 @@ async function handleList(interaction) {
       });
   };
 
-  await sendPaginated(interaction, totalPages, buildEmbed);
+  await sendPaginated(interaction, totalPages, buildEmbed, { ephemeral: true });
 }
 
 module.exports = { handleList };

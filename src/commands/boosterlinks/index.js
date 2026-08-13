@@ -25,7 +25,9 @@ const data = new SlashCommandBuilder()
     sub
       .setName('edit')
       .setDescription('Change which role is tracked for a user (swaps one linked role for another)')
-      .addUserOption((opt) => opt.setName('user').setDescription('The user').setRequired(true))
+      .addStringOption((opt) =>
+        opt.setName('user').setDescription('Which user to edit (start typing to see tracked users)').setRequired(true).setAutocomplete(true)
+      )
       .addStringOption((opt) =>
         opt.setName('old_role').setDescription('Their currently-tracked role').setRequired(true).setAutocomplete(true)
       )
@@ -59,7 +61,9 @@ const data = new SlashCommandBuilder()
     sub
       .setName('remove')
       .setDescription('Stop tracking custom role(s) for a user (does not remove the role itself)')
-      .addUserOption((opt) => opt.setName('user').setDescription('The user').setRequired(true))
+      .addStringOption((opt) =>
+        opt.setName('user').setDescription('Which user (start typing to see tracked users)').setRequired(true).setAutocomplete(true)
+      )
       .addStringOption((opt) =>
         opt
           .setName('role')
@@ -106,23 +110,49 @@ async function execute(interaction) {
   }
 }
 
-// Powers the "role" option's autocomplete on /boosterlink remove, and the "old_role"
-// option's autocomplete on /boosterlink edit — both show whichever roles are actually
-// tracked for the selected user, instead of every role in the server.
+// Powers the "user" option's autocomplete on /boosterlink remove and edit (only users
+// who actually have a tracked link, with their currently-tracked role(s) shown right in
+// the label), and the "role"/"old_role" option's autocomplete on both (only whichever
+// roles are actually tracked for the selected user).
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
+
+  if (focused.name === 'user') {
+    const allLinks = await boosterLinkManager.listAll(interaction.guildId);
+    const linksByUser = new Map();
+    for (const link of allLinks) {
+      if (!linksByUser.has(link.user_id)) linksByUser.set(link.user_id, []);
+      linksByUser.get(link.user_id).push(link.role_id);
+    }
+
+    const query = focused.value.toLowerCase();
+    const choices = [...linksByUser.entries()]
+      .map(([userId, roleIds]) => {
+        const member = interaction.guild.members.cache.get(userId);
+        const displayName = member ? member.user.username : userId;
+        const roleNames = roleIds.map((id) => interaction.guild.roles.cache.get(id)?.name ?? id).join(', ');
+        return { name: `${displayName} — ${roleNames}`.slice(0, 100), value: userId, searchable: displayName.toLowerCase() };
+      })
+      .filter((c) => c.searchable.includes(query))
+      .slice(0, 25)
+      .map(({ name, value }) => ({ name, value }));
+
+    await interaction.respond(choices);
+    return;
+  }
+
   if (focused.name !== 'role' && focused.name !== 'old_role') {
     await interaction.respond([]);
     return;
   }
 
-  const user = interaction.options.getUser('user');
-  if (!user) {
+  const userId = interaction.options.getString('user');
+  if (!userId) {
     await interaction.respond([]);
     return;
   }
 
-  const links = await boosterLinkManager.listForUser(interaction.guildId, user.id);
+  const links = await boosterLinkManager.listForUser(interaction.guildId, userId);
   const query = focused.value.toLowerCase();
 
   const choices = links

@@ -42,6 +42,7 @@ const COMMAND_MANIFEST = [
     subcommands: [
       { name: 'add', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'edit', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'list', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],
@@ -111,8 +112,8 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
-    feature: 'Post Limit',
-    command: '/postlimit',
+    feature: 'Slowmode',
+    command: '/slowmode',
     subcommands: [
       { name: 'add', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
@@ -126,6 +127,7 @@ const COMMAND_MANIFEST = [
     subcommands: [
       { name: 'add', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'edit', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'list', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],

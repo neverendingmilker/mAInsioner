@@ -1,5 +1,5 @@
 const { PermissionFlagsBits } = require('discord.js');
-const postLimitManager = require('../../../features/postlimit/postLimitManager');
+const slowModeManager = require('../../../features/slowmode/slowModeManager');
 const { formatSeconds } = require('../../../utils/duration');
 
 async function handleAdd(interaction) {
@@ -13,9 +13,9 @@ async function handleAdd(interaction) {
 
   let result;
   try {
-    result = await postLimitManager.setLimit(interaction.guildId, channel, duration, interaction.user.id);
+    result = await slowModeManager.setLimit(interaction.guildId, channel, duration, interaction.user.id);
   } catch (err) {
-    if (err instanceof postLimitManager.ValidationError) {
+    if (err instanceof slowModeManager.ValidationError) {
       await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });
       return;
     }

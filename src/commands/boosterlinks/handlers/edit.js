@@ -10,7 +10,12 @@ async function handleEdit(interaction) {
     return;
   }
 
-  const user = interaction.options.getUser('user');
+  const userId = interaction.options.getString('user');
+  const user = await interaction.client.users.fetch(userId).catch(() => null);
+  if (!user) {
+    await interaction.reply({ content: "⚠️ Couldn't find that user anymore.", ephemeral: true });
+    return;
+  }
   const oldRoleId = interaction.options.getString('old_role');
   const newRole = interaction.options.getRole('new_role');
 

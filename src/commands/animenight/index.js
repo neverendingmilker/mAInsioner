@@ -75,9 +75,9 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('remove')
-      .setDescription('[Admin] Remove a single anime entry from the watched list')
+      .setDescription('[Admin] Remove an entire Mystery Anime Night session')
       .addStringOption((opt) =>
-        opt.setName('entry').setDescription('Which entry to remove (start typing to search)').setRequired(true).setAutocomplete(true)
+        opt.setName('session').setDescription('Which session to remove (start typing to search)').setRequired(true).setAutocomplete(true)
       )
   );
 
@@ -115,24 +115,10 @@ async function execute(interaction) {
   }
 }
 
-// Powers the "session" option's autocomplete on /animenight edit (as the admin types,
-// suggest matching sessions), and the "entry" option's autocomplete on /animenight
-// remove (suggest individual anime, most recently added first).
+// Powers the "session" option's autocomplete on both /animenight edit and remove — as
+// the admin types, suggest matching sessions, numbered chronologically.
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
-
-  if (focused.name === 'entry') {
-    const entries = await animeNightManager.getAllEntriesList(interaction.guildId);
-    const query = focused.value.toLowerCase();
-
-    const filtered = entries
-      .filter((e) => e.label.toLowerCase().includes(query))
-      .slice(-25)
-      .reverse();
-
-    await interaction.respond(filtered.map((e) => ({ name: e.label, value: String(e.id) })));
-    return;
-  }
 
   if (focused.name !== 'session') {
     await interaction.respond([]);

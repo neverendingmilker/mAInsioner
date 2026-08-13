@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
 const { handleRemove } = require('./handlers/remove');
+const { handleEdit } = require('./handlers/edit');
 const { handleList } = require('./handlers/list');
 const autoresponderManager = require('../../features/autoresponder/autoresponderManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
@@ -66,6 +67,56 @@ const data = new SlashCommandBuilder()
       )
   )
   .addSubcommand(buildDisableSubcommand())
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription('[Admin] Change the autoresponder settings for a channel')
+      .addStringOption((opt) =>
+        opt
+          .setName('channel')
+          .setDescription('Which autoresponder to edit (start typing to see configured ones)')
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('emojis')
+          .setDescription('New emoji list, replaces the old one entirely (space/comma separated, optional)')
+          .setRequired(false)
+      )
+      .addBooleanOption((opt) =>
+        opt
+          .setName('require_attachment')
+          .setDescription('Only react if the message has an image/gif/video attachment (optional)')
+          .setRequired(false)
+      )
+      .addBooleanOption((opt) =>
+        opt
+          .setName('require_video_link')
+          .setDescription('Only react if the message links a video (e.g. YouTube) (optional)')
+          .setRequired(false)
+      )
+      .addBooleanOption((opt) =>
+        opt
+          .setName('require_x_link')
+          .setDescription('Only react if the message links an X/Twitter post (optional)')
+          .setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('redirect_to_bot_id')
+          .setDescription('New redirect bot ID (optional)')
+          .setRequired(false)
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName('redirect_window_seconds')
+          .setDescription('New redirect window in seconds (optional)')
+          .setMinValue(1)
+          .setMaxValue(autoresponderManager.MAX_REDIRECT_WINDOW_SECONDS)
+          .setRequired(false)
+      )
+  )
   .addSubcommand((sub) => sub.setName('list').setDescription('[Admin] Lists every channel with an autoresponder configured'))
   .addSubcommand((sub) =>
     sub
@@ -102,6 +153,8 @@ async function execute(interaction) {
       return handleAdd(interaction);
     case 'remove':
       return handleRemove(interaction);
+    case 'edit':
+      return handleEdit(interaction);
     case 'list':
       return handleList(interaction);
     default:
@@ -109,8 +162,8 @@ async function execute(interaction) {
   }
 }
 
-// Powers the "channel" option's autocomplete on /autoresponder remove: only shows
-// channels that currently have an autoresponder configured, with a short preview,
+// Powers the "channel" option's autocomplete on /autoresponder edit and remove: only
+// shows channels that currently have an autoresponder configured, with a short preview,
 // instead of every channel in the server.
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);

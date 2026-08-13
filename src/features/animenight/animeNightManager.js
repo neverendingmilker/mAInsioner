@@ -145,40 +145,27 @@ async function editSession(guildId, sessionDate, newTitlesRaw, newDateInput, edi
   return { titles: existing.map((e) => e.title), date: finalDate };
 }
 
-// Removes exactly one anime entry (by its row id) from whichever session it belongs
-// to — the rest of that session is left untouched.
-async function removeAnime(guildId, entryId) {
-  const allEntries = await repo.getAllEntries(guildId);
-  const entry = allEntries.find((e) => String(e.id) === String(entryId));
-  if (!entry) {
-    throw new ValidationError("That entry doesn't exist (it may have just been removed).");
+// Removes an entire session — every anime entry watched on that date — not just one
+// title. Used by /animenight remove now that it identifies sessions the same way
+// /animenight edit does, instead of individual anime entries.
+async function removeSession(guildId, sessionDate) {
+  const existing = await repo.getEntriesForDate(guildId, sessionDate);
+  if (existing.length === 0) {
+    throw new ValidationError("That session doesn't exist (it may have just been removed).");
   }
-
-  await repo.removeEntry(guildId, entry.id);
-  return { title: entry.title, date: entry.watched_date };
-}
-
-// Flat list of every individual anime entry (across every session), formatted for
-// autocomplete on /animenight remove — most recently added ones surface first.
-async function getAllEntriesList(guildId) {
-  const rows = await repo.getAllEntries(guildId);
-  return rows
-    .slice()
-    .sort((a, b) => Number(a.added_at) - Number(b.added_at))
-    .map((row) => ({
-      id: row.id,
-      label: `${row.title} — ${formatDisplayDate(row.watched_date)}`,
-    }));
+  for (const entry of existing) {
+    await repo.removeEntry(guildId, entry.id);
+  }
+  return { titles: existing.map((e) => e.title), date: sessionDate };
 }
 
 module.exports = {
   ValidationError,
   addAnime,
-  removeAnime,
+  removeSession,
   getSortedList,
   getLast,
   getSessionsList,
-  getAllEntriesList,
   editSession,
   formatDisplayDate,
   isEnabled: repo.isEnabled,

@@ -1,5 +1,5 @@
 const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const postLimitManager = require('../../../features/postlimit/postLimitManager');
+const slowModeManager = require('../../../features/slowmode/slowModeManager');
 
 const EMBED_COLOR = 0x3498db;
 
@@ -9,7 +9,7 @@ async function handleList(interaction) {
     return;
   }
 
-  const limits = await postLimitManager.listLimits(interaction.guildId);
+  const limits = await slowModeManager.listLimits(interaction.guildId);
 
   if (limits.length === 0) {
     await interaction.reply({ content: 'No post limits are currently configured in this server.', ephemeral: true });

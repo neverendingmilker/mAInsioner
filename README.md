@@ -21,10 +21,11 @@ src/
         last.js
         edit.js
     autoresponder/
-      index.js       (defines /autoresponder add, remove, list, disable)
+      index.js       (defines /autoresponder add, remove, edit, list, disable)
       handlers/
         add.js
         remove.js
+        edit.js
         list.js
     verify/
       index.js       (defines /verify config, sub, domme, maledom)
@@ -50,17 +51,18 @@ src/
         channel.js
         set.js
         reset.js
-    postlimit/
-      index.js       (defines /postlimit add, remove, list, disable)
+    slowmode/
+      index.js       (defines /slowmode add, remove, list, disable)
       handlers/
         add.js
         remove.js
         list.js
     reactionlimit/
-      index.js       (defines /reactionlimit add, remove, list, disable)
+      index.js       (defines /reactionlimit add, remove, edit, list, disable)
       handlers/
         add.js
         remove.js
+        edit.js
         list.js
     boosterlinks/
       index.js       (defines /boosterlink add, remove, edit, list, exempt add/remove/list, disable)
@@ -150,9 +152,9 @@ src/
       incidentImage.js       (renders the sign PNG with the current count, via @napi-rs/canvas)
       incidentScheduler.js   (cron job: +1 every day at midnight)
       assets/                (base sign image + font, ported from the original Python bot)
-    postlimit/
-      postLimitManager.js     (validation, exemption check, passive per-message enforcement)
-      postLimitRepository.js  (SQL queries: per-channel limits + per-user last-allowed-message tracking)
+    slowmode/
+      slowModeManager.js     (validation, exemption check, passive per-message enforcement)
+      slowModeRepository.js  (SQL queries: per-channel limits + per-user last-allowed-message tracking)
     waifuwarlr/
       waifuWarLRManager.js     (validation, digit->emoji decoding, tracks each channel's most recent image, swaps its reactions and deletes the code message)
       waifuWarLRRepository.js  (SQL queries: per-channel setup + per-digit emoji mappings)
@@ -224,7 +226,7 @@ Every day at midnight (timezone set via `TZ` in `.env`) the bot checks who's cel
 ## Available commands (Mystery Anime Night feature)
 
 - `/animenight add titles:<...> [date]` — **admin only**: adds one or more anime to the watched list. Separate multiple titles with a comma or a slash, e.g. `Naruto, One Piece / Bleach`. The optional `date` accepts `DD/MM`, `DD/MM/YYYY`, `today`, or `yesterday`; defaults to today if omitted entirely. Every distinct date is a "session" (e.g. "Mystery Anime Night 3"), numbered chronologically.
-- `/animenight remove entry:<...>` — **admin only**: removes a single anime entry (not a whole session). The `entry` option has autocomplete, listing individual anime with their session date.
+- `/animenight remove session:<...>` — **admin only**: removes an entire session (every anime watched that day), not a single title. The `session` option has autocomplete, listing sessions numbered chronologically (e.g. "Mystery Anime Night 3 — 15/03/2025 (2 anime)") — same picker as `/animenight edit`.
 - `/animenight list [order]` — shows the watch list as an embed **grouped by session** (10 sessions per page), paginated with ◀ Previous / Next ▶ buttons once there are more than 10. Sessions always appear in chronological order; `order` only controls how titles are sorted *within* each session — `alphabetical` (default) or `added` (the order they were added in).
 - `/animenight last` — shows every anime from the most recent Mystery Anime Night **session** (i.e. the latest distinct date), not just the last few inserted rows. Also paginated if that session has many entries.
 - `/animenight edit session:<...> [titles] [date]` — **admin only**: edits an existing session. The `session` option has autocomplete — start typing and Discord suggests matching sessions (e.g. "Mystery Anime Night 3 — 23/10/2026 (5 anime)"), most recent first. Provide `titles` to replace the whole anime list for that session, `date` to move it to a different day (moving it onto an existing session's date merges the two), or both. Session numbers are computed dynamically from chronological order, so they stay correct even after edits.
@@ -256,9 +258,9 @@ Every day at midnight (same `TZ` used by the birthday feature) the counter is in
 Tracks custom perk roles manually given to server boosters, so they get auto-removed if the person stops boosting. All subcommands require the **Manage Roles** permission.
 
 - `/boosterlink add user:<user> role:<role>` — links a custom role to a booster.
-- `/boosterlink remove user:<user> [role]` — stops tracking that link (does **not** remove the role itself). `role` is optional (autocomplete, shows only roles actually tracked for that user): omit it to untrack every role linked to that user at once.
-- `/boosterlink edit user:<user> old_role:<...> new_role:<role>` — re-points an existing link to a different role, in one step. `old_role` has autocomplete showing only that user's currently-tracked roles.
-- `/boosterlink list [user]` — lists tracked links, optionally filtered to one user.
+- `/boosterlink remove user:<...> [role]` — stops tracking that link (does **not** remove the role itself). Both `user` and `role` are autocompleted — `user` only shows users who actually have a tracked link, with their currently-tracked role(s) shown right in the label (e.g. "Marco — Custom Perk"); `role` then shows only roles tracked for the selected user, and is optional: omit it to untrack every role linked to that user at once.
+- `/boosterlink edit user:<...> old_role:<...> new_role:<role>` — re-points an existing link to a different role, in one step. `user` and `old_role` are both autocompleted the same way as `remove`.
+- `/boosterlink list [user]` — lists tracked links, optionally filtered to one user. Ephemeral (only you see it).
 - `/boosterlink disable enabled:<true/false>` — enables or disables auto-removal for the whole server with a single command. Existing links are kept while disabled; nothing is removed until it's turned back on.
 
 Listens on Discord's `guildMemberUpdate` event: whenever a member who had the server's Booster role no longer has it (boost expired, manually removed, etc.), every custom role linked to them is removed and the link is deleted. Requires the bot's own role to sit above the linked role in the role list.
@@ -270,8 +272,8 @@ Exempt roles: `/boosterlink exempt add role:<role>` / `remove` / `list` manage a
 Generic version of the same idea, not tied to boosting: links any two roles so that losing one auto-removes the other. `list` requires **Manage Roles**; every other subcommand requires **Administrator**.
 
 - `/rolelink add role1:<role> [viceversa:<true/false>]` — after running this, a role picker (native Discord multi-select, listing every role in the server) appears so you can choose **one or more** target roles at once; losing `role1` removes all of them. If `viceversa` is `true` (default `false`), losing any of the target roles also removes `role1`.
-- `/rolelink remove role1:<role> role2:<role>` — removes that link (same role order as when it was created).
-- `/rolelink edit role1:<role> role2:<role> [new_role1] [new_role2] [viceversa]` — identifies the link by its current `role1`/`role2`, then updates whichever of `new_role1`/`new_role2`/`viceversa` you provide.
+- `/rolelink remove link:<...>` — removes a link. `link` is autocompleted, showing every configured link (e.g. "Booster -> Perk") instead of having to know/pick `role1`/`role2` separately.
+- `/rolelink edit link:<...> [new_role1] [new_role2] [viceversa]` — `link` is autocompleted the same way as `remove`; updates whichever of `new_role1`/`new_role2`/`viceversa` you provide.
 - `/rolelink list` — lists all configured role links in the server.
 - `/rolelink disable enabled:<true/false>` — enables or disables role link auto-removal for the whole server.
 
@@ -334,14 +336,14 @@ A small passive fun feature: whenever anyone says a chosen word in one of its ch
 - `/mfaroles` — lists every role in the server that has at least one permission requiring 2FA for moderation, and which of those permissions it has. This is Discord's own fixed list of permissions blocked for a non-2FA account once the server turns on "Require 2FA for moderator actions" (Server Settings → Safety Setup): Administrator, Kick Members, Ban Members, Manage Server, Manage Roles, Manage Channels, Manage Messages, Manage Webhooks, Manage Threads, Mute Members, Deafen Members, Move Members. A role with Administrator implicitly has every other permission on the list too (that's how Discord permissions work), so it's shown as just "Administrator" rather than repeating all 12. Checks both each role's server-wide permissions AND any **per-channel permission override** that grants it an MFA-required permission it doesn't already have server-wide — flagged separately as "Channel overrides" with the channel name(s) and what's granted there (up to 10 channels shown per role before summarizing the rest), since that's the easiest kind of exposure to miss (a role that looks harmless server-wide, but was given Manage Messages on one specific channel and forgotten about). Member-specific overwrites (as opposed to role-based ones) aren't checked. No toggle in `/disablefeature`; it's a stateless read-only utility, not a feature with ongoing behavior. Requires the **Administrator** permission to run.
 
 
-## Available commands (Post Limit feature)
+## Available commands (Slowmode feature)
 
 Limits how often each person can post in a channel — for cooldowns longer than Discord's own slowmode (capped at 6 hours), or when you want it enforced consistently regardless of Discord's per-channel setting. Each channel gets its own independent duration. Discord doesn't offer a way to pre-approve a message before it's sent, so this works by deleting the message immediately after it's posted if the person is still on cooldown; their timestamp isn't touched by a blocked attempt, so repeatedly trying doesn't reset or extend the cooldown. Moderators (Manage Messages or Administrator permission) are always exempt — no separate configurable exempt-role list. All subcommands require the **Administrator** permission.
 
-- `/postlimit add channel:<#channel> duration:<...>` — sets (or replaces) the limit for a channel. `duration` is a number followed by `s`/`m`/`h`/`d` (e.g. `12h`, `1d`, `3d`), minimum 1 minute.
-- `/postlimit remove channel:<...>` — removes the limit from a channel. The `channel` option is autocompleted, only showing channels that currently have a limit (with the cooldown shown), instead of every channel in the server.
-- `/postlimit list` — shows every channel with a limit configured, and what it is.
-- `/postlimit disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:PostLimit` controls the same setting.
+- `/slowmode add channel:<#channel> duration:<...>` — sets (or replaces) the limit for a channel. `duration` is a number followed by `s`/`m`/`h`/`d` (e.g. `12h`, `1d`, `3d`), minimum 1 minute.
+- `/slowmode remove channel:<...>` — removes the limit from a channel. The `channel` option is autocompleted, only showing channels that currently have a limit (with the cooldown shown), instead of every channel in the server.
+- `/slowmode list` — shows every channel with a limit configured, and what it is.
+- `/slowmode disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:Slowmode` controls the same setting.
 
 When someone is blocked, their message is deleted and a short notice is posted in the channel (mentioning them) with a live Discord relative timestamp (`<t:...:R>`) for when they can post again — no DMs sent. The notice auto-deletes itself after 20 seconds, so it doesn't linger.
 
@@ -353,6 +355,7 @@ Auto-reacts with one or more emojis to a chosen channel's messages, including me
 
   This bot's own messages are never reacted to, in any mode — that exclusion doesn't depend on any of the above.
 - `/autoresponder remove channel:<...>` — removes the autoresponder from a channel. The `channel` option is autocompleted, only showing channels that currently have an autoresponder (with its emojis previewed), instead of every channel in the server.
+- `/autoresponder edit channel:<...> [emojis] [require_attachment] [require_video_link] [require_x_link] [redirect_to_bot_id] [redirect_window_seconds]` — changes the settings for an already-configured channel; every field is optional and anything not provided keeps its current value. Same `channel` autocomplete as `remove`.
 - `/autoresponder list` — shows every channel with an autoresponder configured, its emojis, and any active filter/pair/redirect mode.
 - `/autoresponder disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:Autoresponder` controls the same setting.
 
@@ -375,6 +378,7 @@ Limits each person to a fixed **5 reactions per thread** in a chosen channel's t
 
 - `/reactionlimit add channel:<#channel> [ignore_first_post:true|false]` — sets (or replaces) the limit for a channel's threads. `ignore_first_post` (default `false`) excludes reactions on each thread's starter/first message from the count entirely — handy for e.g. a forum where the opening post is meant to collect votes/reactions freely, while still capping reaction spam in the replies underneath it.
 - `/reactionlimit remove channel:<...>` — removes the limit from a channel. The `channel` option is autocompleted, only showing channels that currently have a limit configured, instead of every channel in the server.
+- `/reactionlimit edit channel:<...> [ignore_first_post]` — changes the settings for an already-configured channel. `channel` is autocompleted the same way as `remove`; anything not provided keeps its current value.
 - `/reactionlimit list` — shows every channel with a limit configured.
 - `/reactionlimit disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:ReactionLimit` controls the same setting.
 

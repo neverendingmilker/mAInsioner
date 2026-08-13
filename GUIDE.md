@@ -19,13 +19,14 @@ Admin only. Auto-reacts with one or more emojis to **every** message in a chosen
 
 - **`/autoresponder add`** — Sets (or replaces) the autoresponder for a channel: one or more emojis, separated by spaces or commas. Three optional filters (off by default, reacts to everything): only react if the message has an **attachment** (image/gif/video), only if it **links a video** (YouTube and similar), only if it **links an X/Twitter post** (including fxtwitter/vxtwitter/fixvx/fixupx mirrors). Turn on more than one and it reacts if the message matches *any* of them. There's also an optional **redirect mode** (`redirect_to_bot_id` + `redirect_window_seconds`): waits for a *specific* bot to post in the same channel within the window; if it does, the reaction goes on **its** message instead of the original poster's. If that bot doesn't post in time, the original message gets the reaction as a fallback. Useful when a specific bot reliably reposts the "real" content (an image, a fixed embed, ...) shortly after someone's message. Matches the bot both by its normal user ID and by webhook ID, since many "repost"/"embed fixer" bots post through a Discord webhook rather than as a live bot — in that case Discord's own "author" on the message is a per-webhook placeholder, not the bot's actual account, so both are checked. This bot's own messages are never reacted to, in any mode.
 - **`/autoresponder remove`** — Removes the autoresponder from a channel; the `channel` option shows only channels that currently have one (with a preview), instead of every channel in the server.
+- **`/autoresponder edit`** — Changes the settings for an already-configured channel; every field is optional, anything not provided keeps its current value. Same `channel` autocomplete as `remove`.
 - **`/autoresponder list`** — Shows every channel with an autoresponder configured, its emojis, and any active filter/redirect mode.
 - **`/autoresponder disable`** — Turns the feature on/off for this server.
 
 ## 📺 Anime Night (`/animenight`)
 
 - **`/animenight add`** — Admin only. Adds one or more anime watched in a session (e.g. "Naruto, Bleach").
-- **`/animenight remove`** — Admin only. Removes a single anime entry (autocomplete lets you search for it).
+- **`/animenight remove`** — Admin only. Removes an entire session (numbered chronologically, autocomplete), not a single anime.
 - **`/animenight list`** — Shows the full watched anime list, grouped by session.
 - **`/animenight last`** — Shows only the anime from the most recent session.
 - **`/animenight edit`** — Admin only. Edits an existing session (titles and/or date).
@@ -47,9 +48,9 @@ On someone's birthday, the bot automatically assigns the role (if configured) an
 Admin only (Manage Roles). Links a custom role (that you assign manually to a booster) to that user, so it gets automatically removed if they stop boosting the server.
 
 - **`/boosterlink add`** — Links a custom role to a booster.
-- **`/boosterlink remove`** — Stops tracking the link (does not remove the role from the user). The role is optional (autocomplete, only shows roles actually tracked for that user): if omitted, it untracks every role linked to that user at once.
-- **`/boosterlink edit`** — Swaps which role is tracked for a user, in one step (autocomplete on the old role).
-- **`/boosterlink list`** — Lists active links, optionally filtered by user.
+- **`/boosterlink remove`** — Stops tracking the link (does not remove the role from the user). Both `user` and `role` are autocompleted — `user` only shows users who actually have a tracked link, `role` only the roles tracked for the selected user; `role` is optional: if omitted, it untracks every role linked to that user at once.
+- **`/boosterlink edit`** — Swaps which role is tracked for a user, in one step (`user` and the old role are both autocompleted).
+- **`/boosterlink list`** — Lists active links, optionally filtered by user. Ephemeral (only you see it).
 - **`/boosterlink disable`** — Turns the feature on/off for this server.
 
 When a user loses Discord's Booster role (boost expired, manually removed, etc.), every custom role linked to them gets automatically removed. `/boosterlink exempt` manages a list of roles that skip this — a user only needs one of the configured exempt roles to be skipped entirely, even if they have linked roles and lose the booster role.
@@ -92,19 +93,19 @@ Every day at midnight the counter increases by 1 automatically and the sign is r
 Admin only, except `list` which also works for mods (Manage Roles). Generic version of the concept above, not tied to boosting: links any two roles so that losing the first automatically removes the second.
 
 - **`/rolelink add`** — Pick `role1`, then a picker lets you choose **one or more** target roles at once; losing role1 removes all of them. Optional `viceversa` option (default off): if on, losing a target role also removes role1.
-- **`/rolelink remove`** — Removes a link (same role1/role2 order used when it was created).
-- **`/rolelink edit`** — Change an existing link's roles and/or `viceversa` setting.
+- **`/rolelink remove`** — Removes a link. `link` is autocompleted, showing every configured link instead of picking role1/role2 separately.
+- **`/rolelink edit`** — Change an existing link's roles and/or `viceversa` setting. `link` is autocompleted the same way as `remove`.
 - **`/rolelink list`** — Lists every link configured in the server.
 - **`/rolelink disable`** — Admin only. Turns the feature on/off for this server.
 
-## ⏳ Post Limit (`/postlimit`)
+## ⏳ Slowmode (`/slowmode`)
 
 Admin only. Limits how often each person can post in a channel — for cooldowns longer than Discord's own slowmode (capped at 6h), or when you want it enforced consistently regardless of Discord's setting. Each channel has its own independent duration. Violating messages are deleted immediately, with a short, auto-deleting notice posted in the channel explaining when the person can post again (no DMs). Moderators (Manage Messages or Administrator) are always exempt.
 
-- **`/postlimit add`** — Sets (or replaces) the limit for a channel: a duration like `12h`, `1d`, `3d` (minimum 1 minute).
-- **`/postlimit remove`** — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, instead of every channel in the server.
-- **`/postlimit list`** — Shows every channel with a limit configured, and what it is.
-- **`/postlimit disable`** — Turns the feature on/off for this server.
+- **`/slowmode add`** — Sets (or replaces) the limit for a channel: a duration like `12h`, `1d`, `3d` (minimum 1 minute).
+- **`/slowmode remove`** — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, instead of every channel in the server.
+- **`/slowmode list`** — Shows every channel with a limit configured, and what it is.
+- **`/slowmode disable`** — Turns the feature on/off for this server.
 
 ## 🔢 WaifuWar LR (`/waifuwarlr`)
 
@@ -123,6 +124,7 @@ Admin only. Limits each person to a fixed **5 reactions per thread** in a chosen
 
 - **`/reactionlimit add`** — Sets (or replaces) the limit for a channel's threads. Optional `ignore_first_post` (default off) excludes the thread's starter message from the count.
 - **`/reactionlimit remove`** — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, instead of every channel in the server.
+- **`/reactionlimit edit`** — Changes the settings for an already-configured channel; anything not provided keeps its current value. Same `channel` autocomplete as `remove`.
 - **`/reactionlimit list`** — Shows every channel with a limit configured.
 - **`/reactionlimit disable`** — Turns the feature on/off for this server.
 

@@ -1,5 +1,5 @@
 const { PermissionFlagsBits } = require('discord.js');
-const repo = require('./postLimitRepository');
+const repo = require('./slowModeRepository');
 const { parseDurationToSeconds, formatSeconds } = require('../../utils/duration');
 
 class ValidationError extends Error {}

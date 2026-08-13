@@ -28,8 +28,9 @@ const data = new SlashCommandBuilder()
     sub
       .setName('edit')
       .setDescription('[Admin] Change an existing link (which roles, and/or viceversa)')
-      .addRoleOption((opt) => opt.setName('role1').setDescription('Current role1 of the link to edit').setRequired(true))
-      .addRoleOption((opt) => opt.setName('role2').setDescription('Current role2 of the link to edit').setRequired(true))
+      .addStringOption((opt) =>
+        opt.setName('link').setDescription('Which link to edit (start typing to see configured ones)').setRequired(true).setAutocomplete(true)
+      )
       .addRoleOption((opt) => opt.setName('new_role1').setDescription('New role1 (optional)').setRequired(false))
       .addRoleOption((opt) => opt.setName('new_role2').setDescription('New role2 (optional)').setRequired(false))
       .addBooleanOption((opt) => opt.setName('viceversa').setDescription('New viceversa setting (optional)').setRequired(false))
@@ -39,8 +40,9 @@ const data = new SlashCommandBuilder()
     sub
       .setName('remove')
       .setDescription('[Admin] Removes a role1 -> role2 link')
-      .addRoleOption((opt) => opt.setName('role1').setDescription('role1 as it was set in /rolelink add').setRequired(true))
-      .addRoleOption((opt) => opt.setName('role2').setDescription('role2 as it was set in /rolelink add').setRequired(true))
+      .addStringOption((opt) =>
+        opt.setName('link').setDescription('Which link to remove (start typing to see configured ones)').setRequired(true).setAutocomplete(true)
+      )
   );
 
 async function execute(interaction) {
@@ -60,4 +62,31 @@ async function execute(interaction) {
   }
 }
 
-module.exports = { data, execute };
+// Powers the "link" option's autocomplete on /rolelink edit and remove — shows every
+// currently configured link (role1 -> role2, with its viceversa setting) instead of
+// making the admin pick role1/role2 separately and hope they typed an existing pair.
+async function autocomplete(interaction) {
+  const focused = interaction.options.getFocused(true);
+  if (focused.name !== 'link') {
+    await interaction.respond([]);
+    return;
+  }
+
+  const links = await roleLinkManager.listAll(interaction.guildId);
+  const query = focused.value.toLowerCase();
+
+  const choices = links
+    .map((l) => {
+      const roleA = interaction.guild.roles.cache.get(l.role_a_id);
+      const roleB = interaction.guild.roles.cache.get(l.role_b_id);
+      const arrow = l.bidirectional ? '<->' : '->';
+      const label = `${roleA?.name ?? l.role_a_id} ${arrow} ${roleB?.name ?? l.role_b_id}`;
+      return { name: label.slice(0, 100), value: `${l.role_a_id}:${l.role_b_id}` };
+    })
+    .filter((c) => c.name.toLowerCase().includes(query))
+    .slice(0, 25);
+
+  await interaction.respond(choices);
+}
+
+module.exports = { data, execute, autocomplete };
