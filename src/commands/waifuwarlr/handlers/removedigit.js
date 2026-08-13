@@ -1,5 +1,5 @@
 const { PermissionFlagsBits } = require('discord.js');
-const reactionCodeManager = require('../../../features/reactioncode/reactionCodeManager');
+const waifuWarLRManager = require('../../../features/waifuwarlr/waifuWarLRManager');
 
 async function handleRemoveDigit(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -9,7 +9,7 @@ async function handleRemoveDigit(interaction) {
 
   const channelId = interaction.options.getString('channel');
   const digit = interaction.options.getString('digit');
-  const removedCount = await reactionCodeManager.removeDigit(interaction.guildId, channelId, digit);
+  const removedCount = await waifuWarLRManager.removeDigit(interaction.guildId, channelId, digit);
 
   if (removedCount === 0) {
     await interaction.reply({ content: `⚠️ Digit **${digit}** isn't mapped to anything in <#${channelId}>.`, ephemeral: true });

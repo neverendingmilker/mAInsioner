@@ -1,5 +1,5 @@
 const { PermissionFlagsBits } = require('discord.js');
-const reactionCodeManager = require('../../../features/reactioncode/reactionCodeManager');
+const waifuWarLRManager = require('../../../features/waifuwarlr/waifuWarLRManager');
 
 async function handleAdd(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -10,9 +10,9 @@ async function handleAdd(interaction) {
   const channel = interaction.options.getChannel('channel');
 
   try {
-    await reactionCodeManager.addChannel(interaction.guild, channel, interaction.user.id);
+    await waifuWarLRManager.addChannel(interaction.guild, channel, interaction.user.id);
   } catch (err) {
-    if (err instanceof reactionCodeManager.ValidationError) {
+    if (err instanceof waifuWarLRManager.ValidationError) {
       await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });
       return;
     }
@@ -21,7 +21,7 @@ async function handleAdd(interaction) {
 
   await interaction.reply({
     content:
-      `✅ ${channel} is now set up for reaction codes. Next, map digits to emojis with \`/reactioncode setdigit\` — ` +
+      `✅ ${channel} is now set up for reaction codes. Next, map digits to emojis with \`/waifuwarlr setdigit\` — ` +
       `posting an image there and then a message that's only digits (up to 9) will swap the reactions on that image ` +
       `for the ones those digits are mapped to, and delete the digit message.`,
     ephemeral: true,

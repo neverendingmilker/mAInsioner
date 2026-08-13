@@ -5,7 +5,7 @@ const db = require('../../database/db');
 async function isEnabled(guildId) {
   await db.ready;
   const result = await db.client.execute({
-    sql: 'SELECT enabled FROM reactioncode_guild_config WHERE guild_id = ?',
+    sql: 'SELECT enabled FROM waifuwarlr_guild_config WHERE guild_id = ?',
     args: [guildId],
   });
   const row = result.rows[0];
@@ -15,7 +15,7 @@ async function isEnabled(guildId) {
 async function setEnabled(guildId, enabled) {
   await db.ready;
   await db.client.execute({
-    sql: `INSERT INTO reactioncode_guild_config (guild_id, enabled)
+    sql: `INSERT INTO waifuwarlr_guild_config (guild_id, enabled)
           VALUES (?, ?)
           ON CONFLICT(guild_id) DO UPDATE SET enabled = excluded.enabled`,
     args: [guildId, enabled ? 1 : 0],
@@ -27,7 +27,7 @@ async function setEnabled(guildId, enabled) {
 async function addChannel(guildId, channelId, createdBy) {
   await db.ready;
   await db.client.execute({
-    sql: `INSERT INTO reactioncode_channels (guild_id, channel_id, created_by, created_at)
+    sql: `INSERT INTO waifuwarlr_channels (guild_id, channel_id, created_by, created_at)
           VALUES (?, ?, ?, ?)
           ON CONFLICT(guild_id, channel_id) DO NOTHING`,
     args: [guildId, channelId, createdBy, Date.now()],
@@ -37,11 +37,11 @@ async function addChannel(guildId, channelId, createdBy) {
 async function removeChannel(guildId, channelId) {
   await db.ready;
   const result = await db.client.execute({
-    sql: 'DELETE FROM reactioncode_channels WHERE guild_id = ? AND channel_id = ?',
+    sql: 'DELETE FROM waifuwarlr_channels WHERE guild_id = ? AND channel_id = ?',
     args: [guildId, channelId],
   });
   await db.client.execute({
-    sql: 'DELETE FROM reactioncode_digits WHERE guild_id = ? AND channel_id = ?',
+    sql: 'DELETE FROM waifuwarlr_digits WHERE guild_id = ? AND channel_id = ?',
     args: [guildId, channelId],
   });
   return result.rowsAffected ?? 0;
@@ -50,7 +50,7 @@ async function removeChannel(guildId, channelId) {
 async function hasChannel(guildId, channelId) {
   await db.ready;
   const result = await db.client.execute({
-    sql: 'SELECT 1 FROM reactioncode_channels WHERE guild_id = ? AND channel_id = ?',
+    sql: 'SELECT 1 FROM waifuwarlr_channels WHERE guild_id = ? AND channel_id = ?',
     args: [guildId, channelId],
   });
   return result.rows.length > 0;
@@ -59,7 +59,7 @@ async function hasChannel(guildId, channelId) {
 async function getAllChannels(guildId) {
   await db.ready;
   const result = await db.client.execute({
-    sql: 'SELECT channel_id FROM reactioncode_channels WHERE guild_id = ?',
+    sql: 'SELECT channel_id FROM waifuwarlr_channels WHERE guild_id = ?',
     args: [guildId],
   });
   return result.rows.map((row) => row.channel_id);
@@ -70,7 +70,7 @@ async function getAllChannels(guildId) {
 async function setDigit(guildId, channelId, digit, emoji) {
   await db.ready;
   await db.client.execute({
-    sql: `INSERT INTO reactioncode_digits (guild_id, channel_id, digit, emoji)
+    sql: `INSERT INTO waifuwarlr_digits (guild_id, channel_id, digit, emoji)
           VALUES (?, ?, ?, ?)
           ON CONFLICT(guild_id, channel_id, digit) DO UPDATE SET emoji = excluded.emoji`,
     args: [guildId, channelId, digit, emoji],
@@ -80,7 +80,7 @@ async function setDigit(guildId, channelId, digit, emoji) {
 async function removeDigit(guildId, channelId, digit) {
   await db.ready;
   const result = await db.client.execute({
-    sql: 'DELETE FROM reactioncode_digits WHERE guild_id = ? AND channel_id = ? AND digit = ?',
+    sql: 'DELETE FROM waifuwarlr_digits WHERE guild_id = ? AND channel_id = ? AND digit = ?',
     args: [guildId, channelId, digit],
   });
   return result.rowsAffected ?? 0;
@@ -89,7 +89,7 @@ async function removeDigit(guildId, channelId, digit) {
 async function getDigitMap(guildId, channelId) {
   await db.ready;
   const result = await db.client.execute({
-    sql: 'SELECT digit, emoji FROM reactioncode_digits WHERE guild_id = ? AND channel_id = ?',
+    sql: 'SELECT digit, emoji FROM waifuwarlr_digits WHERE guild_id = ? AND channel_id = ?',
     args: [guildId, channelId],
   });
   const map = new Map();

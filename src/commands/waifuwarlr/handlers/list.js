@@ -1,5 +1,5 @@
 const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
-const reactionCodeManager = require('../../../features/reactioncode/reactionCodeManager');
+const waifuWarLRManager = require('../../../features/waifuwarlr/waifuWarLRManager');
 
 const EMBED_COLOR = 0x1abc9c;
 
@@ -9,7 +9,7 @@ async function handleList(interaction) {
     return;
   }
 
-  const channelIds = await reactionCodeManager.listChannels(interaction.guildId);
+  const channelIds = await waifuWarLRManager.listChannels(interaction.guildId);
   if (channelIds.length === 0) {
     await interaction.reply({ content: 'No channels are set up for reaction codes in this server.', ephemeral: true });
     return;
@@ -17,10 +17,10 @@ async function handleList(interaction) {
 
   const blocks = [];
   for (const channelId of channelIds) {
-    const digitMap = await reactionCodeManager.getDigitMap(interaction.guildId, channelId);
+    const digitMap = await waifuWarLRManager.getDigitMap(interaction.guildId, channelId);
     const mappings =
       digitMap.size === 0
-        ? '*(no digits mapped yet — use `/reactioncode setdigit`)*'
+        ? '*(no digits mapped yet — use `/waifuwarlr setdigit`)*'
         : [...digitMap.entries()]
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([digit, emoji]) => `\`${digit}\` → ${emoji}`)

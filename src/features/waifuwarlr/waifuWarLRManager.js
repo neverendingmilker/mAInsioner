@@ -1,5 +1,5 @@
 const { PermissionFlagsBits } = require('discord.js');
-const repo = require('./reactionCodeRepository');
+const repo = require('./waifuWarLRRepository');
 
 class ValidationError extends Error {}
 
@@ -160,7 +160,7 @@ async function handleMessage(message) {
   const botReactions = pendingImage.reactions.cache.filter((r) => r.me);
   for (const reaction of botReactions.values()) {
     await reaction.users.remove(message.client.user.id).catch((err) => {
-      console.warn(`[reactioncode] Could not remove a previous reaction in guild ${message.guild.id}:`, err.message);
+      console.warn(`[waifuwarlr] Could not remove a previous reaction in guild ${message.guild.id}:`, err.message);
     });
   }
 
@@ -170,12 +170,12 @@ async function handleMessage(message) {
     if (!emoji || seenEmojis.has(emoji)) continue;
     seenEmojis.add(emoji);
     await pendingImage.react(extractReactableEmoji(emoji)).catch((err) => {
-      console.warn(`[reactioncode] Could not react with ${emoji} in guild ${message.guild.id}:`, err.message);
+      console.warn(`[waifuwarlr] Could not react with ${emoji} in guild ${message.guild.id}:`, err.message);
     });
   }
 
   await message.delete().catch((err) => {
-    console.warn(`[reactioncode] Could not delete the code message in guild ${message.guild.id}:`, err.message);
+    console.warn(`[waifuwarlr] Could not delete the code message in guild ${message.guild.id}:`, err.message);
   });
 }
 

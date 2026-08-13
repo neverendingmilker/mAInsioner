@@ -257,18 +257,18 @@ async function createTables() {
         count INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (guild_id, thread_id, user_id)
       )`,
-      `CREATE TABLE IF NOT EXISTS reactioncode_guild_config (
+      `CREATE TABLE IF NOT EXISTS waifuwarlr_guild_config (
         guild_id TEXT PRIMARY KEY,
         enabled INTEGER NOT NULL DEFAULT 1
       )`,
-      `CREATE TABLE IF NOT EXISTS reactioncode_channels (
+      `CREATE TABLE IF NOT EXISTS waifuwarlr_channels (
         guild_id TEXT NOT NULL,
         channel_id TEXT NOT NULL,
         created_by TEXT,
         created_at INTEGER,
         PRIMARY KEY (guild_id, channel_id)
       )`,
-      `CREATE TABLE IF NOT EXISTS reactioncode_digits (
+      `CREATE TABLE IF NOT EXISTS waifuwarlr_digits (
         guild_id TEXT NOT NULL,
         channel_id TEXT NOT NULL,
         digit TEXT NOT NULL,
@@ -305,6 +305,22 @@ async function createTables() {
 // "birthday_channel_id" existed (back when the only option was "remove_after_hours").
 // Safe to run on every startup: each step is skipped once already applied.
 async function migrate() {
+  // The Reaction Code feature was renamed to WaifuWar LR — copy any data from the old
+  // table names (if they exist) into the new ones createTables() just made, then drop
+  // the old tables so they don't linger. A fresh install never had the old names, so
+  // this is a no-op there.
+  const oldWaifuWarLRTables = await client.execute(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('reactioncode_guild_config', 'reactioncode_channels', 'reactioncode_digits')"
+  );
+  if (oldWaifuWarLRTables.rows.length > 0) {
+    await client.execute('INSERT OR IGNORE INTO waifuwarlr_guild_config SELECT * FROM reactioncode_guild_config');
+    await client.execute('INSERT OR IGNORE INTO waifuwarlr_channels SELECT * FROM reactioncode_channels');
+    await client.execute('INSERT OR IGNORE INTO waifuwarlr_digits SELECT * FROM reactioncode_digits');
+    await client.execute('DROP TABLE IF EXISTS reactioncode_guild_config');
+    await client.execute('DROP TABLE IF EXISTS reactioncode_channels');
+    await client.execute('DROP TABLE IF EXISTS reactioncode_digits');
+  }
+
   const columns = await client.execute('PRAGMA table_info(birthday_guild_config)');
   const columnNames = columns.rows.map((row) => row.name);
 

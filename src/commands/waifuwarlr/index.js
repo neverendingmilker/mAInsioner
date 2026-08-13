@@ -4,15 +4,15 @@ const { handleRemove } = require('./handlers/remove');
 const { handleSetDigit } = require('./handlers/setdigit');
 const { handleRemoveDigit } = require('./handlers/removedigit');
 const { handleList } = require('./handlers/list');
-const reactionCodeManager = require('../../features/reactioncode/reactionCodeManager');
+const waifuWarLRManager = require('../../features/waifuwarlr/waifuWarLRManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
-const handleDisable = createDisableHandler(reactionCodeManager, PermissionFlagsBits.Administrator, 'Reaction Code');
+const handleDisable = createDisableHandler(waifuWarLRManager, PermissionFlagsBits.Administrator, 'WaifuWar LR');
 
 const REACTIONCODE_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
 
 const data = new SlashCommandBuilder()
-  .setName('reactioncode')
+  .setName('waifuwarlr')
   .setDescription('Post an image, then a digit-only message to swap its reactions based on a digit->emoji mapping')
   .addSubcommand((sub) =>
     sub
@@ -89,9 +89,9 @@ async function execute(interaction) {
     return handleDisable(interaction);
   }
 
-  if (!(await reactionCodeManager.isEnabled(interaction.guildId))) {
+  if (!(await waifuWarLRManager.isEnabled(interaction.guildId))) {
     await interaction.reply({
-      content: '⚠️ The Reaction Code feature is currently disabled in this server. An admin can re-enable it with `/disablefeature`.',
+      content: '⚠️ The WaifuWar LR feature is currently disabled in this server. An admin can re-enable it with `/disablefeature`.',
       ephemeral: true,
     });
     return;
@@ -120,7 +120,7 @@ async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
 
   if (focused.name === 'channel') {
-    const channelIds = await reactionCodeManager.listChannels(interaction.guildId);
+    const channelIds = await waifuWarLRManager.listChannels(interaction.guildId);
     const query = focused.value.toLowerCase();
     const choices = channelIds
       .map((id) => {
@@ -139,7 +139,7 @@ async function autocomplete(interaction) {
       await interaction.respond([]);
       return;
     }
-    const digitMap = await reactionCodeManager.getDigitMap(interaction.guildId, channelId);
+    const digitMap = await waifuWarLRManager.getDigitMap(interaction.guildId, channelId);
     const query = focused.value.toLowerCase();
     const choices = [...digitMap.entries()]
       .map(([digit, emoji]) => ({ name: `${digit} → ${emoji}`, value: digit }))

@@ -1,5 +1,5 @@
 const { PermissionFlagsBits } = require('discord.js');
-const reactionCodeManager = require('../../../features/reactioncode/reactionCodeManager');
+const waifuWarLRManager = require('../../../features/waifuwarlr/waifuWarLRManager');
 
 async function handleSetDigit(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -13,9 +13,9 @@ async function handleSetDigit(interaction) {
 
   let mappings;
   try {
-    mappings = await reactionCodeManager.setDigit(interaction.guildId, channelId, digit, emoji);
+    mappings = await waifuWarLRManager.setDigit(interaction.guildId, channelId, digit, emoji);
   } catch (err) {
-    if (err instanceof reactionCodeManager.ValidationError) {
+    if (err instanceof waifuWarLRManager.ValidationError) {
       await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });
       return;
     }

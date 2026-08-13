@@ -2,7 +2,7 @@ const stickyManager = require('../features/sticky/stickyManager');
 const goosepizzaManager = require('../features/goosepizza/goosepizzaManager');
 const postLimitManager = require('../features/postlimit/postLimitManager');
 const autoresponderManager = require('../features/autoresponder/autoresponderManager');
-const reactionCodeManager = require('../features/reactioncode/reactionCodeManager');
+const waifuWarLRManager = require('../features/waifuwarlr/waifuWarLRManager');
 const { runInOrder } = require('../utils/channelQueue');
 
 async function processMessage(message) {
@@ -22,8 +22,8 @@ async function processMessage(message) {
     console.error('[autoresponder] Error handling new message:', err);
   });
 
-  await reactionCodeManager.handleMessage(message).catch((err) => {
-    console.error('[reactioncode] Error handling new message:', err);
+  await waifuWarLRManager.handleMessage(message).catch((err) => {
+    console.error('[waifuwarlr] Error handling new message:', err);
   });
 }
 
@@ -31,7 +31,7 @@ module.exports = {
   name: 'messageCreate',
   once: false,
   async execute(message) {
-    if (!message.guild) return; // sticky/goosepizza/postlimit/autoresponder/reactioncode only make sense in guild channels
+    if (!message.guild) return; // sticky/goosepizza/postlimit/autoresponder/waifuwarlr only make sense in guild channels
 
     // Serialized per channel: without this, two messages sent moments apart in the same
     // channel could have their processing interleave and finish out of order (e.g. a

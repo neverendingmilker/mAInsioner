@@ -102,16 +102,16 @@ Admin only. Limits how often each person can post in a channel — for cooldowns
 - **`/postlimit list`** — Shows every channel with a limit configured, and what it is.
 - **`/postlimit disable`** — Turns the feature on/off for this server.
 
-## 🔢 Reaction Code (`/reactioncode`)
+## 🔢 WaifuWar LR (`/waifuwarlr`)
 
 Admin only. In a chosen channel: post an image, then a follow-up message that's *only digits* (up to 9 of them), and each digit gets decoded into the emoji it's mapped to — those become the new reactions on the image (replacing whatever the bot had reacted with before), and the digit-only message is deleted. A digit with no mapping is silently skipped; repeated digits only add their emoji once. If there's no image waiting when a digit code shows up, it's left alone.
 
-- **`/reactioncode add`** — Sets up a channel for reaction codes (doesn't map any digits yet — do that next). Requires the bot to already have View Channel, Read Message History, Add Reactions and Manage Messages in that channel — Manage Messages specifically because deleting the digit-code messages means deleting someone else's message, not the bot's own.
-- **`/reactioncode setdigit`** — Maps digit(s) to emoji(s) for a channel; both `digit` and `emoji` accept a single value or several separated by commas (e.g. `digit:7,8,9 emoji:🟢,🟡,🔴`), paired up by position. Validates every pair before saving any of them, so a mistake in one doesn't leave the mapping half-set.
-- **`/reactioncode removedigit`** — Removes one digit's mapping.
-- **`/reactioncode remove`** — Removes reaction codes (and every digit mapping) from a channel.
-- **`/reactioncode list`** — Shows every channel set up for this, and its current digit → emoji mappings.
-- **`/reactioncode disable`** — Turns the feature on/off for this server.
+- **`/waifuwarlr add`** — Sets up a channel for WaifuWar LR codes (doesn't map any digits yet — do that next). Requires the bot to already have View Channel, Read Message History, Add Reactions and Manage Messages in that channel — Manage Messages specifically because deleting the digit-code messages means deleting someone else's message, not the bot's own.
+- **`/waifuwarlr setdigit`** — Maps digit(s) to emoji(s) for a channel; both `digit` and `emoji` accept a single value or several separated by commas (e.g. `digit:7,8,9 emoji:🟢,🟡,🔴`), paired up by position. Validates every pair before saving any of them, so a mistake in one doesn't leave the mapping half-set.
+- **`/waifuwarlr removedigit`** — Removes one digit's mapping.
+- **`/waifuwarlr remove`** — Removes WaifuWar LR codes (and every digit mapping) from a channel.
+- **`/waifuwarlr list`** — Shows every channel set up for this, and its current digit → emoji mappings.
+- **`/waifuwarlr disable`** — Turns the feature on/off for this server.
 
 ## 🖐️ Reaction Limit (`/reactionlimit`)
 

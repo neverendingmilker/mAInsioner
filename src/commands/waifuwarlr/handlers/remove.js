@@ -1,5 +1,5 @@
 const { PermissionFlagsBits } = require('discord.js');
-const reactionCodeManager = require('../../../features/reactioncode/reactionCodeManager');
+const waifuWarLRManager = require('../../../features/waifuwarlr/waifuWarLRManager');
 
 async function handleRemove(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
@@ -8,7 +8,7 @@ async function handleRemove(interaction) {
   }
 
   const channelId = interaction.options.getString('channel');
-  const removedCount = await reactionCodeManager.removeChannel(interaction.guildId, channelId);
+  const removedCount = await waifuWarLRManager.removeChannel(interaction.guildId, channelId);
 
   if (removedCount === 0) {
     await interaction.reply({ content: "⚠️ That channel isn't set up for reaction codes.", ephemeral: true });
