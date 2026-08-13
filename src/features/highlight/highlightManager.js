@@ -52,6 +52,8 @@ function assertValidWord(word) {
   return trimmed;
 }
 
+const CHANNEL_MODES = ['exclude', 'include'];
+
 async function addWord(guildId, userId, wordInput) {
   const word = assertValidWord(wordInput);
   const existing = await repo.getWordsForUser(guildId, userId);
@@ -82,6 +84,17 @@ async function getWordsForUser(guildId, userId) {
 
 async function toggleIgnoredChannel(guildId, userId, channelId) {
   return repo.toggleIgnoredChannel(guildId, userId, channelId);
+}
+
+async function getChannelMode(guildId, userId) {
+  return repo.getChannelMode(guildId, userId);
+}
+
+async function setChannelMode(guildId, userId, mode) {
+  if (!CHANNEL_MODES.includes(mode)) {
+    throw new ValidationError(`Mode must be one of: ${CHANNEL_MODES.join(', ')}.`);
+  }
+  await repo.setChannelMode(guildId, userId, mode);
 }
 
 async function toggleIgnoredUser(guildId, userId, ignoredUserId) {
@@ -161,8 +174,10 @@ async function handleMessage(message) {
     const ignoredUsers = await repo.getIgnoredUsers(message.guild.id, userId);
     if (ignoredUsers.includes(message.author.id)) continue;
 
-    const ignoredChannels = await repo.getIgnoredChannels(message.guild.id, userId);
-    if (ignoredChannels.includes(message.channelId)) continue;
+    const channelMode = await repo.getChannelMode(message.guild.id, userId);
+    const channelList = await repo.getIgnoredChannels(message.guild.id, userId);
+    if (channelMode === 'exclude' && channelList.includes(message.channelId)) continue;
+    if (channelMode === 'include' && !channelList.includes(message.channelId)) continue;
 
     const lastNotified = await repo.getLastNotified(message.guild.id, userId, message.channelId);
     if (lastNotified && Date.now() - lastNotified < NOTIFY_COOLDOWN_MS) continue;
@@ -180,6 +195,8 @@ module.exports = {
   removeWord,
   getWordsForUser,
   toggleIgnoredChannel,
+  getChannelMode,
+  setChannelMode,
   toggleIgnoredUser,
   getIgnoredChannels,
   getIgnoredUsers,

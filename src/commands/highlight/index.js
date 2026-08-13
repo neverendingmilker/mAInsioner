@@ -4,6 +4,7 @@ const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
 const { handleIgnoreChannel } = require('./handlers/ignorechannel');
 const { handleIgnoreUser } = require('./handlers/ignoreuser');
+const { handleMode } = require('./handlers/mode');
 const highlightManager = require('../../features/highlight/highlightManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
@@ -32,6 +33,21 @@ const data = new SlashCommandBuilder()
       .addUserOption((opt) => opt.setName('user').setDescription('The user').setRequired(true))
   )
   .addSubcommand((sub) => sub.setName('list').setDescription('Shows your highlight words and ignore lists'))
+  .addSubcommand((sub) =>
+    sub
+      .setName('mode')
+      .setDescription('Switches how ignorechannel is interpreted: exclude those channels, or ONLY those channels')
+      .addStringOption((opt) =>
+        opt
+          .setName('mode')
+          .setDescription('Which mode')
+          .setRequired(true)
+          .addChoices(
+            { name: 'Everywhere, except the channels I list', value: 'exclude' },
+            { name: 'ONLY in the channels I list', value: 'include' }
+          )
+      )
+  )
   .addSubcommand((sub) =>
     sub
       .setName('remove')
@@ -69,6 +85,8 @@ async function execute(interaction) {
       return handleIgnoreChannel(interaction);
     case 'ignoreuser':
       return handleIgnoreUser(interaction);
+    case 'mode':
+      return handleMode(interaction);
     default:
       return interaction.reply({ content: 'Unknown subcommand.', ephemeral: true });
   }

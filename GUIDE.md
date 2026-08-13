@@ -67,7 +67,8 @@ A personal keyword watcher — get DM'd (with a bit of context) whenever someone
 - **`/highlight add`** — Adds a word or phrase to your personal list (2–100 characters, up to 25 total). Matched case-insensitively, on word boundaries (so "cat" won't fire on "category"). Your own messages never trigger your own highlights.
 - **`/highlight remove`** — Removes one, with autocomplete over your own list.
 - **`/highlight list`** — Shows your words, plus your ignored channels and ignored users.
-- **`/highlight ignorechannel`** — Toggles a channel on/off your personal ignore list (you'll never be highlighted from messages posted there).
+- **`/highlight ignorechannel`** — Toggles a channel on/off your personal channel list. What that list means depends on `/highlight mode`: by default it's an ignore list, or an allowlist in "only" mode.
+- **`/highlight mode`** — Switches how your `ignorechannel` list is interpreted: everywhere except those channels (default), or only in those channels.
 - **`/highlight ignoreuser`** — Toggles a user on/off your personal ignore list (their messages will never highlight you).
 - **`/highlight disable`** — Turns the feature on/off for this server.
 

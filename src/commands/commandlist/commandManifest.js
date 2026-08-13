@@ -109,6 +109,7 @@ const COMMAND_MANIFEST = [
       { name: 'remove', tier: EVERYONE, permission: null },
       { name: 'list', tier: EVERYONE, permission: null },
       { name: 'ignorechannel', tier: EVERYONE, permission: null },
+      { name: 'mode', tier: EVERYONE, permission: null },
       { name: 'ignoreuser', tier: EVERYONE, permission: null },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],

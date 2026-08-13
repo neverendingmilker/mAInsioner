@@ -90,6 +90,29 @@ async function getIgnoredChannels(guildId, userId) {
   return result.rows.map((r) => r.channel_id);
 }
 
+// --- Channel mode (per user): 'exclude' (default) treats the list above as an ignore
+// list — highlighted everywhere except those channels. 'include' flips it into an
+// allowlist — highlighted ONLY in those channels. ---
+
+async function getChannelMode(guildId, userId) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT mode FROM highlight_channel_mode WHERE guild_id = ? AND user_id = ?',
+    args: [guildId, userId],
+  });
+  return result.rows[0]?.mode ?? 'exclude';
+}
+
+async function setChannelMode(guildId, userId, mode) {
+  await db.ready;
+  await db.client.execute({
+    sql: `INSERT INTO highlight_channel_mode (guild_id, user_id, mode)
+          VALUES (?, ?, ?)
+          ON CONFLICT(guild_id, user_id) DO UPDATE SET mode = excluded.mode`,
+    args: [guildId, userId, mode],
+  });
+}
+
 // --- Ignored users (per user) ---
 
 async function toggleIgnoredUser(guildId, userId, ignoredUserId) {
@@ -151,6 +174,8 @@ module.exports = {
   getAllWordsInGuild,
   toggleIgnoredChannel,
   getIgnoredChannels,
+  getChannelMode,
+  setChannelMode,
   toggleIgnoredUser,
   getIgnoredUsers,
   getLastNotified,

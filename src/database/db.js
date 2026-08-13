@@ -303,6 +303,12 @@ async function createTables() {
         channel_id TEXT NOT NULL,
         PRIMARY KEY (guild_id, user_id, channel_id)
       )`,
+      `CREATE TABLE IF NOT EXISTS highlight_channel_mode (
+        guild_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        mode TEXT NOT NULL DEFAULT 'exclude',
+        PRIMARY KEY (guild_id, user_id)
+      )`,
       `CREATE TABLE IF NOT EXISTS highlight_ignored_users (
         guild_id TEXT NOT NULL,
         user_id TEXT NOT NULL,

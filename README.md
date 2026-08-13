@@ -351,7 +351,8 @@ A personal keyword watcher, independent per user (not admin-configured) — get 
 - `/highlight add word:<...>` — adds a word or phrase to your personal list (2–100 characters, up to 25 total).
 - `/highlight remove word:<...>` — removes one; `word` is autocompleted over your own list only.
 - `/highlight list` — shows your current words, plus your ignored channels and ignored users, in one ephemeral embed.
-- `/highlight ignorechannel channel:<#channel>` — toggles a channel on/off your personal ignore list; while ignored, messages there never highlight you regardless of which word matches.
+- `/highlight ignorechannel channel:<#channel>` — toggles a channel on/off your personal channel list. What that list *means* depends on `/highlight mode` (see below): by default it's an ignore list (that channel never highlights you); in "only" mode it's an allowlist instead (only listed channels can highlight you).
+- `/highlight mode mode:<Everywhere except listed|Only in listed channels>` — switches how your `ignorechannel` list is interpreted. Default is **exclude**: highlighted everywhere except the channels you've listed. Switching to **include** flips it into an allowlist: you're only highlighted in the channels you've listed, nowhere else. Same list either way — just re-interpreted, so nothing needs re-entering when you switch.
 - `/highlight ignoreuser user:<@user>` — toggles a user on/off your personal ignore list; while ignored, nothing they say will highlight you (can't ignore yourself — pointless, since your own messages never trigger your own highlights anyway).
 - `/highlight disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:Highlight` controls the same setting.
 
