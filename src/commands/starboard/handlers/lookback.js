@@ -46,7 +46,7 @@ async function handleLookback(interaction) {
   const isPotentiallyLongScan = options.sinceYearStart || options.sinceDateInput !== undefined;
   if (isPotentiallyLongScan) {
     await interaction.editReply({
-      content: `🔍 Started the lookback for **${name}**. This can take a while for a large date range — I'll DM you the results once it's done.`,
+      content: `🔍 Working on it...`,
     });
   }
 
