@@ -30,7 +30,7 @@ const data = new SlashCommandBuilder()
       .addStringOption((opt) =>
         opt
           .setName('watch_channel')
-          .setDescription('Channel(s) to watch — comma-separated, or "all" to watch every channel except exclude_channels')
+          .setDescription('Channel(s)/categories to watch, comma-separated, or "all" for everything except exclude_channels')
           .setRequired(true)
       )
       .addChannelOption((opt) =>
@@ -64,7 +64,7 @@ const data = new SlashCommandBuilder()
       .addStringOption((opt) =>
         opt
           .setName('exclude_channels')
-          .setDescription('Only used when watch_channel is "all": channel(s) to leave out, comma-separated')
+          .setDescription('Only used when watch_channel is "all": channel(s)/categories to leave out, comma-separated')
           .setRequired(false)
       )
   )
@@ -78,7 +78,7 @@ const data = new SlashCommandBuilder()
       .addStringOption((opt) =>
         opt
           .setName('watch_channel')
-          .setDescription('New channel(s) to watch — comma-separated, or "all" (replaces the current set)')
+          .setDescription('New channel(s)/categories to watch, comma-separated, or "all" (replaces the current set)')
           .setRequired(false)
       )
       .addChannelOption((opt) =>
@@ -107,7 +107,7 @@ const data = new SlashCommandBuilder()
       .addStringOption((opt) =>
         opt
           .setName('exclude_channels')
-          .setDescription('Only used when watch_channel is "all": channel(s) to leave out, comma-separated')
+          .setDescription('Only used when watch_channel is "all": channel(s)/categories to leave out, comma-separated')
           .setRequired(false)
       )
   )

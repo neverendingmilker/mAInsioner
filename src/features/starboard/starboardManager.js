@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const repo = require('./starboardRepository');
 const config = require('../../config/config');
 const { startOfCurrentYear, zonedTimeToUtc } = require('../../utils/timezoneDate');
@@ -150,10 +150,10 @@ function parseChannelListInput(guild, input, maxCount) {
     .filter(Boolean);
 
   if (tokens.length === 0) {
-    throw new ValidationError('Provide at least one channel.');
+    throw new ValidationError('Provide at least one channel or category.');
   }
   if (tokens.length > maxCount) {
-    throw new ValidationError(`You can list at most ${maxCount} channels here.`);
+    throw new ValidationError(`You can list at most ${maxCount} channels/categories here.`);
   }
 
   const channels = [];
@@ -162,16 +162,32 @@ function parseChannelListInput(guild, input, maxCount) {
     const mentionMatch = token.match(/^<#(\d{17,20})>$/);
     const id = mentionMatch ? mentionMatch[1] : /^\d{17,20}$/.test(token) ? token : null;
     if (!id) {
-      throw new ValidationError(`"${token}" doesn't look like a channel — mention it (e.g. #general) or use its ID.`);
+      throw new ValidationError(`"${token}" doesn't look like a channel or category — mention it (e.g. #general) or use its ID.`);
+    }
+
+    const resolved = guild.channels.cache.get(id);
+    if (!resolved) {
+      throw new ValidationError(`Couldn't find a channel or category matching "${token}" in this server.`);
+    }
+
+    // A category isn't itself a text channel — expand it into every text-based channel
+    // currently filed under it instead of rejecting it.
+    if (resolved.type === ChannelType.GuildCategory) {
+      const categoryChannels = [...guild.channels.cache.values()].filter((c) => c.parentId === resolved.id && c.isTextBased());
+      for (const channel of categoryChannels) {
+        if (seenIds.has(channel.id)) continue; // silently dedupe repeats
+        seenIds.add(channel.id);
+        channels.push(channel);
+      }
+      continue;
+    }
+
+    if (!resolved.isTextBased()) {
+      throw new ValidationError(`"${token}" isn't a text channel or category.`);
     }
     if (seenIds.has(id)) continue; // silently dedupe repeats
     seenIds.add(id);
-
-    const channel = guild.channels.cache.get(id);
-    if (!channel || !channel.isTextBased()) {
-      throw new ValidationError(`Couldn't find a text channel matching "${token}" in this server.`);
-    }
-    channels.push(channel);
+    channels.push(resolved);
   }
 
   return channels;
