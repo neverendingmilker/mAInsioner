@@ -201,6 +201,9 @@ async function execute(interaction) {
 }
 
 // Powers the "name" option's autocomplete on /starboard edit, remove and lookback.
+// Powers the "name" option's autocomplete on /starboard edit, remove and lookback —
+// shows each board's current settings right in the suggestion label, so there's no need
+// to run /starboard list first just to remember what a board is currently set to.
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
   if (focused.name !== 'name') {
@@ -208,12 +211,21 @@ async function autocomplete(interaction) {
     return;
   }
 
-  const names = await starboardManager.getNamesList(interaction.guildId);
+  const boards = await starboardManager.listAll(interaction.guildId);
   const query = focused.value.toLowerCase();
 
-  const filtered = names.filter((n) => n.toLowerCase().includes(query)).slice(0, 25);
+  const choices = boards
+    .filter((b) => b.name.toLowerCase().includes(query))
+    .slice(0, 25)
+    .map((b) => {
+      const watchChannel = interaction.guild.channels.cache.get(b.watch_channel_ids[0]);
+      const postChannel = interaction.guild.channels.cache.get(b.post_channel_id);
+      const emojis = starboardManager.formatEmojisForDisplay(JSON.parse(b.emojis));
+      const label = `${b.name} — #${watchChannel?.name ?? '?'}→#${postChannel?.name ?? '?'} · ${b.threshold}+ ${emojis}`;
+      return { name: label.slice(0, 100), value: b.name };
+    });
 
-  await interaction.respond(filtered.map((n) => ({ name: n, value: n })));
+  await interaction.respond(choices);
 }
 
 module.exports = { data, execute, autocomplete };
