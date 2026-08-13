@@ -12,7 +12,6 @@ const handleDisable = createDisableHandler(boosterLinkManager, PermissionFlagsBi
 const data = new SlashCommandBuilder()
   .setName('boosterlink')
   .setDescription('Tracks custom perk roles given to server boosters, so they auto-remove when the boost ends')
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
   .addSubcommand((sub) =>
     sub
       .setName('add')

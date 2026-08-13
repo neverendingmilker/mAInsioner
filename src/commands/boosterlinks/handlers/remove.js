@@ -1,10 +1,10 @@
-const { PermissionFlagsBits } = require('discord.js');
 const boosterLinkManager = require('../../../features/boosterlinks/boosterLinkManager');
+const { isMod } = require('../../../utils/modRole');
 
 async function handleRemove(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)) {
+  if (!isMod(interaction.member)) {
     await interaction.reply({
-      content: '❌ You need the "Manage Roles" permission to use this command.',
+      content: '❌ You need to be a Mod or Admin to use this command.',
       ephemeral: true,
     });
     return;

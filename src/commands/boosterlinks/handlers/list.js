@@ -1,11 +1,17 @@
 const { EmbedBuilder } = require('discord.js');
 const boosterLinkManager = require('../../../features/boosterlinks/boosterLinkManager');
 const { sendPaginated } = require('../../../utils/pagination');
+const { isMod } = require('../../../utils/modRole');
 
 const ITEMS_PER_PAGE = 15;
 const EMBED_COLOR = 0x5865f2;
 
 async function handleList(interaction) {
+  if (!isMod(interaction.member)) {
+    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
+    return;
+  }
+
   const user = interaction.options.getUser('user');
 
   const links = user

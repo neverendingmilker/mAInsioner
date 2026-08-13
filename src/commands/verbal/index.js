@@ -1,10 +1,10 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const warningManager = require('../../features/warning/warningManager');
+const { isMod } = require('../../utils/modRole');
 
 const data = new SlashCommandBuilder()
   .setName('verbal')
   .setDescription('Logs a verbal warning for a user (no role assigned)')
-  .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
   .addUserOption((opt) => opt.setName('user').setDescription('Who to warn').setRequired(true))
   .addStringOption((opt) => opt.setName('reason').setDescription('Why').setRequired(true).setMaxLength(300))
   .addStringOption((opt) =>
@@ -20,6 +20,10 @@ async function execute(interaction) {
       content: '⚠️ The Warnings feature is currently disabled in this server. An admin can re-enable it with `/disablefeature`.',
       ephemeral: true,
     });
+    return;
+  }
+  if (!isMod(interaction.member)) {
+    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
     return;
   }
 

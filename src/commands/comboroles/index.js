@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { handleRun } = require('./handlers/run');
 const comboRolesManager = require('../../features/comboroles/comboRolesManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+const { isMod } = require('../../utils/modRole');
 
 const handleDisable = createDisableHandler(comboRolesManager, PermissionFlagsBits.Administrator, 'Combined Role Search');
 
@@ -46,11 +47,8 @@ async function execute(interaction) {
     return;
   }
 
-  if (
-    !interaction.memberPermissions.has(PermissionFlagsBits.Administrator) &&
-    !interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)
-  ) {
-    await interaction.reply({ content: '❌ You don\'t have permission to use this command.', ephemeral: true });
+  if (!isMod(interaction.member)) {
+    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
     return;
   }
 

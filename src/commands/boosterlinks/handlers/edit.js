@@ -1,12 +1,12 @@
-const { PermissionFlagsBits } = require('discord.js');
 const boosterLinkManager = require('../../../features/boosterlinks/boosterLinkManager');
+const { isMod } = require('../../../utils/modRole');
 
 // Re-points an existing link to a different role (or a different user), without
 // needing a separate unlink + link. Under the hood this is just "stop tracking the old
 // role, start tracking the new one" — done in one step for convenience.
 async function handleEdit(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)) {
-    await interaction.reply({ content: '❌ You need the "Manage Roles" permission to use this command.', ephemeral: true });
+  if (!isMod(interaction.member)) {
+    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
     return;
   }
 

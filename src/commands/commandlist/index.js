@@ -1,6 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { COMMAND_MANIFEST } = require('./commandManifest');
 const { sendPaginated } = require('../../utils/pagination');
+const { isMod } = require('../../utils/modRole');
 
 const EMBED_COLOR = 0x2ecc71;
 const MAX_PAGE_CHARS = 3500; // safety margin under Discord's 4096-char description cap
@@ -72,11 +73,8 @@ function paginateBlocks(blocks) {
 }
 
 async function execute(interaction) {
-  if (
-    !interaction.memberPermissions.has(PermissionFlagsBits.Administrator) &&
-    !interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)
-  ) {
-    await interaction.reply({ content: '❌ You don\'t have permission to use this command.', ephemeral: true });
+  if (!isMod(interaction.member)) {
+    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
     return;
   }
 
@@ -84,9 +82,8 @@ async function execute(interaction) {
   const pages = paginateBlocks(blocks);
 
   const legend =
-    '**Admin** = requires the Administrator permission · **Mod** = requires Manage Roles/Manage Server/Moderate ' +
-    'Members (whatever role your server grants those to) · **Everyone** = no restriction. Option names with no ' +
-    'brackets are required; `[optional]` ones aren\'t.';
+    '**Admin** = requires the Administrator permission · **Mod** = requires the server\'s configured Mod role, or ' +
+    'Administrator · **Everyone** = no restriction. Option names with no brackets are required; `[optional]` ones aren\'t.';
 
   await sendPaginated(
     interaction,
