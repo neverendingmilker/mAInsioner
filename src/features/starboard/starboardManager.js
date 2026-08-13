@@ -1,4 +1,4 @@
-const { EmbedBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
+const { EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const repo = require('./starboardRepository');
 const config = require('../../config/config');
 const { startOfCurrentYear, zonedTimeToUtc } = require('../../utils/timezoneDate');
@@ -138,91 +138,20 @@ function assertCanReadChannel(guild, channel) {
 
 // --- CRUD used by the /starboard command handlers ---
 
-const MAX_WATCH_CHANNELS = 25;
-const WATCH_ALL_KEYWORD = 'all';
-
-// Parses a comma-separated list of channel mentions (<#123>) or raw IDs into resolved,
-// deduplicated text channels — used for the watch_channel/exclude_channels options.
-function parseChannelListInput(guild, input, maxCount) {
-  const tokens = input
-    .split(',')
-    .map((t) => t.trim())
-    .filter(Boolean);
-
-  if (tokens.length === 0) {
-    throw new ValidationError('Provide at least one channel or category.');
-  }
-  if (tokens.length > maxCount) {
-    throw new ValidationError(`You can list at most ${maxCount} channels/categories here.`);
-  }
-
-  const channels = [];
-  const seenIds = new Set();
-  for (const token of tokens) {
-    const mentionMatch = token.match(/^<#(\d{17,20})>$/);
-    const id = mentionMatch ? mentionMatch[1] : /^\d{17,20}$/.test(token) ? token : null;
-    if (!id) {
-      throw new ValidationError(`"${token}" doesn't look like a channel or category — mention it (e.g. #general) or use its ID.`);
-    }
-
-    const resolved = guild.channels.cache.get(id);
-    if (!resolved) {
-      throw new ValidationError(`Couldn't find a channel or category matching "${token}" in this server.`);
-    }
-
-    // A category isn't itself a text channel — expand it into every text-based channel
-    // currently filed under it instead of rejecting it.
-    if (resolved.type === ChannelType.GuildCategory) {
-      const categoryChannels = [...guild.channels.cache.values()].filter((c) => c.parentId === resolved.id && c.isTextBased());
-      for (const channel of categoryChannels) {
-        if (seenIds.has(channel.id)) continue; // silently dedupe repeats
-        seenIds.add(channel.id);
-        channels.push(channel);
-      }
-      continue;
-    }
-
-    if (!resolved.isTextBased()) {
-      throw new ValidationError(`"${token}" isn't a text channel or category.`);
-    }
-    if (seenIds.has(id)) continue; // silently dedupe repeats
-    seenIds.add(id);
-    channels.push(resolved);
-  }
-
-  return channels;
-}
-
-// `watch_channel` can be the literal word "all" (case-insensitive) instead of a channel
-// list — meaning "every channel in the server", optionally minus whatever's passed as
-// exclusions. Returns { watchAll, watchChannels, excludedChannels }.
-function resolveWatchChannelsInput(guild, watchChannelsInput, excludeChannelsInput) {
-  if (watchChannelsInput.trim().toLowerCase() === WATCH_ALL_KEYWORD) {
-    const excludedChannels = excludeChannelsInput ? parseChannelListInput(guild, excludeChannelsInput, MAX_WATCH_CHANNELS) : [];
-    return { watchAll: true, watchChannels: [], excludedChannels };
-  }
-  const watchChannels = parseChannelListInput(guild, watchChannelsInput, MAX_WATCH_CHANNELS);
-  return { watchAll: false, watchChannels, excludedChannels: [] };
-}
-
-async function create(guild, name, watchChannelsInput, excludeChannelsInput, postChannel, threshold, emojisInput, contentType, createdBy) {
+async function create(guild, name, watchChannel, postChannel, threshold, emojisInput, contentType, createdBy) {
   const trimmedName = name.trim();
   if (!trimmedName) {
     throw new ValidationError('Give this starboard a name.');
   }
-
-  const { watchAll, watchChannels, excludedChannels } = resolveWatchChannelsInput(guild, watchChannelsInput, excludeChannelsInput);
-  if (!watchAll && watchChannels.some((c) => c.id === postChannel.id)) {
-    throw new ValidationError("A watch channel and the post channel can't be the same channel.");
+  if (watchChannel.id === postChannel.id) {
+    throw new ValidationError("The watch channel and the post channel can't be the same channel.");
   }
 
   assertValidThreshold(threshold);
   const resolvedContentType = contentType ?? DEFAULT_CONTENT_TYPE;
   assertValidContentType(resolvedContentType);
   const emojis = parseEmojis(emojisInput);
-  for (const channel of watchChannels) {
-    assertCanReadChannel(guild, channel);
-  }
+  assertCanReadChannel(guild, watchChannel);
   assertCanPostInChannel(guild, postChannel);
 
   const existing = await repo.getByName(guild.id, trimmedName);
@@ -237,25 +166,12 @@ async function create(guild, name, watchChannelsInput, excludeChannelsInput, pos
     threshold,
     JSON.stringify(emojis),
     resolvedContentType,
-    watchAll,
+    false,
     createdBy
   );
+  await repo.setWatchChannels(starboardId, [watchChannel.id]);
 
-  if (watchAll) {
-    // The post channel would otherwise be "watched" too (it's just another channel in
-    // the server) — always excluded automatically so the bot never treats its own
-    // reposts as brand new candidate messages for the same board.
-    const excludedIds = new Set(excludedChannels.map((c) => c.id));
-    excludedIds.add(postChannel.id);
-    await repo.setExcludedChannels(starboardId, [...excludedIds]);
-  } else {
-    await repo.setWatchChannels(
-      starboardId,
-      watchChannels.map((c) => c.id)
-    );
-  }
-
-  return { name: trimmedName, watchAll, watchChannels, excludedChannels, emojis, contentType: resolvedContentType };
+  return { name: trimmedName, watchChannel, emojis, contentType: resolvedContentType };
 }
 
 async function edit(guild, name, updates) {
@@ -265,35 +181,19 @@ async function edit(guild, name, updates) {
   }
 
   const fields = {};
-  let resolved; // { watchAll, watchChannels, excludedChannels } when watch_channel was provided
-  let standaloneExcludedChannels; // when only exclude_channels was provided (board must already be watch_all)
 
-  if (updates.watchChannelsInput) {
-    resolved = resolveWatchChannelsInput(guild, updates.watchChannelsInput, updates.excludeChannelsInput);
-    fields.watch_all = resolved.watchAll;
-    for (const channel of resolved.watchChannels) {
-      assertCanReadChannel(guild, channel);
-    }
-  } else if (updates.excludeChannelsInput) {
-    // Updating just the exclusion list, without having to resend watch_channel:all too —
-    // only makes sense if the board is already in "all" mode.
-    if (!board.watch_all) {
-      throw new ValidationError(
-        '"exclude_channels" only applies when watching "all" channels — provide watch_channel:all together with it, or switch the board to "all" mode first.'
-      );
-    }
-    standaloneExcludedChannels = parseChannelListInput(guild, updates.excludeChannelsInput, MAX_WATCH_CHANNELS);
+  if (updates.watchChannel) {
+    assertCanReadChannel(guild, updates.watchChannel);
+    fields.watch_all = false;
   }
   if (updates.postChannel) {
     assertCanPostInChannel(guild, updates.postChannel);
     fields.post_channel_id = updates.postChannel.id;
   }
-
-  const finalWatchAll = resolved ? resolved.watchAll : board.watch_all;
-  const finalWatchIds = resolved && !resolved.watchAll ? resolved.watchChannels.map((c) => c.id) : board.watch_channel_ids;
+  const finalWatchId = updates.watchChannel ? updates.watchChannel.id : board.watch_channel_ids[0];
   const finalPostId = fields.post_channel_id ?? board.post_channel_id;
-  if (!finalWatchAll && finalWatchIds.includes(finalPostId)) {
-    throw new ValidationError("A watch channel and the post channel can't be the same channel.");
+  if (finalWatchId === finalPostId) {
+    throw new ValidationError("The watch channel and the post channel can't be the same channel.");
   }
 
   if (updates.threshold !== undefined) {
@@ -310,41 +210,19 @@ async function edit(guild, name, updates) {
     fields.emojis = JSON.stringify(emojis);
   }
 
-  if (Object.keys(fields).length === 0 && !resolved && !standaloneExcludedChannels) {
+  if (Object.keys(fields).length === 0 && !updates.watchChannel) {
     throw new ValidationError('Provide at least one field to change.');
   }
 
   await repo.updateStarboard(guild.id, name, fields);
-  if (resolved) {
-    if (resolved.watchAll) {
-      const excludedIds = new Set(resolved.excludedChannels.map((c) => c.id));
-      excludedIds.add(finalPostId); // always excluded, same reasoning as create()
-      await repo.setExcludedChannels(board.id, [...excludedIds]);
-      await repo.setWatchChannels(board.id, []);
-    } else {
-      await repo.setWatchChannels(
-        board.id,
-        resolved.watchChannels.map((c) => c.id)
-      );
-      await repo.setExcludedChannels(board.id, []);
-    }
-  } else if (standaloneExcludedChannels) {
-    const excludedIds = new Set(standaloneExcludedChannels.map((c) => c.id));
-    excludedIds.add(finalPostId); // always excluded, same reasoning as create()
-    await repo.setExcludedChannels(board.id, [...excludedIds]);
+  if (updates.watchChannel) {
+    await repo.setWatchChannels(board.id, [updates.watchChannel.id]);
+    await repo.setExcludedChannels(board.id, []);
   }
   return {
     ...board,
     ...fields,
-    watch_all: resolved ? resolved.watchAll : board.watch_all,
-    watch_channel_ids: resolved ? (resolved.watchAll ? [] : resolved.watchChannels.map((c) => c.id)) : board.watch_channel_ids,
-    excluded_channel_ids: resolved
-      ? resolved.watchAll
-        ? [...new Set([...resolved.excludedChannels.map((c) => c.id), finalPostId])]
-        : []
-      : standaloneExcludedChannels
-        ? [...new Set([...standaloneExcludedChannels.map((c) => c.id), finalPostId])]
-        : board.excluded_channel_ids,
+    watch_channel_ids: updates.watchChannel ? [updates.watchChannel.id] : board.watch_channel_ids,
     emojis: emojis ?? JSON.parse(board.emojis),
   };
 }
@@ -850,18 +728,9 @@ async function runLookback(
     }
   }
 
-  // Resolve every channel to scan. In "watch_all" mode that's every text channel in the
-  // server minus the board's exclusions; otherwise it's the board's own watch channels
-  // plus any extras, deduplicated (an admin might accidentally list one twice).
-  let channelIds;
-  if (board.watch_all) {
-    const excluded = new Set(board.excluded_channel_ids);
-    channelIds = [...guild.channels.cache.values()]
-      .filter((c) => c.isTextBased() && !c.isThread() && !excluded.has(c.id))
-      .map((c) => c.id);
-  } else {
-    channelIds = [...new Set([...board.watch_channel_ids, ...extraChannels.map((c) => c.id)])];
-  }
+  // Resolve every channel to scan: the board's own watch channel plus any extras,
+  // deduplicated (an admin might accidentally list the watch channel again).
+  const channelIds = [...new Set([...board.watch_channel_ids, ...extraChannels.map((c) => c.id)])];
 
   const channels = [];
   const inaccessibleChannelIds = [];
@@ -908,8 +777,6 @@ module.exports = {
   LOOKBACK_DEFAULT_LIMIT,
   LOOKBACK_MAX_LIMIT,
   MAX_LOOKBACK_CHANNELS,
-  MAX_WATCH_CHANNELS,
-  WATCH_ALL_KEYWORD,
   isEnabled,
   setEnabled,
   create,

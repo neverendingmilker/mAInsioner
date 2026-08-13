@@ -11,8 +11,7 @@ async function handleEdit(interaction) {
   }
 
   const name = interaction.options.getString('name');
-  const watchChannelsInput = interaction.options.getString('watch_channel') ?? undefined;
-  const excludeChannelsInput = interaction.options.getString('exclude_channels') ?? undefined;
+  const watchChannel = interaction.options.getChannel('watch_channel') ?? undefined;
   const postChannel = interaction.options.getChannel('post_channel') ?? undefined;
   const threshold = interaction.options.getInteger('threshold') ?? undefined;
   const emojisInput = interaction.options.getString('emojis') ?? undefined;
@@ -21,8 +20,7 @@ async function handleEdit(interaction) {
   let updated;
   try {
     updated = await starboardManager.edit(interaction.guild, name, {
-      watchChannelsInput,
-      excludeChannelsInput,
+      watchChannel,
       postChannel,
       threshold,
       emojisInput,
@@ -36,12 +34,9 @@ async function handleEdit(interaction) {
     throw err;
   }
 
-  const watchChannelsList = updated.watch_all
-    ? `**every channel** (except ${updated.excluded_channel_ids.map((id) => `<#${id}>`).join(', ')})`
-    : updated.watch_channel_ids.map((id) => `<#${id}>`).join(', ');
   await interaction.reply({
     content:
-      `✅ Starboard **${name}** updated: watching ${watchChannelsList}, ` +
+      `✅ Starboard **${name}** updated: watching <#${updated.watch_channel_ids[0]}>, ` +
       `posting to <#${updated.post_channel_id}>, threshold **${updated.threshold}**, ` +
       `emojis ${starboardManager.formatEmojisForDisplay(updated.emojis)}, ` +
       `content filter **${starboardManager.CONTENT_TYPES[updated.content_type]}**.`,

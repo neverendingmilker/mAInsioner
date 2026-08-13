@@ -11,8 +11,7 @@ async function handleAdd(interaction) {
   }
 
   const name = interaction.options.getString('name');
-  const watchChannelsInput = interaction.options.getString('watch_channel');
-  const excludeChannelsInput = interaction.options.getString('exclude_channels') ?? undefined;
+  const watchChannel = interaction.options.getChannel('watch_channel');
   const postChannel = interaction.options.getChannel('post_channel');
   const threshold = interaction.options.getInteger('threshold');
   const emojisInput = interaction.options.getString('emojis');
@@ -23,8 +22,7 @@ async function handleAdd(interaction) {
     result = await starboardManager.create(
       interaction.guild,
       name,
-      watchChannelsInput,
-      excludeChannelsInput,
+      watchChannel,
       postChannel,
       threshold,
       emojisInput,
@@ -39,14 +37,9 @@ async function handleAdd(interaction) {
     throw err;
   }
 
-  const watchChannelsList = result.watchAll
-    ? `**every channel** (its own post channel is always excluded automatically${
-        result.excludedChannels.length > 0 ? `, along with ${result.excludedChannels.map((c) => `${c}`).join(', ')}` : ''
-      })`
-    : result.watchChannels.map((c) => `${c}`).join(', ');
   await interaction.reply({
     content:
-      `✅ Starboard **${result.name}** created: messages in ${watchChannelsList} with **${threshold}+** reactions ` +
+      `✅ Starboard **${result.name}** created: messages in ${watchChannel} with **${threshold}+** reactions ` +
       `(${starboardManager.formatEmojisForDisplay(result.emojis)}) get reposted to ${postChannel}. ` +
       `Content filter: **${starboardManager.CONTENT_TYPES[result.contentType]}**.`,
     flags: MessageFlags.Ephemeral,
