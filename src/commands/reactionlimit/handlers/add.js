@@ -8,10 +8,11 @@ async function handleAdd(interaction) {
   }
 
   const channel = interaction.options.getChannel('channel');
+  const reactionLimit = interaction.options.getInteger('limit') ?? reactionLimitManager.DEFAULT_REACTION_LIMIT;
   const ignoreFirstPost = interaction.options.getBoolean('ignore_first_post') ?? false;
 
   try {
-    await reactionLimitManager.setChannel(interaction.guild, channel, ignoreFirstPost, interaction.user.id);
+    await reactionLimitManager.setChannel(interaction.guild, channel, reactionLimit, ignoreFirstPost, interaction.user.id);
   } catch (err) {
     if (err instanceof reactionLimitManager.ValidationError) {
       await interaction.reply({ content: `⚠️ ${err.message}`, ephemeral: true });
@@ -22,7 +23,7 @@ async function handleAdd(interaction) {
 
   await interaction.reply({
     content:
-      `✅ In ${channel}'s threads, each person can now react at most **${reactionLimitManager.REACTION_LIMIT}** times per thread` +
+      `✅ In ${channel}'s threads, each person can now react at most **${reactionLimit}** times per thread` +
       `${ignoreFirstPost ? ' (reactions on the thread\'s starter message don\'t count).' : '.'}`,
     ephemeral: true,
   });

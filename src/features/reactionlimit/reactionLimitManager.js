@@ -3,7 +3,9 @@ const repo = require('./reactionLimitRepository');
 
 class ValidationError extends Error {}
 
-const REACTION_LIMIT = 5; // fixed on purpose — this feature does exactly one thing
+const DEFAULT_REACTION_LIMIT = 5;
+const MIN_REACTION_LIMIT = 1;
+const MAX_REACTION_LIMIT = 100;
 
 // Reactions the bot itself just removed for going over the limit — tracked briefly so
 // the resulting messageReactionRemove event isn't mistaken for the user manually
@@ -36,11 +38,18 @@ function assertCanManageReactionsInChannel(guild, channel) {
   }
 }
 
+function assertValidLimit(limit) {
+  if (!Number.isInteger(limit) || limit < MIN_REACTION_LIMIT || limit > MAX_REACTION_LIMIT) {
+    throw new ValidationError(`The reaction limit must be a whole number between ${MIN_REACTION_LIMIT} and ${MAX_REACTION_LIMIT}.`);
+  }
+}
+
 // --- Configuration ---
 
-async function setChannel(guild, channel, ignoreFirstPost, createdBy) {
+async function setChannel(guild, channel, reactionLimit, ignoreFirstPost, createdBy) {
+  assertValidLimit(reactionLimit);
   assertCanManageReactionsInChannel(guild, channel);
-  await repo.setChannel(guild.id, channel.id, ignoreFirstPost, createdBy);
+  await repo.setChannel(guild.id, channel.id, reactionLimit, ignoreFirstPost, createdBy);
 }
 
 async function removeChannel(guildId, channelId) {
@@ -80,7 +89,7 @@ async function handleReactionAdd(reaction, user, guild) {
   if (isExempt(member)) return;
 
   const currentCount = await repo.getCount(guild.id, channel.id, user.id);
-  if (currentCount >= REACTION_LIMIT) {
+  if (currentCount >= config.reactionLimit) {
     const key = selfRemovalKey(message.id, user.id, reaction);
     pendingSelfRemovals.add(key);
     setTimeout(() => pendingSelfRemovals.delete(key), SELF_REMOVAL_SAFETY_TTL_MS).unref?.();
@@ -121,7 +130,9 @@ async function handleReactionRemove(reaction, user, guild) {
 
 module.exports = {
   ValidationError,
-  REACTION_LIMIT,
+  DEFAULT_REACTION_LIMIT,
+  MIN_REACTION_LIMIT,
+  MAX_REACTION_LIMIT,
   isEnabled,
   setEnabled,
   setChannel,

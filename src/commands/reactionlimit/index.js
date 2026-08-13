@@ -12,7 +12,7 @@ const REACTIONLIMIT_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildFor
 
 const data = new SlashCommandBuilder()
   .setName('reactionlimit')
-  .setDescription(`Limits each person to ${reactionLimitManager.REACTION_LIMIT} reactions per thread in a channel's threads`)
+  .setDescription("Limits how many times each person can react per thread (configurable per channel)")
   .addSubcommand((sub) =>
     sub
       .setName('add')
@@ -23,6 +23,14 @@ const data = new SlashCommandBuilder()
           .setDescription("The channel whose threads should be limited")
           .addChannelTypes(...REACTIONLIMIT_CHANNEL_TYPES)
           .setRequired(true)
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName('limit')
+          .setDescription(`Max reactions per person per thread (default: ${reactionLimitManager.DEFAULT_REACTION_LIMIT})`)
+          .setMinValue(reactionLimitManager.MIN_REACTION_LIMIT)
+          .setMaxValue(reactionLimitManager.MAX_REACTION_LIMIT)
+          .setRequired(false)
       )
       .addBooleanOption((opt) =>
         opt
@@ -42,6 +50,14 @@ const data = new SlashCommandBuilder()
           .setDescription('Which reaction limit to edit (start typing to see configured ones)')
           .setRequired(true)
           .setAutocomplete(true)
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName('limit')
+          .setDescription('New max reactions per person per thread (optional)')
+          .setMinValue(reactionLimitManager.MIN_REACTION_LIMIT)
+          .setMaxValue(reactionLimitManager.MAX_REACTION_LIMIT)
+          .setRequired(false)
       )
       .addBooleanOption((opt) =>
         opt
@@ -113,7 +129,7 @@ async function autocomplete(interaction) {
       const channel = interaction.guild.channels.cache.get(c.channelId);
       const label = channel ? `#${channel.name}` : c.channelId;
       return {
-        name: `${label} — limit: ${reactionLimitManager.REACTION_LIMIT}/thread${c.ignoreFirstPost ? ' (starter excluded)' : ''}`,
+        name: `${label} — limit: ${c.reactionLimit}/thread${c.ignoreFirstPost ? ' (starter excluded)' : ''}`,
         value: c.channelId,
       };
     })

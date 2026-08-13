@@ -255,6 +255,7 @@ async function createTables() {
       `CREATE TABLE IF NOT EXISTS reactionlimit_channels (
         guild_id TEXT NOT NULL,
         channel_id TEXT NOT NULL,
+        reaction_limit INTEGER NOT NULL DEFAULT 5,
         ignore_first_post INTEGER NOT NULL DEFAULT 0,
         created_by TEXT,
         created_at INTEGER,
@@ -359,6 +360,21 @@ async function migrate() {
     await client.execute('DROP TABLE IF EXISTS reactioncode_guild_config');
     await client.execute('DROP TABLE IF EXISTS reactioncode_channels');
     await client.execute('DROP TABLE IF EXISTS reactioncode_digits');
+  }
+
+  // Reaction Limit's per-channel limit used to be a fixed constant (5) for every
+  // channel; it's now configurable per channel. Existing rows get the old fixed value
+  // as their starting point via the column default, so nothing changes in behavior
+  // until an admin explicitly sets a different limit for a channel.
+  const reactionLimitChannelsExists = (
+    await client.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = 'reactionlimit_channels'")
+  ).rows.length > 0;
+  if (reactionLimitChannelsExists) {
+    const reactionLimitColumns = await client.execute('PRAGMA table_info(reactionlimit_channels)');
+    const reactionLimitColumnNames = reactionLimitColumns.rows.map((row) => row.name);
+    if (!reactionLimitColumnNames.includes('reaction_limit')) {
+      await client.execute('ALTER TABLE reactionlimit_channels ADD COLUMN reaction_limit INTEGER NOT NULL DEFAULT 5');
+    }
   }
 
   // Same idea: Post Limit was renamed to Slowmode.

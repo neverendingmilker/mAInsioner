@@ -24,16 +24,17 @@ async function setEnabled(guildId, enabled) {
 
 // --- Per-channel configuration ---
 
-async function setChannel(guildId, channelId, ignoreFirstPost, createdBy) {
+async function setChannel(guildId, channelId, reactionLimit, ignoreFirstPost, createdBy) {
   await db.ready;
   await db.client.execute({
-    sql: `INSERT INTO reactionlimit_channels (guild_id, channel_id, ignore_first_post, created_by, created_at)
-          VALUES (?, ?, ?, ?, ?)
+    sql: `INSERT INTO reactionlimit_channels (guild_id, channel_id, reaction_limit, ignore_first_post, created_by, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
           ON CONFLICT(guild_id, channel_id) DO UPDATE SET
+            reaction_limit = excluded.reaction_limit,
             ignore_first_post = excluded.ignore_first_post,
             created_by = excluded.created_by,
             created_at = excluded.created_at`,
-    args: [guildId, channelId, ignoreFirstPost ? 1 : 0, createdBy, Date.now()],
+    args: [guildId, channelId, reactionLimit, ignoreFirstPost ? 1 : 0, createdBy, Date.now()],
   });
 }
 
@@ -47,7 +48,7 @@ async function removeChannel(guildId, channelId) {
 }
 
 function mapChannelRow(row) {
-  return { channelId: row.channel_id, ignoreFirstPost: Number(row.ignore_first_post) === 1 };
+  return { channelId: row.channel_id, reactionLimit: Number(row.reaction_limit), ignoreFirstPost: Number(row.ignore_first_post) === 1 };
 }
 
 async function getChannel(guildId, channelId) {

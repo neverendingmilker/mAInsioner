@@ -126,9 +126,11 @@ Admin only. In a chosen channel: post an image, then a follow-up message that's 
 
 Admin only. Limits each person to a fixed **5 reactions per thread** in a chosen channel's threads (forum channels or regular text channels with threads) — no configurable count, this feature just does that one thing. Once someone hits 5 in a thread, any further reaction they add there gets silently removed; removing one of their own earlier reactions frees up a slot again. Optionally excludes reactions on each thread's starter/first message from the count. Moderators (Manage Messages or Administrator) are always exempt.
 
-- **`/reactionlimit add`** — Sets (or replaces) the limit for a channel's threads. Optional `ignore_first_post` (default off) excludes the thread's starter message from the count.
+Admin only. Limits how many times each person can react per thread in a channel's threads — the limit is configurable per channel (1–100, default 5) rather than fixed. Moderators (Manage Messages/Administrator) are always exempt.
+
+- **`/reactionlimit add`** — Sets (or replaces) the limit for a channel's threads. Optional `limit` (default 5) sets how many reactions per person per thread; optional `ignore_first_post` (default off) excludes the thread's starter message from the count.
 - **`/reactionlimit remove`** — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, with the limit shown right in the suggestion, instead of every channel in the server.
-- **`/reactionlimit edit`** — Changes the settings for an already-configured channel; anything not provided keeps its current value. Same `channel` autocomplete as `remove`.
+- **`/reactionlimit edit`** — Changes the settings for an already-configured channel; anything not provided (including `limit`) keeps its current value. Same `channel` autocomplete as `remove`.
 - **`/reactionlimit list`** — Shows every channel with a limit configured.
 - **`/reactionlimit disable`** — Turns the feature on/off for this server.
 
