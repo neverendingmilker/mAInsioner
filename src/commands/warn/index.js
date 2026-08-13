@@ -1,10 +1,10 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const warningManager = require('../../features/warning/warningManager');
+const { isMod } = require('../../utils/modRole');
 
 const data = new SlashCommandBuilder()
   .setName('warn')
   .setDescription('[Mod] Warn a user — automatically escalates through the two configured roles')
-  .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
   .addStringOption((opt) =>
     opt.setName('user_id').setDescription('The user\'s ID (works even if they already left the server)').setRequired(true)
   )
@@ -24,8 +24,8 @@ async function execute(interaction) {
     });
     return;
   }
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ModerateMembers)) {
-    await interaction.reply({ content: '❌ You need the "Moderate Members" permission to use this command.', ephemeral: true });
+  if (!isMod(interaction.member)) {
+    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
     return;
   }
 

@@ -1,6 +1,6 @@
-const { PermissionFlagsBits } = require('discord.js');
 const birthdayManager = require('../../../features/birthday/birthdayManager');
 const { celebrateBirthdayIfDue } = require('../../../features/birthday/birthdayScheduler');
+const { isMod } = require('../../../utils/modRole');
 
 async function handleEdit(interaction) {
   const day = interaction.options.getInteger('day');
@@ -10,9 +10,9 @@ async function handleEdit(interaction) {
 
   const isForSomeoneElse = targetUser && targetUser.id !== interaction.user.id;
 
-  if (isForSomeoneElse && !interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)) {
+  if (isForSomeoneElse && !isMod(interaction.member)) {
     await interaction.reply({
-      content: '❌ You need the "Manage Roles" permission to edit someone else\'s birthday.',
+      content: '❌ You need to be a Mod or Admin to edit someone else\'s birthday.',
       ephemeral: true,
     });
     return;

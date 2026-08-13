@@ -1,13 +1,13 @@
-const { PermissionFlagsBits } = require('discord.js');
 const birthdayManager = require('../../../features/birthday/birthdayManager');
+const { isMod } = require('../../../utils/modRole');
 
 async function handleRemove(interaction) {
   const targetUser = interaction.options.getUser('user'); // optional, admin-only
   const isForSomeoneElse = targetUser && targetUser.id !== interaction.user.id;
 
-  if (isForSomeoneElse && !interaction.memberPermissions.has(PermissionFlagsBits.ManageRoles)) {
+  if (isForSomeoneElse && !isMod(interaction.member)) {
     await interaction.reply({
-      content: '❌ You need the "Manage Roles" permission to remove someone else\'s birthday.',
+      content: '❌ You need to be a Mod or Admin to remove someone else\'s birthday.',
       ephemeral: true,
     });
     return;

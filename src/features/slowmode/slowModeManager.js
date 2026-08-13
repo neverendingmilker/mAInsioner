@@ -1,6 +1,6 @@
-const { PermissionFlagsBits } = require('discord.js');
 const repo = require('./slowModeRepository');
 const { parseDurationToSeconds, formatSeconds } = require('../../utils/duration');
+const { isMod } = require('../../utils/modRole');
 
 class ValidationError extends Error {}
 
@@ -48,9 +48,9 @@ async function listLimits(guildId) {
 
 // A member is exempt from the limit if they can manage messages or are a full admin —
 // always exempt, no separate configurable list.
+// Moderators (the configured Mod role, or Administrator) are always exempt.
 function isExempt(member) {
-  if (!member) return false;
-  return member.permissions.has(PermissionFlagsBits.Administrator) || member.permissions.has(PermissionFlagsBits.ManageMessages);
+  return isMod(member);
 }
 
 // Called from messageCreate for every new guild message. Returns true if the message

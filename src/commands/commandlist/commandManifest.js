@@ -102,6 +102,16 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
+    feature: 'MFA Roles',
+    command: '/mfaroles',
+    subcommands: [{ name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator }],
+  },
+  {
+    feature: 'Mod Access',
+    command: '/modaccess',
+    subcommands: [{ name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator }],
+  },
+  {
     feature: 'Incident',
     command: '/incident',
     subcommands: [
@@ -115,8 +125,8 @@ const COMMAND_MANIFEST = [
     feature: 'Slowmode',
     command: '/slowmode',
     subcommands: [
-      { name: 'add', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
-      { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'add', tier: MOD, permission: null, note: 'the configured Mod role, or Administrator' },
+      { name: 'remove', tier: MOD, permission: null, note: 'the configured Mod role, or Administrator' },
       { name: 'list', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],
@@ -139,7 +149,7 @@ const COMMAND_MANIFEST = [
       { name: 'add', tier: ADMIN, permission: PermissionFlagsBits.Administrator, note: 'picks one or more target roles' },
       { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       { name: 'edit', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
-      { name: 'list', tier: MOD, permission: PermissionFlagsBits.ManageRoles },
+      { name: 'list', tier: MOD, permission: null, note: 'the configured Mod role, or Administrator' },
       { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
     ],
   },
@@ -264,14 +274,26 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
+    feature: 'WaifuWar LR',
+    command: '/waifuwarlr',
+    subcommands: [
+      { name: 'add', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'setdigit', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'removedigit', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'list', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+    ],
+  },
+  {
     feature: 'Warn',
     command: '/warn',
     subcommands: [
       {
         name: '(the command itself)',
         tier: MOD,
-        permission: PermissionFlagsBits.ModerateMembers,
-        note: 'auto-escalates through role_1/role_2; shares state with /warning',
+        permission: null,
+        note: 'the configured Mod role, or Administrator; auto-escalates through role_1/role_2; shares state with /warning',
       },
     ],
   },

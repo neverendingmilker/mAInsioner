@@ -1,5 +1,6 @@
 const { PermissionFlagsBits } = require('discord.js');
 const repo = require('./reactionLimitRepository');
+const { isMod } = require('../../utils/modRole');
 
 class ValidationError extends Error {}
 
@@ -60,11 +61,11 @@ async function listChannels(guildId) {
   return repo.getAllChannels(guildId);
 }
 
-// Moderators (Manage Messages or Administrator) are always exempt — no configurable
-// exempt-role list, matching the "does exactly one thing" scope of this feature.
+// Moderators (the configured Mod role, or Administrator) are always exempt — no
+// configurable exempt-role list, matching the "does exactly one thing" scope of this
+// feature.
 function isExempt(member) {
-  if (!member) return false;
-  return member.permissions.has(PermissionFlagsBits.Administrator) || member.permissions.has(PermissionFlagsBits.ManageMessages);
+  return isMod(member);
 }
 
 // Called from messageReactionAdd for every new reaction in the guild. Only acts on

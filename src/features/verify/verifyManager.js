@@ -1,4 +1,5 @@
 const repo = require('./verifyRepository');
+const { isMod } = require('../../utils/modRole');
 
 class ValidationError extends Error {}
 
@@ -68,7 +69,7 @@ function getRoleIdsForType(config, type) {
 // allowed), plus — if configured via /verify config allowedrole — anyone holding
 // that specific role.
 function canUseVerifyCommands(member, config) {
-  if (member.permissions.has('ManageRoles')) return true;
+  if (isMod(member)) return true;
   if (config.allowed_role_id && member.roles.cache.has(config.allowed_role_id)) return true;
   return false;
 }

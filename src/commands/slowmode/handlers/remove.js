@@ -1,9 +1,9 @@
-const { PermissionFlagsBits } = require('discord.js');
 const slowModeManager = require('../../../features/slowmode/slowModeManager');
+const { isMod } = require('../../../utils/modRole');
 
 async function handleRemove(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.ManageMessages) && !interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({ content: '❌ You need the "Manage Messages" or "Administrator" permission to use this command.', ephemeral: true });
+  if (!isMod(interaction.member)) {
+    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
     return;
   }
 
