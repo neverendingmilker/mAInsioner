@@ -37,12 +37,12 @@ async function handleLookback(interaction) {
     threshold: interaction.options.getInteger('threshold') ?? undefined,
   };
 
-  // Date-based scans aren't capped the same way as the default limit-based ones (up to
-  // 20,000 messages, see LOOKBACK_YEAR_HARD_CAP) and can genuinely take longer than the
-  // interaction token's ~15-minute lifetime on a busy channel — mostly from the many
-  // Discord API calls needed to check who reacted on each message. Give an early heads
-  // up for those, so the person knows to expect a wait and a DM rather than seeing
-  // Discord's client eventually show the interaction as "failed" with no explanation.
+  // Date-based scans aren't capped the same way as the default limit-based ones (no
+  // upper bound on messages scanned) and can genuinely take longer than the interaction
+  // token's ~15-minute lifetime on a busy channel — mostly from the many Discord API
+  // calls needed to check who reacted on each message. Give an early heads up for
+  // those, so the person knows to expect a wait and a DM rather than seeing Discord's
+  // client eventually show the interaction as "failed" with no explanation.
   const isPotentiallyLongScan = options.sinceYearStart || options.sinceDateInput !== undefined;
   if (isPotentiallyLongScan) {
     await interaction.editReply({

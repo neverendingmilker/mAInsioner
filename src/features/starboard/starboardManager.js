@@ -547,7 +547,7 @@ const LOOKBACK_MAX_LIMIT = 1000;
 // Higher ceiling used for date-bounded lookbacks (since_year_start / since_date), since a
 // long stretch of history can easily exceed the normal message-count limit above. Still
 // bounded, so a runaway-active channel can't turn this into an unbounded scan.
-const LOOKBACK_YEAR_HARD_CAP = 20000;
+
 const MESSAGE_FETCH_PAGE_SIZE = 100; // Discord's own per-call cap
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const DISCORD_EPOCH_MS = 1420070400000n; // 2015-01-01T00:00:00.000Z
@@ -747,7 +747,7 @@ async function runLookback(
   }
 
   const fetchOptions = {
-    limit: sinceTimestamp !== undefined ? LOOKBACK_YEAR_HARD_CAP : limit,
+    limit: sinceTimestamp !== undefined ? Infinity : limit,
     sinceTimestamp,
     untilTimestampExclusive,
   };
