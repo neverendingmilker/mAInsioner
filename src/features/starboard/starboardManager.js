@@ -266,6 +266,7 @@ async function edit(guild, name, updates) {
 
   const fields = {};
   let resolved; // { watchAll, watchChannels, excludedChannels } when watch_channel was provided
+  let standaloneExcludedChannels; // when only exclude_channels was provided (board must already be watch_all)
 
   if (updates.watchChannelsInput) {
     resolved = resolveWatchChannelsInput(guild, updates.watchChannelsInput, updates.excludeChannelsInput);
@@ -273,6 +274,15 @@ async function edit(guild, name, updates) {
     for (const channel of resolved.watchChannels) {
       assertCanReadChannel(guild, channel);
     }
+  } else if (updates.excludeChannelsInput) {
+    // Updating just the exclusion list, without having to resend watch_channel:all too —
+    // only makes sense if the board is already in "all" mode.
+    if (!board.watch_all) {
+      throw new ValidationError(
+        '"exclude_channels" only applies when watching "all" channels — provide watch_channel:all together with it, or switch the board to "all" mode first.'
+      );
+    }
+    standaloneExcludedChannels = parseChannelListInput(guild, updates.excludeChannelsInput, MAX_WATCH_CHANNELS);
   }
   if (updates.postChannel) {
     assertCanPostInChannel(guild, updates.postChannel);
@@ -300,7 +310,7 @@ async function edit(guild, name, updates) {
     fields.emojis = JSON.stringify(emojis);
   }
 
-  if (Object.keys(fields).length === 0 && !resolved) {
+  if (Object.keys(fields).length === 0 && !resolved && !standaloneExcludedChannels) {
     throw new ValidationError('Provide at least one field to change.');
   }
 
@@ -318,6 +328,10 @@ async function edit(guild, name, updates) {
       );
       await repo.setExcludedChannels(board.id, []);
     }
+  } else if (standaloneExcludedChannels) {
+    const excludedIds = new Set(standaloneExcludedChannels.map((c) => c.id));
+    excludedIds.add(finalPostId); // always excluded, same reasoning as create()
+    await repo.setExcludedChannels(board.id, [...excludedIds]);
   }
   return {
     ...board,
@@ -328,7 +342,9 @@ async function edit(guild, name, updates) {
       ? resolved.watchAll
         ? [...new Set([...resolved.excludedChannels.map((c) => c.id), finalPostId])]
         : []
-      : board.excluded_channel_ids,
+      : standaloneExcludedChannels
+        ? [...new Set([...standaloneExcludedChannels.map((c) => c.id), finalPostId])]
+        : board.excluded_channel_ids,
     emojis: emojis ?? JSON.parse(board.emojis),
   };
 }
