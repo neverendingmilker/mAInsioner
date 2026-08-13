@@ -72,6 +72,10 @@ Admin only. A little passive fun feature: whenever anyone says a chosen word in 
 - **`/goosepizza list`** — shows every trigger configured in the server, and every channel each one watches.
 - **`/goosepizza disable`** — turns a single trigger on/off (pass `name`), or GoosePizza entirely (every trigger at once, if `name` is omitted). (`/disablefeature` maps to the same all-triggers switch.)
 
+## 🔐 MFA Roles (`/mfaroles`)
+
+Admin only. A quick security-audit command: lists every role in the server that has at least one permission Discord requires 2FA for (if the server ever turns on "Require 2FA for moderator actions"). This is Discord's own fixed list — not everything people assume counts as a "mod permission" is actually on it (View Audit Log, Manage Emojis and Stickers, and timeouts, for example, are not). Only checks each role's own base permissions, not per-channel overrides.
+
 ## 🪧 Incident (`/incident`)
 
 Admin only (the command itself is hidden from anyone without the Administrator permission). Keeps a "Days since last incident" sign updated in a channel with the current count.

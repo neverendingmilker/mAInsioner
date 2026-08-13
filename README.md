@@ -42,6 +42,8 @@ src/
         remove.js
         list.js
         disable.js
+    mfaroles/
+      index.js       (single-file command, no subcommands — lists roles with 2FA-required permissions)
     incident/
       index.js       (defines /incident channel, set, reset, disable)
       handlers/
@@ -326,6 +328,10 @@ A small passive fun feature: whenever anyone says a chosen word in one of its ch
 - `/goosepizza remove name:<...>` — deletes a trigger.
 - `/goosepizza list` — shows every trigger configured in the server: its channels, trigger text, emoji, mode, and enabled/disabled state.
 - `/goosepizza disable enabled:<true|false> [name]` — with `name` given (autocomplete), enables/disables just that one trigger without touching the others. Without `name`, it's a dedicated on/off switch for the whole feature (every trigger at once) — `/disablefeature feature:GoosePizza` controls that exact same all-triggers setting, so either works.
+
+## Available commands (MFA Roles)
+
+- `/mfaroles` — lists every role in the server that has at least one permission requiring 2FA for moderation, and which of those permissions it has. This is Discord's own fixed list of permissions blocked for a non-2FA account once the server turns on "Require 2FA for moderator actions" (Server Settings → Safety Setup): Administrator, Kick Members, Ban Members, Manage Server, Manage Roles, Manage Channels, Manage Messages, Manage Webhooks, Manage Threads, Mute Members, Deafen Members, Move Members. A role with Administrator implicitly has every other permission on the list too (that's how Discord permissions work), so it's shown as just "Administrator" rather than repeating all 12. Only checks each role's own base permissions — a permission granted only via a per-channel override won't be picked up. No toggle in `/disablefeature`; it's a stateless read-only utility, not a feature with ongoing behavior. Requires the **Administrator** permission to run.
 
 
 ## Available commands (Post Limit feature)
