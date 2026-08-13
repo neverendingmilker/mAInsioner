@@ -66,7 +66,7 @@ Mod only (Manage Roles) for `search`; `disable` is Admin only.
 Admin only. A little passive fun feature: whenever anyone says a chosen word in one of its chosen channels, the bot automatically responds with a chosen emoji — either by posting it as a new message, or by reacting with it directly on the triggering message. You can set up multiple independent triggers — different words, channels, emojis and modes can all coexist, including several watching the same channel at once — and each trigger can itself watch more than one channel.
 
 - **`/goosepizza add`** — sets up a new trigger's name, word/phrase, emoji, and mode (Comment or React); right after, you'll get a channel picker (a native Discord select menu listing every channel in the server) to choose which channel(s) it watches.
-- **`/goosepizza edit`** — changes the word/phrase, emoji, and/or mode of an existing trigger. The `name` option has autocomplete.
+- **`/goosepizza edit`** — changes the word/phrase, emoji, and/or mode of an existing trigger. The `name` option has autocomplete, and shows the trigger's current word/phrase, emoji and mode right in each suggestion.
 - **`/goosepizza channels`** — opens the same channel picker for an existing trigger, pre-filled with its current channels; whatever you select replaces the list entirely.
 - **`/goosepizza remove`** — deletes a trigger.
 - **`/goosepizza list`** — shows every trigger configured in the server, and every channel each one watches.

@@ -107,7 +107,10 @@ async function execute(interaction) {
   }
 }
 
-// Powers the "name" option's autocomplete on /goosepizza edit, channels, remove, disable.
+// Powers the "name" option's autocomplete on /goosepizza edit, channels, remove, disable
+// — shows each trigger's current word/phrase, emoji and response mode right in the
+// suggestion label, so there's no need to check elsewhere first to remember what a
+// trigger is currently set to.
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
   if (focused.name !== 'name') {
@@ -115,11 +118,18 @@ async function autocomplete(interaction) {
     return;
   }
 
-  const names = await goosepizzaManager.getNamesList(interaction.guildId);
+  const triggers = await goosepizzaManager.listAll(interaction.guildId);
   const query = focused.value.toLowerCase();
-  const filtered = names.filter((n) => n.toLowerCase().includes(query)).slice(0, 25);
 
-  await interaction.respond(filtered.map((n) => ({ name: n, value: n })));
+  const choices = triggers
+    .filter((t) => t.name.toLowerCase().includes(query))
+    .slice(0, 25)
+    .map((t) => {
+      const label = `${t.name} — "${t.trigger_text}" ${t.emoji} (${t.response_mode})`;
+      return { name: label.slice(0, 100), value: t.name };
+    });
+
+  await interaction.respond(choices);
 }
 
 module.exports = { data, execute, autocomplete };
