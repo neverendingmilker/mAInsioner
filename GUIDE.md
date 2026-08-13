@@ -74,7 +74,7 @@ Admin only. A little passive fun feature: whenever anyone says a chosen word in 
 
 ## 🔐 MFA Roles (`/mfaroles`)
 
-Admin only. A quick security-audit command: lists every role in the server that has at least one permission Discord requires 2FA for (if the server ever turns on "Require 2FA for moderator actions"). This is Discord's own fixed list — not everything people assume counts as a "mod permission" is actually on it (View Audit Log, Manage Emojis and Stickers, and timeouts, for example, are not). Only checks each role's own base permissions, not per-channel overrides.
+Admin only. A quick security-audit command: lists every role in the server that has at least one permission Discord requires 2FA for (if the server ever turns on "Require 2FA for moderator actions"). This is Discord's own fixed list — not everything people assume counts as a "mod permission" is actually on it (View Audit Log, Manage Emojis and Stickers, and timeouts, for example, are not). Checks both server-wide role permissions and per-channel role overrides (flagged separately as "Channel overrides"), since a role quietly granted a 2FA-gated permission on just one channel is easy to miss otherwise. Member-specific (not role-based) overwrites aren't checked.
 
 ## 🪧 Incident (`/incident`)
 
