@@ -102,6 +102,18 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
+    feature: 'Highlight',
+    command: '/highlight',
+    subcommands: [
+      { name: 'add', tier: EVERYONE, permission: null },
+      { name: 'remove', tier: EVERYONE, permission: null },
+      { name: 'list', tier: EVERYONE, permission: null },
+      { name: 'ignorechannel', tier: EVERYONE, permission: null },
+      { name: 'ignoreuser', tier: EVERYONE, permission: null },
+      { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+    ],
+  },
+  {
     feature: 'MFA Roles',
     command: '/mfaroles',
     subcommands: [{ name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator }],

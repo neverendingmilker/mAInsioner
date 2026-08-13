@@ -60,6 +60,19 @@ When a user loses Discord's Booster role (boost expired, manually removed, etc.)
 - **`/comboroles search`** `Mod` — Shows the users who have **all** of the given roles, optionally excluding anyone who also has one of up to three "BUT" roles. Results are paginated.
 - **`/comboroles disable`** `Admin` — Turns the whole feature off/on for this server.
 
+## 🔦 Highlight (`/highlight`)
+
+A personal keyword watcher — get DM'd (with a bit of context) whenever someone says a word or phrase you've set up, anywhere in the server, even in channels you're not actively watching. Everyone can use it for their own list; `disable` is Admin only.
+
+- **`/highlight add`** — Adds a word or phrase to your personal list (2–100 characters, up to 25 total). Matched case-insensitively, on word boundaries (so "cat" won't fire on "category"). Your own messages never trigger your own highlights.
+- **`/highlight remove`** — Removes one, with autocomplete over your own list.
+- **`/highlight list`** — Shows your words, plus your ignored channels and ignored users.
+- **`/highlight ignorechannel`** — Toggles a channel on/off your personal ignore list (you'll never be highlighted from messages posted there).
+- **`/highlight ignoreuser`** — Toggles a user on/off your personal ignore list (their messages will never highlight you).
+- **`/highlight disable`** — Turns the feature on/off for this server.
+
+Notifications are DMs with a short embed: a couple of messages of context before the trigger, the triggering message itself, which word(s) matched, and a jump link. To avoid spamming you if a word comes up a lot in one conversation, you won't be re-notified in the same channel more than once every 5 minutes.
+
 ## 🍕 GoosePizza (`/goosepizza`)
 
 A little passive fun feature: whenever anyone says a chosen word in one of its chosen channels, the bot automatically responds with a chosen emoji — either by posting it as a new message, or by reacting with it directly on the triggering message. You can set up multiple independent triggers — different words, channels, emojis and modes can all coexist, including several watching the same channel at once — and each trigger can itself watch more than one channel.

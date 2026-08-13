@@ -43,6 +43,14 @@ src/
         remove.js
         list.js
         disable.js
+    highlight/
+      index.js       (defines /highlight add, remove, list, ignorechannel, ignoreuser, disable + autocomplete)
+      handlers/
+        add.js
+        remove.js
+        list.js
+        ignorechannel.js
+        ignoreuser.js
     mfaroles/
       index.js       (single-file command, no subcommands — lists roles with 2FA-required permissions)
     modaccess/
@@ -148,6 +156,9 @@ src/
       goosepizzaManager.js     (validation, config, multi-trigger matching/response)
       goosepizzaRepository.js  (SQL queries: per-guild triggers + their channels + enabled toggle)
       goosepizzaChannelSessions.js (in-memory state between the channel picker and its follow-up)
+    highlight/
+      highlightManager.js     (per-guild word-cache, matching against every message, DM notification with context, cooldown)
+      highlightRepository.js  (SQL queries: per-user words, ignored channels/users, last-notified cooldown timestamps)
     incident/
       incidentManager.js     (validation + posts/refreshes the sign in Discord)
       incidentRepository.js  (SQL queries)
@@ -332,6 +343,19 @@ A small passive fun feature: whenever anyone says a chosen word in one of its ch
 - `/goosepizza remove name:<...>` — deletes a trigger.
 - `/goosepizza list` — shows every trigger configured in the server: its channels, trigger text, emoji, mode, and enabled/disabled state.
 - `/goosepizza disable enabled:<true|false> [name]` — with `name` given (autocomplete), enables/disables just that one trigger without touching the others. Without `name`, it's a dedicated on/off switch for the whole feature (every trigger at once) — `/disablefeature feature:GoosePizza` controls that exact same all-triggers setting, so either works.
+
+## Available commands (Highlight feature)
+
+A personal keyword watcher, independent per user (not admin-configured) — get DM'd whenever someone says a word/phrase from your own list anywhere in the server, even in channels you don't normally follow. Matching is case-insensitive and word-boundary-aware (so `cat` won't fire on "category"), runs against every message server-wide, and never triggers on your own messages. `disable` requires the **Administrator** permission; every other subcommand is open to everyone, each acting only on the caller's own list.
+
+- `/highlight add word:<...>` — adds a word or phrase to your personal list (2–100 characters, up to 25 total).
+- `/highlight remove word:<...>` — removes one; `word` is autocompleted over your own list only.
+- `/highlight list` — shows your current words, plus your ignored channels and ignored users, in one ephemeral embed.
+- `/highlight ignorechannel channel:<#channel>` — toggles a channel on/off your personal ignore list; while ignored, messages there never highlight you regardless of which word matches.
+- `/highlight ignoreuser user:<@user>` — toggles a user on/off your personal ignore list; while ignored, nothing they say will highlight you (can't ignore yourself — pointless, since your own messages never trigger your own highlights anyway).
+- `/highlight disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:Highlight` controls the same setting.
+
+When a match fires, you get a DM with a small embed: up to 3 messages of context immediately before the trigger, the triggering message itself, which word(s) matched, and a jump link — enough to follow the conversation without needing to open the channel first. To avoid spamming you if a word comes up repeatedly in one conversation, you won't be re-notified in the same channel more than once every 5 minutes, even if a different word matches in between.
 
 ## Available commands (MFA Roles)
 
