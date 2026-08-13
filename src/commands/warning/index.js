@@ -12,21 +12,6 @@ const data = new SlashCommandBuilder()
   .setDescription('Configuration and management for the Warnings feature (to warn someone, use /warn)')
   .addSubcommand((sub) =>
     sub
-      .setName('edit')
-      .setDescription('[Mod] Edit one of your own previously-issued warnings/verbals')
-      .addStringOption((opt) =>
-        opt.setName('warning').setDescription('Which of your warnings to edit').setRequired(true).setAutocomplete(true)
-      )
-      .addStringOption((opt) => opt.setName('reason').setDescription('New reason (optional)').setRequired(false).setMaxLength(300))
-      .addStringOption((opt) =>
-        opt
-          .setName('date')
-          .setDescription('New date: DD/MM/YY or DD/MM/YYYY, overwrites the current one (optional)')
-          .setRequired(false)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub
       .setName('config')
       .setDescription('[Admin] Configure the two escalation roles used by /warn and/or the warnings list channel')
       .addRoleOption((opt) =>
@@ -43,10 +28,25 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
+  .addSubcommand(buildDisableSubcommand())
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription('[Mod] Edit one of your own previously-issued warnings/verbals')
+      .addStringOption((opt) =>
+        opt.setName('warning').setDescription('Which of your warnings to edit').setRequired(true).setAutocomplete(true)
+      )
+      .addStringOption((opt) => opt.setName('reason').setDescription('New reason (optional)').setRequired(false).setMaxLength(300))
+      .addStringOption((opt) =>
+        opt
+          .setName('date')
+          .setDescription('New date: DD/MM/YY or DD/MM/YYYY, overwrites the current one (optional)')
+          .setRequired(false)
+      )
+  )
   .addSubcommand((sub) =>
     sub.setName('update').setDescription('[Admin] Refreshes the warnings list embed with the current formatting/content')
-  )
-  .addSubcommand(buildDisableSubcommand());
+  );
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();

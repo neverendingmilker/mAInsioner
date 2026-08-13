@@ -34,37 +34,6 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
-      .setName('edit')
-      .setDescription("Edit your saved birthday (or, for mods, anyone's)")
-      .addIntegerOption((opt) =>
-        opt.setName('day').setDescription('Day (1-31)').setMinValue(1).setMaxValue(31).setRequired(true)
-      )
-      .addIntegerOption((opt) =>
-        opt.setName('month').setDescription('Month (1-12)').setMinValue(1).setMaxValue(12).setRequired(true)
-      )
-      .addIntegerOption((opt) =>
-        opt.setName('year').setDescription('Year of birth (optional)').setRequired(false)
-      )
-      .addUserOption((opt) =>
-        opt
-          .setName('user')
-          .setDescription('[Mod only] Edit the birthday for someone else instead of yourself')
-          .setRequired(false)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('remove')
-      .setDescription('Remove your birthday (or, for admins, someone else\'s)')
-      .addUserOption((opt) =>
-        opt
-          .setName('user')
-          .setDescription('[Admin only] Remove someone else\'s birthday instead of your own')
-          .setRequired(false)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub
       .setName('config')
       .setDescription('[Admin] Configure the birthday role, removal timer and/or greeting channel')
       .addRoleOption((opt) =>
@@ -84,10 +53,41 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
+  .addSubcommand(buildDisableSubcommand())
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription("Edit your saved birthday (or, for mods, anyone's)")
+      .addIntegerOption((opt) =>
+        opt.setName('day').setDescription('Day (1-31)').setMinValue(1).setMaxValue(31).setRequired(true)
+      )
+      .addIntegerOption((opt) =>
+        opt.setName('month').setDescription('Month (1-12)').setMinValue(1).setMaxValue(12).setRequired(true)
+      )
+      .addIntegerOption((opt) =>
+        opt.setName('year').setDescription('Year of birth (optional)').setRequired(false)
+      )
+      .addUserOption((opt) =>
+        opt
+          .setName('user')
+          .setDescription('[Mod only] Edit the birthday for someone else instead of yourself')
+          .setRequired(false)
+      )
+  )
   .addSubcommand((sub) =>
     sub.setName('list').setDescription('Show all birthdays in this server, grouped by month')
   )
-  .addSubcommand(buildDisableSubcommand());
+  .addSubcommand((sub) =>
+    sub
+      .setName('remove')
+      .setDescription('Remove your birthday (or, for admins, someone else\'s)')
+      .addUserOption((opt) =>
+        opt
+          .setName('user')
+          .setDescription('[Admin only] Remove someone else\'s birthday instead of your own')
+          .setRequired(false)
+      )
+  );
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();

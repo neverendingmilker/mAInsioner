@@ -19,6 +19,10 @@ const data = new SlashCommandBuilder()
         opt.setName('channel').setDescription('Channel where the sign will be posted').setRequired(true)
       )
   )
+  .addSubcommand(buildDisableSubcommand())
+  .addSubcommand((sub) =>
+    sub.setName('reset').setDescription('Resets the counter to 0 (use it when an incident just happened)')
+  )
   .addSubcommand((sub) =>
     sub
       .setName('set')
@@ -26,11 +30,7 @@ const data = new SlashCommandBuilder()
       .addIntegerOption((opt) =>
         opt.setName('number').setDescription('New value for the counter').setRequired(true).setMinValue(0)
       )
-  )
-  .addSubcommand((sub) =>
-    sub.setName('reset').setDescription('Resets the counter to 0 (use it when an incident just happened)')
-  )
-  .addSubcommand(buildDisableSubcommand());
+  );
 
 async function execute(interaction) {
   switch (interaction.options.getSubcommand()) {

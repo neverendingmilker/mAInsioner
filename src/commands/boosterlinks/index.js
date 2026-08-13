@@ -20,6 +20,41 @@ const data = new SlashCommandBuilder()
       .addUserOption((opt) => opt.setName('user').setDescription('The booster').setRequired(true))
       .addRoleOption((opt) => opt.setName('role').setDescription('Their custom perk role').setRequired(true))
   )
+  .addSubcommand(buildDisableSubcommand())
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription('Change which role is tracked for a user (swaps one linked role for another)')
+      .addUserOption((opt) => opt.setName('user').setDescription('The user').setRequired(true))
+      .addStringOption((opt) =>
+        opt.setName('old_role').setDescription('Their currently-tracked role').setRequired(true).setAutocomplete(true)
+      )
+      .addRoleOption((opt) => opt.setName('new_role').setDescription('The role to track instead').setRequired(true))
+  )
+  .addSubcommandGroup((group) =>
+    group
+      .setName('exempt')
+      .setDescription('Manage which roles are exempt from the auto-removal, regardless of boost status')
+      .addSubcommand((sub) =>
+        sub
+          .setName('add')
+          .setDescription('Add a role: members with it are never touched by the auto-removal')
+          .addRoleOption((opt) => opt.setName('role').setDescription('The role to exempt').setRequired(true))
+      )
+      .addSubcommand((sub) => sub.setName('list').setDescription('Lists every exempt role'))
+      .addSubcommand((sub) =>
+        sub
+          .setName('remove')
+          .setDescription('Remove a role from the exempt list')
+          .addRoleOption((opt) => opt.setName('role').setDescription('The role to stop exempting').setRequired(true))
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('list')
+      .setDescription('Lists tracked custom roles')
+      .addUserOption((opt) => opt.setName('user').setDescription("Show only this user's tracked roles").setRequired(false))
+  )
   .addSubcommand((sub) =>
     sub
       .setName('remove')
@@ -32,42 +67,7 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
           .setAutocomplete(true)
       )
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('edit')
-      .setDescription('Change which role is tracked for a user (swaps one linked role for another)')
-      .addUserOption((opt) => opt.setName('user').setDescription('The user').setRequired(true))
-      .addStringOption((opt) =>
-        opt.setName('old_role').setDescription('Their currently-tracked role').setRequired(true).setAutocomplete(true)
-      )
-      .addRoleOption((opt) => opt.setName('new_role').setDescription('The role to track instead').setRequired(true))
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('list')
-      .setDescription('Lists tracked custom roles')
-      .addUserOption((opt) => opt.setName('user').setDescription("Show only this user's tracked roles").setRequired(false))
-  )
-  .addSubcommandGroup((group) =>
-    group
-      .setName('exempt')
-      .setDescription('Manage which roles are exempt from the auto-removal, regardless of boost status')
-      .addSubcommand((sub) =>
-        sub
-          .setName('add')
-          .setDescription('Add a role: members with it are never touched by the auto-removal')
-          .addRoleOption((opt) => opt.setName('role').setDescription('The role to exempt').setRequired(true))
-      )
-      .addSubcommand((sub) =>
-        sub
-          .setName('remove')
-          .setDescription('Remove a role from the exempt list')
-          .addRoleOption((opt) => opt.setName('role').setDescription('The role to stop exempting').setRequired(true))
-      )
-      .addSubcommand((sub) => sub.setName('list').setDescription('Lists every exempt role'))
-  )
-  .addSubcommand(buildDisableSubcommand());
+  );
 
 async function execute(interaction) {
   const group = interaction.options.getSubcommandGroup(false);

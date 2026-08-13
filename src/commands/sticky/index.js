@@ -44,6 +44,7 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
+  .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) =>
     sub
       .setName('edit')
@@ -69,6 +70,7 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
+  .addSubcommand((sub) => sub.setName('list').setDescription('Show all sticky messages configured in this server'))
   .addSubcommand((sub) =>
     sub
       .setName('remove')
@@ -80,9 +82,7 @@ const data = new SlashCommandBuilder()
           .addChannelTypes(...STICKY_CHANNEL_TYPES)
           .setRequired(true)
       )
-  )
-  .addSubcommand((sub) => sub.setName('list').setDescription('Show all sticky messages configured in this server'))
-  .addSubcommand(buildDisableSubcommand());
+  );
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();

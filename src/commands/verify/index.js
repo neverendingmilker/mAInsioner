@@ -41,15 +41,7 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
-  .addSubcommand((sub) =>
-    sub
-      .setName('sub')
-      .setDescription('[Admin] Verify a user as Sub')
-      .addUserOption((opt) => opt.setName('user').setDescription('User to verify').setRequired(true))
-      .addStringOption((opt) =>
-        opt.setName('verification').setDescription('How the verification was done').setRequired(true)
-      )
-  )
+  .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) =>
     sub
       .setName('domme')
@@ -59,6 +51,12 @@ const data = new SlashCommandBuilder()
         opt.setName('verification').setDescription('How the verification was done').setRequired(true)
       )
       .addStringOption((opt) => opt.setName('social').setDescription('Social media / handle').setRequired(true))
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription('[Admin] Edit the Verification/Social fields of a user\'s last verification report')
+      .addUserOption((opt) => opt.setName('user').setDescription('User whose report to edit').setRequired(true))
   )
   .addSubcommand((sub) =>
     sub
@@ -72,11 +70,13 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
-      .setName('edit')
-      .setDescription('[Admin] Edit the Verification/Social fields of a user\'s last verification report')
-      .addUserOption((opt) => opt.setName('user').setDescription('User whose report to edit').setRequired(true))
-  )
-  .addSubcommand(buildDisableSubcommand());
+      .setName('sub')
+      .setDescription('[Admin] Verify a user as Sub')
+      .addUserOption((opt) => opt.setName('user').setDescription('User to verify').setRequired(true))
+      .addStringOption((opt) =>
+        opt.setName('verification').setDescription('How the verification was done').setRequired(true)
+      )
+  );
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();

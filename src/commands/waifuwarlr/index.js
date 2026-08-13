@@ -22,6 +22,8 @@ const data = new SlashCommandBuilder()
         opt.setName('channel').setDescription('The channel').addChannelTypes(...REACTIONCODE_CHANNEL_TYPES).setRequired(true)
       )
   )
+  .addSubcommand(buildDisableSubcommand())
+  .addSubcommand((sub) => sub.setName('list').setDescription('[Admin] Lists every channel set up for reaction codes and their digit mappings'))
   .addSubcommand((sub) =>
     sub
       .setName('remove')
@@ -30,6 +32,25 @@ const data = new SlashCommandBuilder()
         opt
           .setName('channel')
           .setDescription('Which channel to remove (start typing to see configured ones)')
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('removedigit')
+      .setDescription("[Admin] Removes one digit's mapping for a channel")
+      .addStringOption((opt) =>
+        opt
+          .setName('channel')
+          .setDescription('Which channel (start typing to see configured ones)')
+          .setRequired(true)
+          .setAutocomplete(true)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('digit')
+          .setDescription('Which digit to unmap')
           .setRequired(true)
           .setAutocomplete(true)
       )
@@ -57,28 +78,7 @@ const data = new SlashCommandBuilder()
           .setDescription('The matching emoji(s), same order/count as "digit", e.g. "🟢,🟡,🔴"')
           .setRequired(true)
       )
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('removedigit')
-      .setDescription("[Admin] Removes one digit's mapping for a channel")
-      .addStringOption((opt) =>
-        opt
-          .setName('channel')
-          .setDescription('Which channel (start typing to see configured ones)')
-          .setRequired(true)
-          .setAutocomplete(true)
-      )
-      .addStringOption((opt) =>
-        opt
-          .setName('digit')
-          .setDescription('Which digit to unmap')
-          .setRequired(true)
-          .setAutocomplete(true)
-      )
-  )
-  .addSubcommand((sub) => sub.setName('list').setDescription('[Admin] Lists every channel set up for reaction codes and their digit mappings'))
-  .addSubcommand(buildDisableSubcommand());
+  );
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();

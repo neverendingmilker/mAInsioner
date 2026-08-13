@@ -29,32 +29,7 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
-  .addSubcommand((sub) =>
-    sub
-      .setName('remove')
-      .setDescription('[Admin] Remove a single anime entry from the watched list')
-      .addStringOption((opt) =>
-        opt.setName('entry').setDescription('Which entry to remove (start typing to search)').setRequired(true).setAutocomplete(true)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('list')
-      .setDescription('Show the full watched anime list')
-      .addStringOption((opt) =>
-        opt
-          .setName('order')
-          .setDescription('How to sort titles within each session (default: alphabetical)')
-          .addChoices(
-            { name: 'Alphabetical', value: 'alphabetical' },
-            { name: 'Order added', value: 'added' }
-          )
-          .setRequired(false)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub.setName('last').setDescription('Show the anime from the most recent Mystery Anime Night session')
-  )
+  .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) =>
     sub
       .setName('edit')
@@ -79,7 +54,32 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
-  .addSubcommand(buildDisableSubcommand());
+  .addSubcommand((sub) =>
+    sub.setName('last').setDescription('Show the anime from the most recent Mystery Anime Night session')
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('list')
+      .setDescription('Show the full watched anime list')
+      .addStringOption((opt) =>
+        opt
+          .setName('order')
+          .setDescription('How to sort titles within each session (default: alphabetical)')
+          .addChoices(
+            { name: 'Alphabetical', value: 'alphabetical' },
+            { name: 'Order added', value: 'added' }
+          )
+          .setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('remove')
+      .setDescription('[Admin] Remove a single anime entry from the watched list')
+      .addStringOption((opt) =>
+        opt.setName('entry').setDescription('Which entry to remove (start typing to search)').setRequired(true).setAutocomplete(true)
+      )
+  );
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();

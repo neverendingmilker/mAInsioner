@@ -8,6 +8,7 @@ const handleDisable = createDisableHandler(comboRolesManager, PermissionFlagsBit
 const data = new SlashCommandBuilder()
   .setName('comboroles')
   .setDescription('Shows the users who have all the given roles (optionally excluding others with BUT)')
+  .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) =>
     sub
       .setName('search')
@@ -26,8 +27,7 @@ const data = new SlashCommandBuilder()
       .addRoleOption((opt) =>
         opt.setName('but3').setDescription('BUT: exclude anyone who also has this role (optional)').setRequired(false)
       )
-  )
-  .addSubcommand(buildDisableSubcommand());
+  );
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();

@@ -32,34 +32,12 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
-      .setName('edit')
-      .setDescription('[Admin] Edit an existing trigger\'s text/emoji/mode (use /goosepizza channels for its channels)')
-      .addStringOption((opt) =>
-        opt.setName('name').setDescription('Which trigger to edit').setRequired(true).setAutocomplete(true)
-      )
-      .addStringOption((opt) => opt.setName('trigger').setDescription('New trigger text').setRequired(false))
-      .addStringOption((opt) => opt.setName('emoji').setDescription('New emoji').setRequired(false))
-      .addStringOption((opt) =>
-        opt.setName('mode').setDescription('New response mode').setRequired(false).addChoices(...MODE_CHOICES)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub
       .setName('channels')
       .setDescription('[Admin] Pick which channel(s) a trigger watches (replaces its current list)')
       .addStringOption((opt) =>
         opt.setName('name').setDescription('Which trigger').setRequired(true).setAutocomplete(true)
       )
   )
-  .addSubcommand((sub) =>
-    sub
-      .setName('remove')
-      .setDescription('[Admin] Delete a trigger')
-      .addStringOption((opt) =>
-        opt.setName('name').setDescription('Which trigger to remove').setRequired(true).setAutocomplete(true)
-      )
-  )
-  .addSubcommand((sub) => sub.setName('list').setDescription('Lists every GoosePizza trigger configured in this server'))
   .addSubcommand((sub) =>
     sub
       .setName('disable')
@@ -71,6 +49,28 @@ const data = new SlashCommandBuilder()
           .setDescription('Which trigger to disable/enable (omit to affect every trigger at once)')
           .setRequired(false)
           .setAutocomplete(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription('[Admin] Edit an existing trigger\'s text/emoji/mode (use /goosepizza channels for its channels)')
+      .addStringOption((opt) =>
+        opt.setName('name').setDescription('Which trigger to edit').setRequired(true).setAutocomplete(true)
+      )
+      .addStringOption((opt) => opt.setName('trigger').setDescription('New trigger text').setRequired(false))
+      .addStringOption((opt) => opt.setName('emoji').setDescription('New emoji').setRequired(false))
+      .addStringOption((opt) =>
+        opt.setName('mode').setDescription('New response mode').setRequired(false).addChoices(...MODE_CHOICES)
+      )
+  )
+  .addSubcommand((sub) => sub.setName('list').setDescription('Lists every GoosePizza trigger configured in this server'))
+  .addSubcommand((sub) =>
+    sub
+      .setName('remove')
+      .setDescription('[Admin] Delete a trigger')
+      .addStringOption((opt) =>
+        opt.setName('name').setDescription('Which trigger to remove').setRequired(true).setAutocomplete(true)
       )
   );
 

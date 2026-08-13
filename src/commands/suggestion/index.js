@@ -23,42 +23,8 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
-      .setName('edit')
-      .setDescription('Edit one of your own pending suggestions')
-      .addIntegerOption((opt) =>
-        opt.setName('number').setDescription('Suggestion number (e.g. 12)').setMinValue(1).setRequired(true)
-      )
-      .addStringOption((opt) =>
-        opt.setName('text').setDescription('New text for the suggestion').setMaxLength(1000).setRequired(true)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('remove')
-      .setDescription('Remove your own pending suggestion, or (mods) any suggestion by number')
-      .addIntegerOption((opt) =>
-        opt
-          .setName('number')
-          .setDescription("Suggestion number — required if you have more than one pending, or for a mod's removal")
-          .setMinValue(1)
-          .setRequired(false)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub.setName('list').setDescription('Show all suggestions still waiting for a decision')
-  )
-  .addSubcommand((sub) =>
-    sub
       .setName('approve')
       .setDescription('[Admin] Approve a suggestion')
-      .addIntegerOption((opt) =>
-        opt.setName('number').setDescription('Suggestion number (e.g. 12)').setMinValue(1).setRequired(true)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('reject')
-      .setDescription('[Admin] Reject a suggestion')
       .addIntegerOption((opt) =>
         opt.setName('number').setDescription('Suggestion number (e.g. 12)').setMinValue(1).setRequired(true)
       )
@@ -75,7 +41,41 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
-  .addSubcommand(buildDisableSubcommand());
+  .addSubcommand(buildDisableSubcommand())
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription('Edit one of your own pending suggestions')
+      .addIntegerOption((opt) =>
+        opt.setName('number').setDescription('Suggestion number (e.g. 12)').setMinValue(1).setRequired(true)
+      )
+      .addStringOption((opt) =>
+        opt.setName('text').setDescription('New text for the suggestion').setMaxLength(1000).setRequired(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub.setName('list').setDescription('Show all suggestions still waiting for a decision')
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('reject')
+      .setDescription('[Admin] Reject a suggestion')
+      .addIntegerOption((opt) =>
+        opt.setName('number').setDescription('Suggestion number (e.g. 12)').setMinValue(1).setRequired(true)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('remove')
+      .setDescription('Remove your own pending suggestion, or (mods) any suggestion by number')
+      .addIntegerOption((opt) =>
+        opt
+          .setName('number')
+          .setDescription("Suggestion number — required if you have more than one pending, or for a mod's removal")
+          .setMinValue(1)
+          .setRequired(false)
+      )
+  );
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();

@@ -23,13 +23,7 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
-  .addSubcommand((sub) =>
-    sub
-      .setName('remove')
-      .setDescription('[Admin] Removes a role1 -> role2 link')
-      .addRoleOption((opt) => opt.setName('role1').setDescription('role1 as it was set in /rolelink add').setRequired(true))
-      .addRoleOption((opt) => opt.setName('role2').setDescription('role2 as it was set in /rolelink add').setRequired(true))
-  )
+  .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) =>
     sub
       .setName('edit')
@@ -41,7 +35,13 @@ const data = new SlashCommandBuilder()
       .addBooleanOption((opt) => opt.setName('viceversa').setDescription('New viceversa setting (optional)').setRequired(false))
   )
   .addSubcommand((sub) => sub.setName('list').setDescription('[Mod] Lists all configured role links in this server'))
-  .addSubcommand(buildDisableSubcommand());
+  .addSubcommand((sub) =>
+    sub
+      .setName('remove')
+      .setDescription('[Admin] Removes a role1 -> role2 link')
+      .addRoleOption((opt) => opt.setName('role1').setDescription('role1 as it was set in /rolelink add').setRequired(true))
+      .addRoleOption((opt) => opt.setName('role2').setDescription('role2 as it was set in /rolelink add').setRequired(true))
+  );
 
 async function execute(interaction) {
   switch (interaction.options.getSubcommand()) {

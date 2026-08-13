@@ -30,6 +30,8 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
+  .addSubcommand(buildDisableSubcommand())
+  .addSubcommand((sub) => sub.setName('list').setDescription('[Admin] Lists every channel with a reaction limit configured'))
   .addSubcommand((sub) =>
     sub
       .setName('remove')
@@ -41,9 +43,7 @@ const data = new SlashCommandBuilder()
           .setRequired(true)
           .setAutocomplete(true)
       )
-  )
-  .addSubcommand((sub) => sub.setName('list').setDescription('[Admin] Lists every channel with a reaction limit configured'))
-  .addSubcommand(buildDisableSubcommand());
+  );
 
 async function execute(interaction) {
   const sub = interaction.options.getSubcommand();

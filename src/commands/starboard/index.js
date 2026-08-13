@@ -70,6 +70,7 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
+  .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) =>
     sub
       .setName('edit')
@@ -113,14 +114,6 @@ const data = new SlashCommandBuilder()
           .setDescription('Only used when watch_channel is "all": channel(s)/categories to leave out, comma-separated')
           .setAutocomplete(true)
           .setRequired(false)
-      )
-  )
-  .addSubcommand((sub) =>
-    sub
-      .setName('remove')
-      .setDescription('[Admin] Delete a starboard')
-      .addStringOption((opt) =>
-        opt.setName('name').setDescription('Which starboard to remove').setRequired(true).setAutocomplete(true)
       )
   )
   .addSubcommand((sub) => sub.setName('list').setDescription('Lists every starboard configured in this server'))
@@ -176,7 +169,14 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
-  .addSubcommand(buildDisableSubcommand());
+  .addSubcommand((sub) =>
+    sub
+      .setName('remove')
+      .setDescription('[Admin] Delete a starboard')
+      .addStringOption((opt) =>
+        opt.setName('name').setDescription('Which starboard to remove').setRequired(true).setAutocomplete(true)
+      )
+  );
 
 async function execute(interaction) {
   const subcommand = interaction.options.getSubcommand();
