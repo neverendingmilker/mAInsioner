@@ -27,11 +27,10 @@ const data = new SlashCommandBuilder()
       .setName('add')
       .setDescription('[Admin] Set up a new starboard')
       .addStringOption((opt) => opt.setName('name').setDescription('A short name for this starboard (e.g. "main")').setRequired(true))
-      .addChannelOption((opt) =>
+      .addStringOption((opt) =>
         opt
           .setName('watch_channel')
-          .setDescription('Channel to watch for reactions')
-          .addChannelTypes(...STARBOARD_CHANNEL_TYPES)
+          .setDescription('Channel(s) to watch — comma-separated, or "all" to watch every channel except exclude_channels')
           .setRequired(true)
       )
       .addChannelOption((opt) =>
@@ -62,6 +61,12 @@ const data = new SlashCommandBuilder()
           .addChoices(...CONTENT_TYPE_CHOICES)
           .setRequired(false)
       )
+      .addStringOption((opt) =>
+        opt
+          .setName('exclude_channels')
+          .setDescription('Only used when watch_channel is "all": channel(s) to leave out, comma-separated')
+          .setRequired(false)
+      )
   )
   .addSubcommand((sub) =>
     sub
@@ -70,11 +75,10 @@ const data = new SlashCommandBuilder()
       .addStringOption((opt) =>
         opt.setName('name').setDescription('Which starboard to edit').setRequired(true).setAutocomplete(true)
       )
-      .addChannelOption((opt) =>
+      .addStringOption((opt) =>
         opt
           .setName('watch_channel')
-          .setDescription('New channel to watch for reactions')
-          .addChannelTypes(...STARBOARD_CHANNEL_TYPES)
+          .setDescription('New channel(s) to watch — comma-separated, or "all" (replaces the current set)')
           .setRequired(false)
       )
       .addChannelOption((opt) =>
@@ -98,6 +102,12 @@ const data = new SlashCommandBuilder()
           .setName('content_type')
           .setDescription('New message-type restriction')
           .addChoices(...CONTENT_TYPE_CHOICES)
+          .setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('exclude_channels')
+          .setDescription('Only used when watch_channel is "all": channel(s) to leave out, comma-separated')
           .setRequired(false)
       )
   )

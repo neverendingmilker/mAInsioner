@@ -166,14 +166,24 @@ async function createTables() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         guild_id TEXT NOT NULL,
         name TEXT NOT NULL,
-        watch_channel_id TEXT NOT NULL,
         post_channel_id TEXT NOT NULL,
         threshold INTEGER NOT NULL,
         emojis TEXT NOT NULL,
         content_type TEXT NOT NULL DEFAULT 'any',
+        watch_all INTEGER NOT NULL DEFAULT 0,
         created_by TEXT,
         created_at INTEGER,
         UNIQUE (guild_id, name)
+      )`,
+      `CREATE TABLE IF NOT EXISTS starboard_watch_channels (
+        starboard_id INTEGER NOT NULL,
+        channel_id TEXT NOT NULL,
+        PRIMARY KEY (starboard_id, channel_id)
+      )`,
+      `CREATE TABLE IF NOT EXISTS starboard_excluded_channels (
+        starboard_id INTEGER NOT NULL,
+        channel_id TEXT NOT NULL,
+        PRIMARY KEY (starboard_id, channel_id)
       )`,
       `CREATE TABLE IF NOT EXISTS starboard_posts (
         guild_id TEXT NOT NULL,
@@ -468,6 +478,23 @@ async function migrate() {
     // the old column/tables from before this change.
     if (starboardColumnNames.includes('voting_method')) {
       await client.execute('ALTER TABLE starboards DROP COLUMN voting_method');
+    }
+
+    // A starboard used to watch exactly one channel via a column on this table; it can
+    // now watch several, tracked in starboard_watch_channels instead. Migrate any
+    // pre-existing single watch_channel_id into that table before dropping the column,
+    // so upgrading doesn't silently un-configure every starboard's watch channel.
+    if (starboardColumnNames.includes('watch_channel_id')) {
+      await client.execute(`
+        INSERT OR IGNORE INTO starboard_watch_channels (starboard_id, channel_id)
+        SELECT id, watch_channel_id FROM starboards WHERE watch_channel_id IS NOT NULL
+      `);
+      await client.execute('ALTER TABLE starboards DROP COLUMN watch_channel_id');
+    }
+
+    // "Watch every channel except a few" mode for starboards.
+    if (!starboardColumnNames.includes('watch_all')) {
+      await client.execute('ALTER TABLE starboards ADD COLUMN watch_all INTEGER NOT NULL DEFAULT 0');
     }
   }
   await client.execute('DROP TABLE IF EXISTS starboard_vote_messages');

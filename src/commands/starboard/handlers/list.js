@@ -14,7 +14,10 @@ async function handleList(interaction) {
   const lines = boards.map((b) => {
     const emojis = starboardManager.formatEmojisForDisplay(JSON.parse(b.emojis));
     const contentTypeLabel = starboardManager.CONTENT_TYPES[b.content_type] ?? b.content_type;
-    return `**${b.name}** — <#${b.watch_channel_id}> → <#${b.post_channel_id}> · **${b.threshold}+** ${emojis} · ${contentTypeLabel}`;
+    const watchChannelsList = b.watch_all
+      ? `All channels${b.excluded_channel_ids.length > 0 ? ` (except ${b.excluded_channel_ids.map((id) => `<#${id}>`).join(', ')})` : ''}`
+      : b.watch_channel_ids.map((id) => `<#${id}>`).join(', ');
+    return `**${b.name}** — ${watchChannelsList} → <#${b.post_channel_id}> · **${b.threshold}+** ${emojis} · ${contentTypeLabel}`;
   });
 
   const embed = new EmbedBuilder().setColor(EMBED_COLOR).setTitle('Starboards').setDescription(lines.join('\n'));
