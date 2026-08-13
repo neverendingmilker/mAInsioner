@@ -111,6 +111,15 @@ async function execute(interaction) {
 // — shows each trigger's current word/phrase, emoji and response mode right in the
 // suggestion label, so there's no need to check elsewhere first to remember what a
 // trigger is currently set to.
+// Autocomplete suggestions are plain text — Discord doesn't render a custom emoji's
+// <:name:id> mention as an actual image there, it just shows the raw markup as-is,
+// which isn't very readable. Show a ":name:" shortcode instead in that case; a unicode
+// emoji (🍕) already renders fine as plain text, so it's used as-is.
+function formatEmojiForLabel(emoji) {
+  const customMatch = emoji.match(/^<a?:(\w{2,32}):\d{17,20}>$/);
+  return customMatch ? `:${customMatch[1]}:` : emoji;
+}
+
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
   if (focused.name !== 'name') {
@@ -125,7 +134,7 @@ async function autocomplete(interaction) {
     .filter((t) => t.name.toLowerCase().includes(query))
     .slice(0, 25)
     .map((t) => {
-      const label = `${t.name} — "${t.trigger_text}" ${t.emoji} (${t.response_mode})`;
+      const label = `${t.name} — "${t.trigger_text}" ${formatEmojiForLabel(t.emoji)} (${t.response_mode})`;
       return { name: label.slice(0, 100), value: t.name };
     });
 

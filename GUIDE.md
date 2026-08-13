@@ -66,7 +66,7 @@ Mod only (Manage Roles) for `search`; `disable` is Admin only.
 Admin only. A little passive fun feature: whenever anyone says a chosen word in one of its chosen channels, the bot automatically responds with a chosen emoji — either by posting it as a new message, or by reacting with it directly on the triggering message. You can set up multiple independent triggers — different words, channels, emojis and modes can all coexist, including several watching the same channel at once — and each trigger can itself watch more than one channel.
 
 - **`/goosepizza add`** — sets up a new trigger's name, word/phrase, emoji, and mode (Comment or React); right after, you'll get a channel picker (a native Discord select menu listing every channel in the server) to choose which channel(s) it watches.
-- **`/goosepizza edit`** — changes the word/phrase, emoji, and/or mode of an existing trigger. The `name` option has autocomplete, and shows the trigger's current word/phrase, emoji and mode right in each suggestion.
+- **`/goosepizza edit`** — changes the word/phrase, emoji, and/or mode of an existing trigger. The `name` option has autocomplete, and shows the trigger's current word/phrase, emoji and mode right in each suggestion (a custom server emoji shows as `:shortcode:`, since autocomplete can't render it as an image).
 - **`/goosepizza channels`** — opens the same channel picker for an existing trigger, pre-filled with its current channels; whatever you select replaces the list entirely.
 - **`/goosepizza remove`** — deletes a trigger.
 - **`/goosepizza list`** — shows every trigger configured in the server, and every channel each one watches.
@@ -107,7 +107,7 @@ Admin only. Limits how often each person can post in a channel — for cooldowns
 Admin only. In a chosen channel: post an image, then a follow-up message that's *only digits* (up to 9 of them), and each digit gets decoded into the emoji it's mapped to — those become the new reactions on the image (replacing whatever the bot had reacted with before), and the digit-only message is deleted. A digit with no mapping is silently skipped; repeated digits only add their emoji once. If there's no image waiting when a digit code shows up, it's left alone.
 
 - **`/waifuwarlr add`** — Sets up a channel for WaifuWar LR codes (doesn't map any digits yet — do that next). Requires the bot to already have View Channel, Read Message History, Add Reactions and Manage Messages in that channel — Manage Messages specifically because deleting the digit-code messages means deleting someone else's message, not the bot's own.
-- **`/waifuwarlr setdigit`** — Maps digit(s) to emoji(s) for a channel; both `digit` and `emoji` accept a single value or several separated by commas (e.g. `digit:7,8,9 emoji:🟢,🟡,🔴`), paired up by position. Validates every pair before saving any of them, so a mistake in one doesn't leave the mapping half-set.
+- **`/waifuwarlr setdigit`** — Maps digit(s) to emoji(s) for a channel; both `digit` and `emoji` accept a single value or several separated by commas (e.g. `digit:7,8,9 emoji:🟢,🟡,🔴`), paired up by position. Validates every pair before saving any of them, so a mistake in one doesn't leave the mapping half-set. `channel` is autocompleted, showing that channel's current mappings right in the suggestion.
 - **`/waifuwarlr removedigit`** — Removes one digit's mapping.
 - **`/waifuwarlr remove`** — Removes WaifuWar LR codes (and every digit mapping) from a channel.
 - **`/waifuwarlr list`** — Shows every channel set up for this, and its current digit → emoji mappings.

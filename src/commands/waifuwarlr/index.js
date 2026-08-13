@@ -116,20 +116,34 @@ async function execute(interaction) {
 // Powers the autocomplete on "channel" (remove, setdigit, removedigit — only shows
 // configured channels) and "digit" (removedigit — only shows digits already mapped for
 // whichever channel is currently selected in that same interaction).
+// Autocomplete suggestions are plain text — a custom emoji's <:name:id> mention doesn't
+// render as an image there, just as raw markup. Show a ":name:" shortcode instead in
+// that case; a unicode emoji (🍕) already renders fine as plain text, so it's used as-is.
+function formatEmojiForLabel(emoji) {
+  const customMatch = emoji.match(/^<a?:(\w{2,32}):\d{17,20}>$/);
+  return customMatch ? `:${customMatch[1]}:` : emoji;
+}
+
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
 
   if (focused.name === 'channel') {
     const channelIds = await waifuWarLRManager.listChannels(interaction.guildId);
     const query = focused.value.toLowerCase();
-    const choices = channelIds
-      .map((id) => {
+    const choices = await Promise.all(
+      channelIds.map(async (id) => {
         const channel = interaction.guild.channels.cache.get(id);
-        return { name: channel ? `#${channel.name}` : id, value: id };
+        const label = channel ? `#${channel.name}` : id;
+        const digitMap = await waifuWarLRManager.getDigitMap(interaction.guildId, id);
+        const mappingsPreview = [...digitMap.entries()]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([digit, emoji]) => `${digit}${formatEmojiForLabel(emoji)}`)
+          .join(' ');
+        const name = mappingsPreview ? `${label} — ${mappingsPreview}` : `${label} — no mappings yet`;
+        return { name: name.slice(0, 100), value: id };
       })
-      .filter((c) => c.name.toLowerCase().includes(query))
-      .slice(0, 25);
-    await interaction.respond(choices);
+    );
+    await interaction.respond(choices.filter((c) => c.name.toLowerCase().includes(query)).slice(0, 25));
     return;
   }
 
