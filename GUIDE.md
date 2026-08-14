@@ -1,222 +1,196 @@
-# Bot commands
+# mAInsioner — User Guide
 
-Quick guide to what each command does. No technical details, just practical usage.
+Every feature can be turned on/off with `/disablefeature feature:<pick one> enabled:true|false` (Admin only), or with that feature's own `disable` subcommand — same on/off flag either way. `/verbal` shares its toggle with `/warning`.
 
-Every feature listed below can be turned on/off for the whole server either with the universal
-**`/disablefeature feature:<pick one> enabled:true|false`** (Administrator only), or with that feature's own
-**`/<command> disable enabled:true|false`** subcommand — both control the exact same on/off switch, so use
-whichever is more convenient. Disabling a feature keeps its saved data, but stops its automatic behavior and
-blocks its commands until it's re-enabled.
+---
 
-**`/commandlist`** `Mod` — Reply is only visible to you. Shows a table of every command in the
-bot, who can use it (**Admin**/**Mod**/**Everyone**), and which options each one takes — options with no brackets
-are required, `[optional]` ones aren't (pulled live from the commands themselves, so it can't drift out of date).
-Paginated with buttons if it doesn't fit on one page.
+## 🎬 Anime Night (`/animenight`)
 
-## 🤖 Autoresponder (`/autoresponder`)
+Tracks a "Mystery Anime Night" watch list, grouped into dated sessions.
 
-Auto-reacts with one or more emojis to **every** message in a chosen channel by default — no trigger word needed (for that, see GoosePizza instead). Applies to the channel's threads too (e.g. a forum's individual posts, or "rooms" under a shared parent channel). Each channel can have its own emoji set, and optionally an extra filter to only react to certain kinds of content.
+- **`/animenight add`** `Admin` — Adds one or more anime to a session (creates it if the date doesn't exist yet).
+- **`/animenight edit`** `Admin` — Edits an existing session's titles and/or date (autocomplete).
+- **`/animenight remove`** `Admin` — Removes an entire session (autocomplete, numbered chronologically).
+- **`/animenight list`** `Everyone` — Lists all sessions, oldest or newest first.
+- **`/animenight last`** `Everyone` — Shows the anime from the most recent session.
 
-- **`/autoresponder add`** `Admin` — Sets (or replaces) the autoresponder for a channel: one or more emojis, separated by spaces or commas. Three optional filters (off by default, reacts to everything): only react if the message has an **attachment** (image/gif/video), only if it **links a video** (YouTube and similar), only if it **links an X/Twitter post** (including fxtwitter/vxtwitter/fixvx/fixupx mirrors). Turn on more than one and it reacts if the message matches *any* of them. There's also an optional **redirect mode** (`redirect_to_bot_id` + `redirect_window_seconds`): waits for a *specific* bot to post in the same channel within the window; if it does, the reaction goes on **its** message instead of the original poster's. If that bot doesn't post in time, the original message gets the reaction as a fallback. Useful when a specific bot reliably reposts the "real" content (an image, a fixed embed, ...) shortly after someone's message. Matches the bot both by its normal user ID and by webhook ID, since many "repost"/"embed fixer" bots post through a Discord webhook rather than as a live bot — in that case Discord's own "author" on the message is a per-webhook placeholder, not the bot's actual account, so both are checked. This bot's own messages are never reacted to, in any mode.
-- **`/autoresponder remove`** `Admin` — Removes the autoresponder from a channel; the `channel` option shows only channels that currently have one (with a preview), instead of every channel in the server.
-- **`/autoresponder edit`** `Admin` — Changes the settings for an already-configured channel; every field is optional, anything not provided keeps its current value. Same `channel` autocomplete as `remove`.
-- **`/autoresponder list`** `Admin` — Shows every channel with an autoresponder configured, its emojis, and any active filter/redirect mode.
-- **`/autoresponder disable`** `Admin` — Turns the feature on/off for this server.
+## 🔁 Autoresponder (`/autoresponder`)
 
-## 📺 Anime Night (`/animenight`)
+Auto-reacts with emoji to every message in a channel (including threads), with optional content filters and a "redirect to a bot's repost" mode.
 
-- **`/animenight add`** `Admin` — Adds one or more anime watched in a session (e.g. "Naruto, Bleach").
-- **`/animenight remove`** `Admin` — Removes an entire session (numbered chronologically, autocomplete), not a single anime.
-- **`/animenight list`** `Everyone` — Shows the full watched anime list, grouped by session.
-- **`/animenight last`** `Everyone` — Shows only the anime from the most recent session.
-- **`/animenight edit`** `Admin` — Edits an existing session (titles and/or date).
-- **`/animenight disable`** `Admin` — Turns the feature on/off for this server.
+- **`/autoresponder add`** `Admin` — Sets up a channel: emoji list, optional filters (attachment/video link/X link), optional redirect-to-bot window.
+- **`/autoresponder edit`** `Admin` — Changes settings for an already-configured channel; anything omitted keeps its current value. Autocomplete shows configured channels with a preview.
+- **`/autoresponder remove`** `Admin` — Removes it from a channel (same autocomplete).
+- **`/autoresponder list`** `Admin` — Lists every configured channel.
 
 ## 🎂 Birthdays (`/birthday`)
 
-- **`/birthday add`** `Everyone` — Save your birthday (day, month and, if you want, year). A mod can use it to save someone else's birthday.
-- **`/birthday edit`** `Everyone` — Change your already-saved birthday. A mod can edit someone else's. Only works if a birthday is already saved — use `add` first.
-- **`/birthday remove`** `Everyone` — Delete your saved birthday. A mod can remove someone else's.
-- **`/birthday config`** `Mod` — Sets the role given to whoever's celebrating, how long before removing it, and/or the channel where greetings are posted.
-- **`/birthday list`** `Everyone` — Shows every birthday in the server, grouped by month.
-- **`/birthday disable`** `Mod` — Turns the feature on/off for this server.
+Assigns a role on someone's birthday and removes it after a set time.
 
-On someone's birthday, the bot automatically assigns the role (if configured) and posts a greeting (if a channel is configured), then removes the role after the configured time.
+- **`/birthday add`** `Everyone` (Mod for others) — Sets your own birthday, or someone else's if you're a Mod.
+- **`/birthday edit`** `Everyone` (Mod for others) — Same rule, for editing.
+- **`/birthday remove`** `Everyone` (Mod for others) — Same rule, for removing.
+- **`/birthday config`** — Sets the birthday role, how long it stays on, and an optional announcement channel. Requires **Manage Roles**.
+- **`/birthday list`** `Everyone` — Lists every stored birthday, grouped by month.
 
-## 🚀 Booster custom roles (`/boosterlink`)
+## 🔗 Booster Links (`/boosterlink`)
 
-Links a custom role (that you assign manually to a booster) to that user, so it gets automatically removed if they stop boosting the server.
+Tracks custom perk roles given to boosters, so they auto-remove when the boost ends.
 
-- **`/boosterlink add`** `Mod` — Links a custom role to a booster.
-- **`/boosterlink remove`** `Mod` — Stops tracking the link (does not remove the role from the user). Both `user` and `role` are autocompleted — `user` only shows users who actually have a tracked link, `role` only the roles tracked for the selected user; `role` is optional: if omitted, it untracks every role linked to that user at once.
-- **`/boosterlink edit`** `Mod` — Swaps which role is tracked for a user, in one step (`user` and the old role are both autocompleted).
-- **`/boosterlink list`** `Mod` — Lists active links, optionally filtered by user. Ephemeral (only you see it).
-- **`/boosterlink disable`** `Mod` — Turns the feature on/off for this server.
+- **`/boosterlink add`** `Mod` — Links a role to a booster.
+- **`/boosterlink edit`** `Mod` — Re-points an existing link to a different role (autocomplete on user/role).
+- **`/boosterlink remove`** `Mod` — Stops tracking a link (doesn't remove the role itself).
+- **`/boosterlink list`** `Mod` — Lists tracked links, optionally filtered by user. Ephemeral.
+- **`/boosterlink exempt`** `Mod` — Manages roles exempt from auto-removal.
+- **`/boosterlink disable`** `Admin` — Turns the feature on/off.
 
-When a user loses Discord's Booster role (boost expired, manually removed, etc.), every custom role linked to them gets automatically removed. `/boosterlink exempt` manages a list of roles that skip this — a user only needs one of the configured exempt roles to be skipped entirely, even if they have linked roles and lose the booster role.
+## 🔎 Combined Role Search (`/comboroles`)
 
-## 🔎 Combined role search (`/comboroles`)
+- **`/comboroles search`** `Mod` — Shows users who have **all** the given roles, optionally excluding anyone with one of up to three "BUT" roles. Paginated.
+- **`/comboroles disable`** `Admin` — Turns the feature on/off.
 
-- **`/comboroles search`** `Mod` — Shows the users who have **all** of the given roles, optionally excluding anyone who also has one of up to three "BUT" roles. Results are paginated.
-- **`/comboroles disable`** `Admin` — Turns the whole feature off/on for this server.
+## 📋 Command List (`/commandlist`)
 
-## 🔦 Highlight (`/highlight`)
-
-A personal keyword watcher — get DM'd (with a bit of context) whenever someone says a word or phrase you've set up, anywhere in the server, even in channels you're not actively watching. Everyone can use it for their own list; `disable` is Admin only.
-
-- **`/highlight add`** — Adds a word or phrase to your personal list (2–100 characters, up to 25 total). Matched case-insensitively, on word boundaries (so "cat" won't fire on "category"). Your own messages never trigger your own highlights.
-- **`/highlight remove`** — Removes one, with autocomplete over your own list.
-- **`/highlight list`** — Shows your words, plus your ignored channels and ignored users.
-- **`/highlight ignorechannel`** — Toggles a channel on/off your personal channel list. What that list means depends on `/highlight mode`: by default it's an ignore list, or an allowlist in "only" mode.
-- **`/highlight mode`** — Switches how your `ignorechannel` list is interpreted: everywhere except those channels (default), or only in those channels.
-- **`/highlight ignoreuser`** — Toggles a user on/off your personal ignore list (their messages will never highlight you).
-- **`/highlight disable`** — Turns the feature on/off for this server.
-
-Notifications are DMs with a short embed: a couple of messages of context before the trigger, the triggering message itself, which word(s) matched, and a jump link. To avoid spamming you if a word comes up a lot in one conversation, you won't be re-notified in the same channel more than once every 5 minutes.
-
-## 🍯 Honeypot (`/honeypot`)
-
-Admin only. Turns a channel into a trap: posts a message with a button, and after that, **any** interaction from someone who isn't a Mod/Admin — writing a message there, reacting to anything there, or clicking the button — gets them kicked from the server immediately, no warning.
-
-- **`/honeypot add`** — Sets up a channel as a honeypot and posts the trap message (with the button) right away. Custom message text and button label are optional (both have sensible defaults). Running it again on the same channel replaces the trap message.
-- **`/honeypot remove`** — Removes the trap from a channel (autocomplete over active ones) and deletes the trap message if it's still there.
-- **`/honeypot list`** — Shows every channel currently set up as a honeypot.
-- **`/honeypot disable`** — Turns the whole feature on/off for the server.
-
-Mods and Admins are always safe from every trigger — the point is to catch people who shouldn't be interacting with the channel at all. The kick uses the standard Discord kick (not a ban), so a kicked person can rejoin with a new invite if that's ever needed.
+`Mod` — Shows every bot command, who can use it (Admin/Mod/Everyone), and its options (required ones have no brackets). Pulled live from the commands, so it can't drift out of date.
 
 ## 🍕 GoosePizza (`/goosepizza`)
 
-A little passive fun feature: whenever anyone says a chosen word in one of its chosen channels, the bot automatically responds with a chosen emoji — either by posting it as a new message, or by reacting with it directly on the triggering message. You can set up multiple independent triggers — different words, channels, emojis and modes can all coexist, including several watching the same channel at once — and each trigger can itself watch more than one channel.
+A passive word-triggered responder — several independent trigger/channel/emoji combos per server, each reacting or replying when its trigger word/phrase appears.
 
-- **`/goosepizza add`** `Admin` — sets up a new trigger's name, word/phrase, emoji, and mode (Comment or React); right after, you'll get a channel picker (a native Discord select menu listing every channel in the server) to choose which channel(s) it watches.
-- **`/goosepizza edit`** `Admin` — changes the word/phrase, emoji, and/or mode of an existing trigger. The `name` option has autocomplete, and shows the trigger's current word/phrase, emoji and mode right in each suggestion (a custom server emoji shows as `:shortcode:`, since autocomplete can't render it as an image).
-- **`/goosepizza channels`** `Admin` — opens the same channel picker for an existing trigger, pre-filled with its current channels; whatever you select replaces the list entirely.
-- **`/goosepizza remove`** `Admin` — deletes a trigger.
-- **`/goosepizza list`** `Admin` — shows every trigger configured in the server, and every channel each one watches.
-- **`/goosepizza disable`** `Admin` — turns a single trigger on/off (pass `name`), or GoosePizza entirely (every trigger at once, if `name` is omitted). (`/disablefeature` maps to the same all-triggers switch.)
+- **`/goosepizza add`** `Admin` — Creates a trigger: name, word/phrase, emoji, mode (react or reply), channels.
+- **`/goosepizza edit`** `Admin` — Changes an existing trigger's word/emoji/mode (autocomplete shows current values).
+- **`/goosepizza channels`** `Admin` — Changes which channels a trigger watches.
+- **`/goosepizza remove`** `Admin` — Deletes a trigger.
+- **`/goosepizza list`** `Admin` — Lists every trigger.
+- **`/goosepizza disable`** `Admin` — Turns one trigger, or the whole feature, on/off.
 
-## 🔐 MFA Roles (`/mfaroles`) `Admin`
+## 🔦 Highlight (`/highlight`)
 
-A quick security-audit command: lists every role in the server that has at least one permission Discord requires 2FA for (if the server ever turns on "Require 2FA for moderator actions"). This is Discord's own fixed list — not everything people assume counts as a "mod permission" is actually on it (View Audit Log, Manage Emojis and Stickers, and timeouts, for example, are not). Checks both server-wide role permissions and per-channel role overrides (flagged separately as "Channel overrides"), since a role quietly granted a 2FA-gated permission on just one channel is easy to miss otherwise. Optional `ignore_bots:true` skips bots' own auto-created roles. Member-specific (not role-based) overwrites aren't checked here — see `/modaccess` for that.
+Personal keyword watcher — get DM'd (with context) when someone says a word/phrase from your list, anywhere in the server. Everyone can use it; `disable` is Admin only.
 
-## 🛡️ Mod Access (`/modaccess`) `Admin`
+- **`/highlight add`** — Adds a word/phrase (2–100 chars, up to 25). Matched case-insensitively on word boundaries. Never triggers on your own messages.
+- **`/highlight remove`** — Removes one (autocomplete over your list).
+- **`/highlight list`** — Shows your words, channel list + mode, and ignored users.
+- **`/highlight ignorechannel`** — Toggles a channel on/off your list.
+- **`/highlight mode`** — Switches whether that list means "everywhere except these" (default) or "only these".
+- **`/highlight ignoreuser`** — Toggles a user on/off your ignore list.
+- **`/highlight disable`** `Admin` — Turns the feature on/off.
 
-A broader companion to `/mfaroles`: same idea, but also flags permissions commonly *thought of* as moderator-level that Discord's 2FA rule doesn't actually cover (View Audit Log, Manage Nicknames, Manage Expressions, Timeout Members). It also catches per-channel overrides granted directly to an **individual person**, not just roles — those show up as their own entries (👤) separate from the role list (🎭). Same `ignore_bots:true` option as `/mfaroles`, which here also skips bot accounts with an individual channel override.
+Notifications: a DM with a couple messages of context, the trigger itself, matched word(s), and a jump link. Capped at one notification per channel every 5 minutes.
 
-## 🪧 Incident (`/incident`)
+## 🍯 Honeypot (`/honeypot`)
 
-Keeps a "Days since last incident" sign updated in a channel with the current count.
+`Admin`. Turns a channel into a trap: posts a message with a button, then kicks anyone who isn't Mod/Admin the moment they write there, react to anything there, or click the button.
 
-- **`/incident channel`** `Admin` — Sets the channel where the sign is kept updated.
-- **`/incident set`** `Admin` — Manually sets the counter to a specific number.
-- **`/incident reset`** `Admin` — Resets the counter to 0 (use it when an incident just happened).
-- **`/incident disable`** `Admin` — Turns the feature on/off for this server.
+- **`/honeypot add`** — Sets up the trap channel and posts the bait message (custom text/button label optional).
+- **`/honeypot remove`** — Removes the trap and deletes the bait message.
+- **`/honeypot list`** — Lists active honeypot channels.
+- **`/honeypot disable`** — Turns the feature on/off.
 
-Every day at midnight the counter increases by 1 automatically and the sign is regenerated. Only one message is ever kept visible: the old one is deleted when the sign updates.
+## 🪧 Incident Counter (`/incident`)
 
-## 🔗 Linked roles (`/rolelink`)
+Keeps a "days since last incident" sign updated in a channel, auto-incrementing daily.
 
-Generic version of the concept above, not tied to boosting: links any two roles so that losing the first automatically removes the second.
+- **`/incident channel`** `Admin` — Sets which channel shows the sign.
+- **`/incident set`** `Admin` — Manually sets the day count.
+- **`/incident reset`** `Admin` — Resets to 0 (an incident just happened).
+- **`/incident disable`** `Admin` — Turns the feature on/off.
 
-- **`/rolelink add`** `Admin` — Pick `role1`, then a picker lets you choose **one or more** target roles at once; losing role1 removes all of them. Optional `viceversa` option (default off): if on, losing a target role also removes role1.
-- **`/rolelink remove`** `Admin` — Removes a link. `link` is autocompleted, showing every configured link instead of picking role1/role2 separately.
-- **`/rolelink edit`** `Admin` — Change an existing link's roles and/or `viceversa` setting. `link` is autocompleted the same way as `remove`.
-- **`/rolelink list`** `Mod` — Lists every link configured in the server.
-- **`/rolelink disable`** `Admin` — Turns the feature on/off for this server.
+## 🔐 MFA Roles (`/mfaroles`)
 
-## ⏳ Slowmode (`/slowmode`)
+`Admin`. Security audit: lists roles with at least one permission Discord requires 2FA for (server-wide and per-channel overrides). `ignore_bots:true` skips bot-owned roles.
 
-Limits how often each person can post in a channel — for cooldowns longer than Discord's own slowmode (capped at 6h), or when you want it enforced consistently regardless of Discord's setting. Each channel has its own independent duration. Violating messages are deleted immediately, with a short, auto-deleting notice posted in the channel explaining when the person can post again (no DMs). Moderators (Manage Messages or Administrator) are always exempt.
+## 🛡️ Mod Access (`/modaccess`)
 
-- **`/slowmode add`** `Mod` — Sets (or replaces) the limit for a channel: a duration like `12h`, `1d`, `3d` (minimum 1 minute). Mod (Manage Messages) or Admin.
-- **`/slowmode remove`** `Mod` — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, instead of every channel in the server. Mod (Manage Messages) or Admin.
-- **`/slowmode list`** `Admin` — Shows every channel with a limit configured, and what it is.
-- **`/slowmode disable`** `Admin` — Turns the feature on/off for this server.
-
-## 🔢 WaifuWar LR (`/waifuwarlr`)
-
-In a chosen channel: post an image, then a follow-up message that's *only digits* (up to 9 of them), and each digit gets decoded into the emoji it's mapped to — those become the new reactions on the image (replacing whatever the bot had reacted with before), and the digit-only message is deleted. A digit with no mapping is silently skipped; repeated digits only add their emoji once. If there's no image waiting when a digit code shows up, it's left alone.
-
-- **`/waifuwarlr add`** `Admin` — Sets up a channel for WaifuWar LR codes (doesn't map any digits yet — do that next). Requires the bot to already have View Channel, Read Message History, Add Reactions and Manage Messages in that channel — Manage Messages specifically because deleting the digit-code messages means deleting someone else's message, not the bot's own.
-- **`/waifuwarlr setdigit`** `Admin` — Maps digit(s) to emoji(s) for a channel; both `digit` and `emoji` accept a single value or several separated by commas (e.g. `digit:7,8,9 emoji:🟢,🟡,🔴`), paired up by position. Validates every pair before saving any of them, so a mistake in one doesn't leave the mapping half-set. `channel` is autocompleted, showing that channel's current mappings right in the suggestion.
-- **`/waifuwarlr removedigit`** `Admin` — Removes one digit's mapping.
-- **`/waifuwarlr remove`** `Admin` — Removes WaifuWar LR codes (and every digit mapping) from a channel.
-- **`/waifuwarlr list`** `Admin` — Shows every channel set up for this, and its current digit → emoji mappings.
-- **`/waifuwarlr disable`** `Admin` — Turns the feature on/off for this server.
+`Admin`. Broader companion to `/mfaroles` — also flags commonly-assumed "mod" permissions (Audit Log, Nicknames, Expressions, Timeout) that aren't actually 2FA-gated, and catches per-channel overrides granted to individual people, not just roles.
 
 ## 🖐️ Reaction Limit (`/reactionlimit`)
 
-Limits how many times each person can react per thread in a channel's threads — the limit is configurable per channel (1–100, default 5) rather than fixed. Moderators (Manage Messages/Administrator) are always exempt.
+Caps how many times each person can react per thread — configurable per channel (1–100, default 5). Mods/Admins always exempt.
 
-- **`/reactionlimit add`** `Admin` — Sets (or replaces) the limit for a channel's threads. Optional `limit` (default 5) sets how many reactions per person per thread; optional `ignore_first_post` (default off) excludes the thread's starter message from the count.
-- **`/reactionlimit remove`** `Admin` — Removes the limit from a channel; the `channel` option shows only channels that currently have one configured, with the limit shown right in the suggestion, instead of every channel in the server.
-- **`/reactionlimit edit`** `Admin` — Changes the settings for an already-configured channel; anything not provided (including `limit`) keeps its current value. Same `channel` autocomplete as `remove`.
-- **`/reactionlimit list`** `Admin` — Shows every channel with a limit configured.
-- **`/reactionlimit disable`** `Admin` — Turns the feature on/off for this server.
+- **`/reactionlimit add`** `Admin` — Sets the limit for a channel's threads (and optional starter-message exclusion).
+- **`/reactionlimit edit`** `Admin` — Changes settings for an already-configured channel (autocomplete shows the current limit).
+- **`/reactionlimit remove`** `Admin` — Removes it from a channel.
+- **`/reactionlimit list`** `Admin` — Lists every configured channel.
+- **`/reactionlimit disable`** `Admin` — Turns the feature on/off.
+
+## 🔗 Role Links (`/rolelink`)
+
+Losing role1 automatically removes role2 (optionally the reverse too).
+
+- **`/rolelink add`** `Admin` — Creates a link, one or more target roles at once, optional two-way removal.
+- **`/rolelink edit`** `Admin` — Changes an existing link (autocomplete over configured ones).
+- **`/rolelink remove`** `Admin` — Removes a link (same autocomplete).
+- **`/rolelink list`** `Mod` — Lists all configured links.
+- **`/rolelink disable`** `Admin` — Turns the feature on/off.
+
+## ⏳ Slowmode (`/slowmode`)
+
+Per-person posting cooldown per channel, beyond Discord's own 6h slowmode cap. Mods/Admins always exempt.
+
+- **`/slowmode add`** `Mod` — Sets the cooldown (e.g. `12h`, `1d`, `3d`, min 1 minute).
+- **`/slowmode remove`** `Mod` — Removes it (autocomplete shows configured channels).
+- **`/slowmode list`** `Admin` — Lists every configured channel.
+- **`/slowmode disable`** `Admin` — Turns the feature on/off.
 
 ## ⭐ Starboard (`/starboard`)
 
-Collects the most popular messages of a channel (by reaction count) and reposts them to a dedicated channel. You can set up more than one starboard, each watching its own channel and posting to its own (different) channel.
+Reposts messages that collect enough reactions to a dedicated channel. A server can run several independent starboards.
 
-- **`/starboard add`** `Admin` — Sets up a new starboard: give it a name, the channel to watch for reactions, the channel to post to, the minimum number of reactions needed, which emoji(s) count (one or more, or `any` to count a reaction with any emoji at all), and optionally a content-type filter (e.g. images only).
-- **`/starboard edit`** `Admin` — Changes any combination of the settings above for an existing starboard. The `name` option has autocomplete, and shows that board's current settings right in each suggestion (channel, threshold, emojis), so you can see what's already set without checking `/starboard list` first.
-- **`/starboard remove`** `Admin` — Deletes a starboard. Already-posted messages are left as they are, but stop being updated.
-- **`/starboard list`** `Everyone` — Shows every starboard configured in the server.
-- **`/starboard disable`** `Admin` — Turns the feature on/off for this server.
+- **`/starboard add`** `Admin` — Name, watch channel, post channel, threshold, emoji(s), optional content-type filter.
+- **`/starboard edit`** `Admin` — Changes any setting for an existing board (autocomplete shows current values).
+- **`/starboard remove`** `Admin` — Deletes a board.
+- **`/starboard list`** `Everyone` — Lists all boards.
+- **`/starboard lookback`** `Admin` — Scans past messages for ones that already qualify (by count, or since a date — no upper limit on how far back).
+- **`/starboard disable`** `Admin` — Turns the feature on/off.
 
-A message qualifies once enough different people have reacted with at least one of the configured emojis (reacting with two counted emojis only counts once per person, and the message author's own reaction doesn't count). The reaction count on the starboard post stays live: if it later drops back below the threshold, the post is removed from the starboard. If the original message gets deleted, its starboard post is removed too.
+## 📌 Sticky Messages (`/sticky`)
 
-Once a message is reposted, the bot auto-reacts with ⭐ on its own copy — you can keep starring it right from the starboard channel from then on, and those extra reactions add to the count too (the bot's own reaction never counts towards the total).
+Keeps a message pinned to the bottom of a channel, reposting it after new activity.
 
-Optionally, each starboard can restrict which kind of message qualifies at all: **Any message** (default), **Text only**, **Images only**, **GIFs only**, **Videos only**, **Any media**, or **Text + media** (needs both a caption and an attachment).
-
-- **`/starboard lookback`** `Admin` — Scans a starboard's watch channel for messages that already qualify but haven't been picked up yet — handy right after creating a new starboard, or to catch up on messages missed while the bot was offline. Runs immediately once you submit the command, no extra picker or confirmation step. By default it scans the most recent 200 messages (up to 1000), but you can instead scan back to January 1st, back to a specific date, or a specific date range (from/to) — those can take much longer on a busy channel (checking who reacted on each message is one Discord API call per message), so you'll get a brief "working on it" message right away instead of waiting in silence; the actual result then arrives however it can — right there if it finishes in time, or by DM if the scan outlasts Discord's ~15-minute interaction window. Messages are processed oldest-first, so starboard posts appear in the same order the messages were actually sent. You can also, just for that scan, check a different content type, different emoji(s), or a different minimum vote count than what the starboard is normally configured for, without changing its saved settings. If a handful of messages fail to check (a temporary hiccup), the scan keeps going and tells you how many it had to skip — you can just run it again to pick those up.
-
-## 📌 Sticky messages (`/sticky`)
-
-Reacts to every new message, including from other bots. It disappears immediately as soon as new activity happens, then by default waits 30 seconds before reappearing at the bottom of the channel (configurable per channel); if several messages arrive during that wait, they are all covered by the same pending repost, so it does not hop around once per message.
-
-- **`/sticky add`** `Admin` — Sets (or replaces) the sticky message for a channel. The message text is typed directly as a command option, no popup window. Optional `delay` sets how long to wait after new activity before reposting (default **30 seconds**).
-- **`/sticky edit`** `Admin` — Changes the text of an existing channel's sticky message. The `channel` option shows only channels that currently have a sticky (with a text preview), instead of every channel in the server. Reposts right away with the new text; optional `delay` changes the repost wait time too (keeps the current one if omitted).
-- **`/sticky remove`** `Admin` — Removes the sticky message from a channel.
-- **`/sticky list`** `Everyone` — Shows every sticky message configured in the server.
-- **Right-click a message → Apps → "Sticky: Add"** — same as `/sticky add`, but uses that message's own text instead of retyping it.
-- **Right-click a message → Apps → "Sticky: Edit"** — opens a popup pre-filled with that channel's current sticky text; edit it and submit to update.
-- **Right-click a message → Apps → "Sticky: Remove"** — removes whatever sticky is configured for that channel (the message you clicked doesn't matter, it's just a quick entry point).
-- **`/sticky disable`** `Admin` — Turns the feature on/off for this server.
-
-The sticky message is reposted at the bottom of the channel after each new message (deleting the old one first, waiting 10 seconds between the deletion and the repost).
+- **`/sticky`** `Admin` (right-click a message → Apps → **Sticky: Add**) — Sets up (or replaces) the sticky message for a channel.
+- **`/sticky edit`** `Admin` — Or right-click → **Sticky: Edit** (opens a modal).
+- **`/sticky remove`** `Admin` — Or right-click → **Sticky: Remove**.
+- **`/sticky list`** `Everyone` — Lists active sticky messages.
 
 ## 💡 Suggestions (`/suggestion`)
 
-- **`/suggestion add`** `Everyone` — Submits a new suggestion.
-- **`/suggestion edit`** `Everyone` — Edits one of your own pending suggestions.
-- **`/suggestion remove`** `Everyone` — Removes your own pending suggestion. If you have more than one pending, you must give the `number`. An admin can instead remove **any** suggestion by number.
-- **`/suggestion list`** `Everyone` — Shows every suggestion still waiting for a decision.
-- **`/suggestion approve`** / **`/suggestion reject`** `Admin` — Decides a suggestion. Admins can also decide by reacting to the suggestion's own message, or via **right-click a suggestion's message → Apps → "Suggestion: Approve"/"Suggestion: Reject"** (resolves which suggestion it is from the message itself, no number needed).
-- **`/suggestion channel`** `Admin` — Sets where suggestions get posted; omit the channel to remove the current one.
-- **`/suggestion disable`** `Admin` — Turns the feature on/off for this server.
+Users submit suggestions; Admins approve/deny.
+
+- **`/suggestion`** `Everyone` — Submits one.
+- **`/suggestion edit`** `Everyone` — Edits one of your own still-pending suggestions.
+- **`/suggestion remove`** `Everyone` (any, for Admins) — Removes your own pending suggestion, or (Admins) any suggestion by number.
+- **`/suggestion list`** `Everyone` — Lists suggestions still awaiting a decision.
+- **`/suggestion approve`** / **`/suggestion reject`** `Admin` — Decides one (also doable by reacting to the suggestion message, or right-click → Apps → Approve/Reject).
+- **`/suggestion channel`** `Admin` — Sets (or clears) where suggestions get posted.
+- **`/suggestion disable`** `Admin` — Turns the feature on/off.
 
 ## ✅ Verification (`/verify`)
 
-- **`/verify config`** `Admin` — Sets the roles to assign for each verification type (sub / domme / maledom), a single shared role to remove (if any) when verifying someone, the channel where reports get posted, and (optionally) an extra role allowed to use `sub`/`domme`/`maledom`/`edit` without being a Mod.
-- **`/verify sub`**, **`/verify domme`**, **`/verify maledom`** `Mod` — Verifies a user as one of the three types: assigns the matching role, removes the configured shared role (if any), keeps the three types mutually exclusive (strips either other one if present), and posts a report in the set channel. If the user already had a previous report, it's replaced by the new one. Also usable by the role set via `/verify config allowedrole`. **Note:** `/verify sub` no longer has a "social" field (removed on request); `/verify domme` and `/verify maledom` still have it.
-- **`/verify subroles`** `Admin` — Optional extra check, `/verify sub` only: configures a set of up to 6 roles plus a default one. If the member has none of the configured set when verified as Sub, the default gets assigned automatically alongside the sub role — what the roles represent is entirely up to you, the bot just checks whether the member holds at least one of them.
-- **`/verify edit`** `Mod` — Edits the verification/social fields of a user's last report.
-- **`/verify disable`** `Admin` — Turns the feature on/off for this server.
+- **`/verify config`** `Admin` — Sets the role per type (sub/domme/maledom), a shared role to remove, the report channel, and an optional extra "allowed" role.
+- **`/verify sub`**, **`/verify domme`**, **`/verify maledom`** `Mod` — Verifies a user: assigns the role, removes the shared one, keeps the three exclusive, posts a report.
+- **`/verify subroles`** `Admin` — Optional extra: a set of up to 6 roles plus a default. If a member verified as Sub has none of them, the default gets assigned automatically.
+- **`/verify edit`** `Mod` — Edits a user's last report.
+- **`/verify disable`** `Admin` — Turns the feature on/off.
 
-## ⚠️ Warnings (`/warning`, `/verbal`)
+## 🔢 WaifuWar LR (`/waifuwarlr`)
 
-Everything below Admin-only is Moderate Members. Keeps a running, always-up-to-date list of warnings in a channel you choose.
+Post an image, then a digit-only message: each digit maps to an emoji, swapping the bot's reactions on that image and deleting the digit message.
 
-- **`/warn`** `Mod` — Warn a user by their **ID** (works even if they've already left the server). Automatically escalates: no role yet → assigns `role_1`; already has `role_1` → assigns `role_2`; already has `role_2` → assigns nothing and tells you the team should discuss banning them in chat instead. Optional `date` to backdate it (date only, never a time).
-- **`/warning config`** `Admin` — Sets any combination of the two escalation roles `/warn` uses (`role_1` and `role_2`, provided together) and/or the channel where the warnings list is posted and kept updated.
-- **`/warning edit`** `Mod` — Edit one of **your own** past warnings/verbals (autocomplete only shows entries you personally issued) — change the reason and/or the date.
-- **`/warning update`** `Admin` — Re-renders the warnings list embed with whatever the current formatting/content logic is, without needing a new warning to trigger it.
-- **`/verbal`** `Mod` — Lighter version: just a user and a reason, no role assigned. Same optional `date`.
-- **`/warning disable`** `Admin` — Turns the feature on/off for this server (also disables `/warn` and `/verbal`, which share the same on/off state).
+- **`/waifuwarlr add`** `Admin` — Sets up a channel.
+- **`/waifuwarlr setdigit`** `Admin` — Maps digit(s) to emoji(s) (comma-separated, paired by position). Autocomplete previews current mappings.
+- **`/waifuwarlr removedigit`** `Admin` — Removes a mapping.
+- **`/waifuwarlr remove`** `Admin` — Removes a channel entirely.
+- **`/waifuwarlr list`** `Admin` — Lists configured channels and their mappings.
+- **`/waifuwarlr disable`** `Admin` — Turns the feature on/off.
 
-The embed shows the **name of the role actually assigned** on each line instead of a generic "Warning" label (falls back to "Warning" if no role was assigned that time — already maxed out, or the user wasn't in the server). If anyone who was ever escalated to `role_2` later gets banned, they show up in a "🔨 Banned after final warning" section at the bottom (needs the bot to have the Ban Members permission; silently skipped otherwise).
+## ⚠️ Warnings (`/warn`, `/verbal`, `/warning`)
 
-Everything is logged in a single embed that gets edited in place (never reposted) — titled "Warnings", showing when it was last updated, and then one block per user with every warning/verbal they've ever received. Whenever someone gets a new one, their block jumps back to the top of the list.
+Formal warnings escalate a user through two configured roles; verbals are logged with no role.
+
+- **`/warn`** `Mod` — Issues a formal warning (auto-escalates).
+- **`/verbal`** `Mod` — Logs a verbal warning.
+- **`/warning config`** `Admin` — Sets the two escalation roles and log channel.
+- **`/warning edit`** `Mod` — Edits a warning/verbal you issued yourself.
+- **`/warning update`** `Admin` — Refreshes the posted warnings-list embed with current formatting/content.
+- **`/warning disable`** `Admin` — Shared toggle with `/verbal`.
