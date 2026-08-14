@@ -106,12 +106,12 @@ async function handleVerifyType(interaction, type) {
   }
 
   // Sub-only: if configured, make sure the member holds at least one of the admin's
-  // "total" roles, backfilling the configured default if they hold none of them.
+  // sub roles, backfilling the configured default if they hold none of them.
   if (type === 'sub') {
-    const totalRoleStatus = await verifyManager.assignDefaultTotalRoleIfMissing(guild, member);
-    if (totalRoleStatus === 'assigned') {
-      const defaultRole = guild.roles.cache.get(config.default_total_role_id);
-      notes.push(`➕ Had none of the configured "total" roles — assigned the default${defaultRole ? ` (${defaultRole})` : ''}.`);
+    const subRoleStatus = await verifyManager.assignDefaultSubRoleIfMissing(guild, member);
+    if (subRoleStatus === 'assigned') {
+      const defaultRole = guild.roles.cache.get(config.default_sub_role_id);
+      notes.push(`➕ Had none of the configured sub roles — assigned the default${defaultRole ? ` (${defaultRole})` : ''}.`);
     }
   }
 

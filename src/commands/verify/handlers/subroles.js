@@ -1,7 +1,7 @@
 const { PermissionFlagsBits } = require('discord.js');
 const verifyManager = require('../../../features/verify/verifyManager');
 
-async function handleTotalRoles(interaction) {
+async function handleSubRoles(interaction) {
   if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
     return;
@@ -18,8 +18,8 @@ async function handleTotalRoles(interaction) {
     return;
   }
 
-  await verifyManager.setTotalRoles(interaction.guildId, uniqueRoleIds);
-  await verifyManager.setConfig(interaction.guildId, { defaultTotalRole: defaultRole.id });
+  await verifyManager.setSubRoles(interaction.guildId, uniqueRoleIds);
+  await verifyManager.setConfig(interaction.guildId, { defaultSubRole: defaultRole.id });
 
   const rolesList = roles.map((r) => `${r}`).join(', ');
   await interaction.reply({
@@ -30,4 +30,4 @@ async function handleTotalRoles(interaction) {
   });
 }
 
-module.exports = { handleTotalRoles };
+module.exports = { handleSubRoles };

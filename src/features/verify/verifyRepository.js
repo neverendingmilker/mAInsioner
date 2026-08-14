@@ -21,7 +21,7 @@ async function getGuildConfig(guildId) {
         remove_role_id: row.remove_role_id,
         report_channel_id: row.report_channel_id,
         allowed_role_id: row.allowed_role_id,
-        default_total_role_id: row.default_total_role_id,
+        default_sub_role_id: row.default_sub_role_id,
       }
     : {
         guild_id: guildId,
@@ -31,7 +31,7 @@ async function getGuildConfig(guildId) {
         remove_role_id: null,
         report_channel_id: null,
         allowed_role_id: null,
-        default_total_role_id: null,
+        default_sub_role_id: null,
       };
 }
 
@@ -41,7 +41,7 @@ async function setGuildConfig(guildId, fields) {
   await db.ready;
   await db.client.execute({
     sql: `INSERT INTO verify_role_config
-            (guild_id, sub_give_role_id, domme_give_role_id, maledom_give_role_id, remove_role_id, report_channel_id, allowed_role_id, default_total_role_id)
+            (guild_id, sub_give_role_id, domme_give_role_id, maledom_give_role_id, remove_role_id, report_channel_id, allowed_role_id, default_sub_role_id)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(guild_id) DO UPDATE SET
             sub_give_role_id = excluded.sub_give_role_id,
@@ -50,7 +50,7 @@ async function setGuildConfig(guildId, fields) {
             remove_role_id = excluded.remove_role_id,
             report_channel_id = excluded.report_channel_id,
             allowed_role_id = excluded.allowed_role_id,
-            default_total_role_id = excluded.default_total_role_id`,
+            default_sub_role_id = excluded.default_sub_role_id`,
     args: [
       guildId,
       fields.sub_give_role_id,
@@ -59,31 +59,31 @@ async function setGuildConfig(guildId, fields) {
       fields.remove_role_id,
       fields.report_channel_id,
       fields.allowed_role_id,
-      fields.default_total_role_id,
+      fields.default_sub_role_id,
     ],
   });
 }
 
-// --- "Total" roles: an admin-configured set of roles (any number) that /verify sub
+// --- Sub roles: an admin-configured set of roles (any number) that /verify sub
 // checks a member against — if they hold NONE of them, the configured default role is
 // assigned as a fallback. What the roles represent is up to the admin; the bot only
 // checks membership in the set. ---
 
-async function setTotalRoles(guildId, roleIds) {
+async function setSubRoles(guildId, roleIds) {
   await db.ready;
-  await db.client.execute({ sql: 'DELETE FROM verify_total_roles WHERE guild_id = ?', args: [guildId] });
+  await db.client.execute({ sql: 'DELETE FROM verify_sub_roles WHERE guild_id = ?', args: [guildId] });
   for (const roleId of roleIds) {
     await db.client.execute({
-      sql: 'INSERT INTO verify_total_roles (guild_id, role_id) VALUES (?, ?)',
+      sql: 'INSERT INTO verify_sub_roles (guild_id, role_id) VALUES (?, ?)',
       args: [guildId, roleId],
     });
   }
 }
 
-async function getTotalRoles(guildId) {
+async function getSubRoles(guildId) {
   await db.ready;
   const result = await db.client.execute({
-    sql: 'SELECT role_id FROM verify_total_roles WHERE guild_id = ?',
+    sql: 'SELECT role_id FROM verify_sub_roles WHERE guild_id = ?',
     args: [guildId],
   });
   return result.rows.map((r) => r.role_id);
@@ -187,8 +187,8 @@ async function setEnabled(guildId, enabled) {
 module.exports = {
   getGuildConfig,
   setGuildConfig,
-  setTotalRoles,
-  getTotalRoles,
+  setSubRoles,
+  getSubRoles,
   isEnabled,
   setEnabled,
   insertReport,

@@ -68,10 +68,10 @@ async function createTables() {
         remove_role_id TEXT,
         report_channel_id TEXT,
         allowed_role_id TEXT,
-        default_total_role_id TEXT,
+        default_sub_role_id TEXT,
         enabled INTEGER NOT NULL DEFAULT 1
       )`,
-      `CREATE TABLE IF NOT EXISTS verify_total_roles (
+      `CREATE TABLE IF NOT EXISTS verify_sub_roles (
         guild_id TEXT NOT NULL,
         role_id TEXT NOT NULL,
         PRIMARY KEY (guild_id, role_id)
@@ -358,16 +358,26 @@ async function createTables() {
 // "birthday_channel_id" existed (back when the only option was "remove_after_hours").
 // Safe to run on every startup: each step is skipped once already applied.
 async function migrate() {
-  // Verify: '/verify sub' can now optionally backfill one of several "total" roles if
-  // the member has none of them, defaulting to a configured fallback role.
+  // Verify: '/verify sub' can now optionally backfill one of several "sub roles" if
+  // the member has none of them, defaulting to a configured fallback role. (Briefly
+  // called "total roles" before the subcommand/column/table were renamed — handled
+  // below for anyone who already picked up that first version.)
   const verifyRoleConfigExists =
     (await client.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = 'verify_role_config'")).rows.length > 0;
   if (verifyRoleConfigExists) {
     const verifyColumns = await client.execute('PRAGMA table_info(verify_role_config)');
     const verifyColumnNames = verifyColumns.rows.map((row) => row.name);
-    if (!verifyColumnNames.includes('default_total_role_id')) {
-      await client.execute('ALTER TABLE verify_role_config ADD COLUMN default_total_role_id TEXT');
+    if (verifyColumnNames.includes('default_total_role_id') && !verifyColumnNames.includes('default_sub_role_id')) {
+      await client.execute('ALTER TABLE verify_role_config RENAME COLUMN default_total_role_id TO default_sub_role_id');
+    } else if (!verifyColumnNames.includes('default_sub_role_id')) {
+      await client.execute('ALTER TABLE verify_role_config ADD COLUMN default_sub_role_id TEXT');
     }
+  }
+  const oldVerifyTotalRolesExists =
+    (await client.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = 'verify_total_roles'")).rows.length > 0;
+  if (oldVerifyTotalRolesExists) {
+    await client.execute('INSERT OR IGNORE INTO verify_sub_roles SELECT * FROM verify_total_roles');
+    await client.execute('DROP TABLE verify_total_roles');
   }
 
 

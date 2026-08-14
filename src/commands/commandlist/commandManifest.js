@@ -276,7 +276,7 @@ const COMMAND_MANIFEST = [
         note: 'the configured Mod role, or Administrator, or the role set via /verify config allowedrole',
         verifyAllowedRoleCheck: true,
       },
-      { name: 'totalroles', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'subroles', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
       {
         name: 'edit',
         tier: MOD,
