@@ -68,7 +68,13 @@ async function createTables() {
         remove_role_id TEXT,
         report_channel_id TEXT,
         allowed_role_id TEXT,
+        default_total_role_id TEXT,
         enabled INTEGER NOT NULL DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS verify_total_roles (
+        guild_id TEXT NOT NULL,
+        role_id TEXT NOT NULL,
+        PRIMARY KEY (guild_id, role_id)
       )`,
       `CREATE TABLE IF NOT EXISTS verify_reports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -352,6 +358,19 @@ async function createTables() {
 // "birthday_channel_id" existed (back when the only option was "remove_after_hours").
 // Safe to run on every startup: each step is skipped once already applied.
 async function migrate() {
+  // Verify: '/verify sub' can now optionally backfill one of several "total" roles if
+  // the member has none of them, defaulting to a configured fallback role.
+  const verifyRoleConfigExists =
+    (await client.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = 'verify_role_config'")).rows.length > 0;
+  if (verifyRoleConfigExists) {
+    const verifyColumns = await client.execute('PRAGMA table_info(verify_role_config)');
+    const verifyColumnNames = verifyColumns.rows.map((row) => row.name);
+    if (!verifyColumnNames.includes('default_total_role_id')) {
+      await client.execute('ALTER TABLE verify_role_config ADD COLUMN default_total_role_id TEXT');
+    }
+  }
+
+
   // The Reaction Code feature was renamed to WaifuWar LR — copy any data from the old
   // table names (if they exist) into the new ones createTables() just made, then drop
   // the old tables so they don't linger. A fresh install never had the old names, so

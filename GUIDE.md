@@ -189,10 +189,11 @@ The sticky message is reposted at the bottom of the channel after each new messa
 
 ## ✅ Verification (`/verify`)
 
-- **`/verify config`** `Admin` — Sets the roles to assign for each verification type (sub / domme / maledom), the shared role to remove (if any) when verifying someone, the channel where reports get posted, and (optionally) an extra role allowed to use `sub`/`domme`/`maledom`/`edit` without being a Mod.
-- **`/verify sub`**, **`/verify domme`**, **`/verify maledom`** `Mod` — Verifies a user as one of the three types: assigns the matching role, removes the configured role (if any), and posts a report in the set channel. If the user already had a previous report, it's replaced by the new one. Also usable by the role set via `/verify config allowedrole`. **Note:** `/verify sub` no longer has a "social" field (removed on request); `/verify domme` and `/verify maledom` still have it.
+- **`/verify config`** `Admin` — Sets the roles to assign for each verification type (sub / domme / maledom), a single shared role to remove (if any) when verifying someone, the channel where reports get posted, and (optionally) an extra role allowed to use `sub`/`domme`/`maledom`/`edit` without being a Mod.
+- **`/verify sub`**, **`/verify domme`**, **`/verify maledom`** `Mod` — Verifies a user as one of the three types: assigns the matching role, removes the configured shared role (if any), keeps the three types mutually exclusive (strips either other one if present), and posts a report in the set channel. If the user already had a previous report, it's replaced by the new one. Also usable by the role set via `/verify config allowedrole`. **Note:** `/verify sub` no longer has a "social" field (removed on request); `/verify domme` and `/verify maledom` still have it.
+- **`/verify totalroles`** `Admin` — Optional extra check, `/verify sub` only: configures a set of up to 6 roles plus a default one. If the member has none of the configured set when verified as Sub, the default gets assigned automatically alongside the sub role — what the roles represent is entirely up to you, the bot just checks whether the member holds at least one of them.
 - **`/verify edit`** `Mod` — Edits the verification/social fields of a user's last report.
-- **`/verify disable`** `Mod` — Turns the feature on/off for this server.
+- **`/verify disable`** `Admin` — Turns the feature on/off for this server.
 
 ## ⚠️ Warnings (`/warning`, `/verbal`)
 

@@ -105,6 +105,16 @@ async function handleVerifyType(interaction, type) {
     }
   }
 
+  // Sub-only: if configured, make sure the member holds at least one of the admin's
+  // "total" roles, backfilling the configured default if they hold none of them.
+  if (type === 'sub') {
+    const totalRoleStatus = await verifyManager.assignDefaultTotalRoleIfMissing(guild, member);
+    if (totalRoleStatus === 'assigned') {
+      const defaultRole = guild.roles.cache.get(config.default_total_role_id);
+      notes.push(`➕ Had none of the configured "total" roles — assigned the default${defaultRole ? ` (${defaultRole})` : ''}.`);
+    }
+  }
+
   // Post the verification report to the configured channel (if any).
   if (config.report_channel_id) {
     const reportChannel = guild.channels.cache.get(config.report_channel_id);

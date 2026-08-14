@@ -2,6 +2,7 @@ const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('disco
 const { handleConfig } = require('./handlers/config');
 const { handleVerifyType } = require('./handlers/verifyAction');
 const { handleEdit } = require('./handlers/edit');
+const { handleTotalRoles } = require('./handlers/totalroles');
 const verifyManager = require('../../features/verify/verifyManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
@@ -76,6 +77,18 @@ const data = new SlashCommandBuilder()
       .addStringOption((opt) =>
         opt.setName('verification').setDescription('How the verification was done').setRequired(true)
       )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('totalroles')
+      .setDescription('[Admin] Sets the role set /verify sub checks, and the default assigned if a member has none of them')
+      .addRoleOption((opt) => opt.setName('role_1').setDescription('A role in the set').setRequired(true))
+      .addRoleOption((opt) => opt.setName('default_role').setDescription('Assigned if the member has none of the roles').setRequired(true))
+      .addRoleOption((opt) => opt.setName('role_2').setDescription('Another role in the set').setRequired(false))
+      .addRoleOption((opt) => opt.setName('role_3').setDescription('Another role in the set').setRequired(false))
+      .addRoleOption((opt) => opt.setName('role_4').setDescription('Another role in the set').setRequired(false))
+      .addRoleOption((opt) => opt.setName('role_5').setDescription('Another role in the set').setRequired(false))
+      .addRoleOption((opt) => opt.setName('role_6').setDescription('Another role in the set').setRequired(false))
   );
 
 async function execute(interaction) {
@@ -106,6 +119,8 @@ async function execute(interaction) {
       return handleVerifyType(interaction, 'maledom');
     case 'edit':
       return handleEdit(interaction);
+    case 'totalroles':
+      return handleTotalRoles(interaction);
     default:
       return interaction.reply({ content: 'Unknown subcommand.', ephemeral: true });
   }

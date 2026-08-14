@@ -246,15 +246,17 @@ Every day at midnight (timezone set via `TZ` in `.env`) the bot checks who's cel
 
 ## Available commands (Verify feature)
 
-`/verify config` requires the **Administrator** permission; every other subcommand requires **Manage Roles**, or the role configured via `/verify config allowedrole`.
+`/verify config`, `/verify totalroles` and `/verify disable` require the **Administrator** permission; `/verify sub`, `/verify domme`, `/verify maledom` and `/verify edit` require the server's configured Mod role (or Administrator), or the role configured via `/verify config allowedrole`.
 
-- `/verify config [verified_sub] [subremove] [verified_domme] [dommeremove] [verified_maledom] [maledomremove] [channel] [allowedrole]` — **admin only**: configures any combination of the following in one call:
+- `/verify config [verified_sub] [verified_domme] [verified_maledom] [remove] [channel] [allowedrole]` — **admin only**: configures any combination of the following in one call:
   - `verified_sub` / `verified_domme` / `verified_maledom` — the role assigned by `/verify sub`, `/verify domme`, `/verify maledom` respectively.
-  - `subremove` / `dommeremove` / `maledomremove` — an **optional** role to strip from the member (if they currently have it) when that command is run — e.g. remove a generic "Unverified" or "Findomme" role once the specific Verified role is granted.
-  - `channel:<#channel>` — the text channel where verification reports are posted (report format: TBD).
-- `/verify sub user:<@user>` / `/verify domme user:<@user>` / `/verify maledom user:<@user>` — assigns the configured "give" role for that type (no-op if the member already has it), and removes the configured "remove" role for that type if the member currently holds it.
+  - `remove` — a single **shared** role, optional, stripped from the member (if they currently have it) whenever any of the three types is run — e.g. remove a generic "Unverified" role once any Verified role is granted.
+  - `channel:<#channel>` — the text channel where verification reports are posted.
+  - `allowedrole:<role>` — an extra role (besides the configured Mod role/Administrator) allowed to run `sub`/`domme`/`maledom`/`edit`.
+- `/verify sub user:<@user> verification:<...>` / `/verify domme user:<@user> verification:<...> social:<...>` / `/verify maledom user:<@user> verification:<...> social:<...>` — assigns the configured "give" role for that type (no-op if the member already has it), removes the shared "remove" role if the member currently holds it, strips the "give" role of either other type if present (keeps the three mutually exclusive), and posts/replaces a report in the configured channel. `/verify sub` has no `social` field (removed on request); `domme`/`maledom` still have it.
+- `/verify totalroles role_1:<role> default_role:<role> [role_2] [role_3] [role_4] [role_5] [role_6]` — **admin only**, and entirely optional: configures a set of roles (up to 6, `role_1` and `default_role` are the only required ones) that `/verify sub` checks the member against. If the member holds **none** of them, `default_role` gets assigned automatically as a fallback, right alongside the normal sub role assignment — noted in the command's reply when it happens. Doesn't apply to `/verify domme` or `/verify maledom`. Re-running this command **replaces** the whole role set. What the roles represent is entirely up to you — the bot only checks set membership, nothing else.
 
-Each of the three types is independent — e.g. running `/verify domme` never touches the sub or maledom roles unless you explicitly configured them to overlap. The bot's role must be higher than every role it needs to touch (both give and remove), otherwise it reports which one it couldn't apply instead of failing silently. Running `/verify sub|domme|maledom` before `/verify config` has been set up for that type replies with a reminder instead of doing anything.
+Each of the three types is independent — e.g. running `/verify domme` never touches the sub or maledom roles unless you explicitly configured them to overlap. The bot's role must be higher than every role it needs to touch (give, shared remove, and the mutual-exclusivity strip), otherwise it reports which one it couldn't apply instead of failing silently. Running `/verify sub|domme|maledom` before `/verify config` has been set up for that type replies with a reminder instead of doing anything.
 
 ## Available commands (Incident feature)
 
