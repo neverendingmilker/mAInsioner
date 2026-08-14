@@ -62,7 +62,7 @@ Alphabetical by feature. `Admin` = Administrator permission. `Mod` = the server'
 - `add day:<...> month:<...> [year] [user]` `Everyone` (Mod for `user`) — sets your own birthday, or someone else's if you're a Mod.
 - `edit [...] [user]` `Everyone` (Mod for `user`) — same rule, editing.
 - `remove [user]` `Everyone` (Mod for `user`) — same rule, removing.
-- `config [role] [remove_after] [channel]` — sets the birthday role, how long it stays assigned, and an optional announcement channel. Requires **Manage Roles**.
+- `config [role] [remove_after] [channel]` `Mod` — sets the birthday role, how long it stays assigned, and an optional announcement channel.
 - `list` `Everyone` — lists all stored birthdays, grouped by month.
 
 ### Booster Links (`/boosterlink`)

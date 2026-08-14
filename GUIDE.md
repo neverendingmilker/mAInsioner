@@ -30,7 +30,7 @@ Assigns a role on someone's birthday and removes it after a set time.
 - **`/birthday add`** `Everyone` (Mod for others) — Sets your own birthday, or someone else's if you're a Mod.
 - **`/birthday edit`** `Everyone` (Mod for others) — Same rule, for editing.
 - **`/birthday remove`** `Everyone` (Mod for others) — Same rule, for removing.
-- **`/birthday config`** — Sets the birthday role, how long it stays on, and an optional announcement channel. Requires **Manage Roles**.
+- **`/birthday config`** `Mod` — Sets the birthday role, how long it stays on, and an optional announcement channel.
 - **`/birthday list`** `Everyone` — Lists every stored birthday, grouped by month.
 
 ## 🔗 Booster Links (`/boosterlink`)
