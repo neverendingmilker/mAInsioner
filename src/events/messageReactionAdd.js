@@ -2,6 +2,7 @@ const { PermissionFlagsBits } = require('discord.js');
 const suggestionManager = require('../features/suggestion/suggestionManager');
 const starboardManager = require('../features/starboard/starboardManager');
 const reactionLimitManager = require('../features/reactionlimit/reactionLimitManager');
+const honeypotManager = require('../features/honeypot/honeypotManager');
 
 // Handles the suggestion decide-by-react shortcut (admin reacts check00/wrong00 on a
 // suggestion message). Any other emoji is simply not a match here and does nothing.
@@ -45,6 +46,10 @@ module.exports = {
 
     const message = reaction.message;
     if (!message.guild) return;
+
+    await honeypotManager.handleReactionAdd(reaction, user, message.guild).catch((err) => {
+      console.error('[honeypot] Error handling reaction add:', err);
+    });
 
     await handleSuggestionVote(reaction, user, message).catch((err) => {
       console.error('[suggestion] Error handling reaction-based vote:', err);

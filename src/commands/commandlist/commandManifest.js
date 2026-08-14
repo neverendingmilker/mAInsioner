@@ -115,6 +115,16 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
+    feature: 'Honeypot',
+    command: '/honeypot',
+    subcommands: [
+      { name: 'add', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'remove', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'list', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+      { name: 'disable', tier: ADMIN, permission: PermissionFlagsBits.Administrator },
+    ],
+  },
+  {
     feature: 'MFA Roles',
     command: '/mfaroles',
     subcommands: [{ name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator }],

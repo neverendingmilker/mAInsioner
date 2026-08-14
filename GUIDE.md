@@ -74,6 +74,17 @@ A personal keyword watcher — get DM'd (with a bit of context) whenever someone
 
 Notifications are DMs with a short embed: a couple of messages of context before the trigger, the triggering message itself, which word(s) matched, and a jump link. To avoid spamming you if a word comes up a lot in one conversation, you won't be re-notified in the same channel more than once every 5 minutes.
 
+## 🍯 Honeypot (`/honeypot`)
+
+Admin only. Turns a channel into a trap: posts a message with a button, and after that, **any** interaction from someone who isn't a Mod/Admin — writing a message there, reacting to anything there, or clicking the button — gets them kicked from the server immediately, no warning.
+
+- **`/honeypot add`** — Sets up a channel as a honeypot and posts the trap message (with the button) right away. Custom message text and button label are optional (both have sensible defaults). Running it again on the same channel replaces the trap message.
+- **`/honeypot remove`** — Removes the trap from a channel (autocomplete over active ones) and deletes the trap message if it's still there.
+- **`/honeypot list`** — Shows every channel currently set up as a honeypot.
+- **`/honeypot disable`** — Turns the whole feature on/off for the server.
+
+Mods and Admins are always safe from every trigger — the point is to catch people who shouldn't be interacting with the channel at all. The kick uses the standard Discord kick (not a ban), so a kicked person can rejoin with a new invite if that's ever needed.
+
 ## 🍕 GoosePizza (`/goosepizza`)
 
 A little passive fun feature: whenever anyone says a chosen word in one of its chosen channels, the bot automatically responds with a chosen emoji — either by posting it as a new message, or by reacting with it directly on the triggering message. You can set up multiple independent triggers — different words, channels, emojis and modes can all coexist, including several watching the same channel at once — and each trigger can itself watch more than one channel.

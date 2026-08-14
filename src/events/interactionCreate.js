@@ -14,6 +14,16 @@ module.exports = {
       return;
     }
 
+    if (interaction.isButton() && interaction.customId === 'honeypot:kick') {
+      const honeypotManager = require('../features/honeypot/honeypotManager');
+      try {
+        await honeypotManager.handleButtonClick(interaction);
+      } catch (err) {
+        console.error('[honeypot] Error handling button click:', err);
+      }
+      return;
+    }
+
     if (interaction.isModalSubmit() && interaction.customId.startsWith('sticky:edit-modal:')) {
       try {
         const channelId = interaction.customId.slice('sticky:edit-modal:'.length);

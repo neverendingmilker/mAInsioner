@@ -11,6 +11,7 @@ const FEATURES = {
   comboroles: { label: 'Combined Role Search', manager: require('../../features/comboroles/comboRolesManager') },
   goosepizza: { label: 'GoosePizza', manager: require('../../features/goosepizza/goosepizzaManager') },
   highlight: { label: 'Highlight', manager: require('../../features/highlight/highlightManager') },
+  honeypot: { label: 'Honeypot', manager: require('../../features/honeypot/honeypotManager') },
   incident: { label: 'Incident Counter', manager: require('../../features/incident/incidentManager') },
   reactionlimit: { label: 'Reaction Limit', manager: require('../../features/reactionlimit/reactionLimitManager') },
   rolelink: { label: 'Role Links', manager: require('../../features/rolelinks/roleLinkManager') },

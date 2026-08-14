@@ -20,6 +20,18 @@ const client = createClient({
 async function createTables() {
   await client.batch(
     [
+      `CREATE TABLE IF NOT EXISTS honeypot_config (
+        guild_id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS honeypot_channels (
+        guild_id TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        message_id TEXT NOT NULL,
+        created_by TEXT,
+        created_at INTEGER,
+        PRIMARY KEY (guild_id, channel_id)
+      )`,
       `CREATE TABLE IF NOT EXISTS birthday_guild_config (
         guild_id TEXT PRIMARY KEY,
         birthday_role_id TEXT,

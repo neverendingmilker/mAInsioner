@@ -51,6 +51,12 @@ src/
         list.js
         ignorechannel.js
         ignoreuser.js
+    honeypot/
+      index.js       (defines /honeypot add, remove, list, disable + autocomplete)
+      handlers/
+        add.js
+        remove.js
+        list.js
     mfaroles/
       index.js       (single-file command, no subcommands — lists roles with 2FA-required permissions)
     modaccess/
@@ -159,6 +165,9 @@ src/
     highlight/
       highlightManager.js     (per-guild word-cache, matching against every message, DM notification with context, cooldown)
       highlightRepository.js  (SQL queries: per-user words, ignored channels/users, last-notified cooldown timestamps)
+    honeypot/
+      honeypotManager.js     (posts the trap message/button, kicks non-mods on message/reaction/button interactions)
+      honeypotRepository.js  (SQL queries: per-guild trap channels + their bait message IDs)
     incident/
       incidentManager.js     (validation + posts/refreshes the sign in Discord)
       incidentRepository.js  (SQL queries)
@@ -359,6 +368,17 @@ A personal keyword watcher, independent per user (not admin-configured) — get 
 - `/highlight disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:Highlight` controls the same setting.
 
 When a match fires, you get a DM with a small embed: up to 3 messages of context immediately before the trigger, the triggering message itself, which word(s) matched, and a jump link — enough to follow the conversation without needing to open the channel first. To avoid spamming you if a word comes up repeatedly in one conversation, you won't be re-notified in the same channel more than once every 5 minutes, even if a different word matches in between.
+
+## Available commands (Honeypot feature)
+
+Sets up a channel as a trap for anyone who isn't a Mod/Admin. Every subcommand requires the **Administrator** permission.
+
+- `/honeypot add channel:<#channel> [message] [button_label]` — turns the channel into a honeypot and immediately posts the bait message there, with a button attached. `message` and `button_label` are both optional and default to generic trap text/label if omitted. Running this again on a channel that's already a honeypot posts a fresh message (the old one, if it still exists, is left alone — remove first if you want it cleaned up).
+- `/honeypot remove channel:<...>` — removes the trap from a channel and deletes the bait message if it's still there. `channel` is autocompleted, showing only channels currently set up as honeypots.
+- `/honeypot list` — shows every channel currently set up as a honeypot.
+- `/honeypot disable enabled:<true|false>` — turns the whole feature on/off for the server; `/disablefeature feature:Honeypot` controls the same setting.
+
+Once a channel is a honeypot, three separate triggers all lead to the same outcome for anyone who isn't a Mod (the configured Mod role) or Administrator: posting **any** message in that channel, adding **any** reaction to **any** message in that channel, or clicking the trap button — each one gets the person kicked from the server immediately (a standard kick, not a ban, so they could rejoin with a new invite if that's ever warranted). Mods and Admins are completely exempt from all three and can interact with the channel freely. The bot needs the **Kick Members** permission server-wide, plus **View Channel**/**Send Messages** in the target channel to post the bait message in the first place.
 
 ## Available commands (MFA Roles)
 
