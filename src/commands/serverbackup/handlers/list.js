@@ -16,11 +16,15 @@ async function handleList(interaction) {
     return;
   }
 
-  const lines = snapshots.map((s) => {
-    const label = s.label ? ` — ${s.label}` : '';
-    const source = s.sourceGuildName ? ` — from **${s.sourceGuildName}**` : '';
-    return `**#${s.id}**${label}${source} — <t:${Math.floor(s.createdAt / 1000)}:R> by <@${s.createdBy}>`;
-  });
+  const lines = await Promise.all(
+    snapshots.map(async (s) => {
+      const label = s.label ? ` — ${s.label}` : '';
+      const source = s.sourceGuildName ? ` — from **${s.sourceGuildName}**` : '';
+      const counts = await serverBackupManager.getAssetCounts(s.id);
+      const assets = counts.emoji + counts.sticker + counts.soundboard > 0 ? ` — ${counts.emoji}🙂/${counts.sticker}🏷️/${counts.soundboard}🔊` : '';
+      return `**#${s.id}**${label}${source}${assets} — <t:${Math.floor(s.createdAt / 1000)}:R> by <@${s.createdBy}>`;
+    })
+  );
 
   const embed = new EmbedBuilder()
     .setColor(EMBED_COLOR)

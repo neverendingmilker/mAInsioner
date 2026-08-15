@@ -147,15 +147,17 @@ Losing role1 automatically removes role2 (optionally the reverse too).
 
 ## 🗄️ Server Backup (`/serverbackup`)
 
-Snapshots the server's roles (plus which members held which, by Discord user ID), categories, and channels — names, colors/settings, and permission overwrites. Doesn't cover emoji, stickers, or soundboard sounds (those are binary files, not just structure — a separate backup would be needed for them).
+Snapshots the server's roles (plus which members held which, by Discord user ID), categories, channels — names, colors/settings, and permission overwrites — and emoji, stickers, and soundboard sounds (the actual files, downloaded and stored, since those can't be reconstructed from just a name).
 
-- **`/serverbackup create`** `Admin` — Saves a snapshot, with an optional label to remember it by. `what` picks the scope: everything (default), roles only, or categories/channels only.
+- **`/serverbackup create`** `Admin` — Saves a snapshot, with an optional label to remember it by. `what` picks the scope: everything (default), roles only, categories/channels only, or emoji/stickers/soundboard only.
 - **`/serverbackup list`** `Admin` — Lists every saved backup, across every server the bot backs up (not just this one).
 - **`/serverbackup members`** `Admin` — Just the member role reassignment part of a restore, on its own — no role/channel creation, no confirmation prompt, much faster than a full `restore`. Use this to catch up members who joined *after* the last restore already ran, instead of redoing the whole thing.
-- **`/serverbackup restore`** `Admin` — Recreates whatever's missing from a chosen backup (autocomplete over saved ones). Matches roles by name and channels by name/type/category, so it only ever adds what's missing — nothing already there gets touched or deleted, and it's safe to run more than once. `what` lets you restore a narrower scope than the backup contains. Role hierarchy is restored best-effort: a role positioned above the bot's own can't be moved there automatically.
+- **`/serverbackup restore`** `Admin` — Recreates whatever's missing from a chosen backup (autocomplete over saved ones). Matches roles/emoji/stickers/soundboard sounds by name and channels by name/type/category, so it only ever adds what's missing — nothing already there gets touched or deleted, and it's safe to run more than once. `what` lets you restore a narrower scope than the backup contains. Role hierarchy is restored best-effort: a role positioned above the bot's own can't be moved there automatically.
 - **`/serverbackup disable`** `Admin` — Turns the feature on/off.
 
-A backup isn't tied to the server it came from — any saved backup can be restored on **any** server the bot is in. That's what makes it possible to test a restore safely: take a backup of the real server, invite the bot to an empty test server, and restore there without any risk to the original. Needs the **Manage Roles** and **Manage Channels** permissions.
+A backup isn't tied to the server it came from — any saved backup can be restored on **any** server the bot is in. That's what makes it possible to test a restore safely: take a backup of the real server, invite the bot to an empty test server, and restore there without any risk to the original. Needs the **Manage Roles**, **Manage Channels**, and/or **Manage Guild Expressions** permissions, depending on scope.
+
+Restored emoji, stickers, and soundboard sounds always get brand-new Discord IDs — there's no way to reuse the original one. Any old message that used the original will keep showing as a broken emoji/sticker even after a restore brings it back under the same name.
 
 Restoring roles also reassigns them to whoever from the backup is already a member of the target server, matched by their Discord user ID — additive only, it never removes a role. Anyone who hasn't joined the target server yet is just skipped for now. As more people migrate over afterward, run `/serverbackup members` (not the full `restore`) to pick them up — it's the same reassignment step alone, without redoing the role/channel creation work that's already done.
 

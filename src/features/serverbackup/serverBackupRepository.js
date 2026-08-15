@@ -68,4 +68,45 @@ async function getSnapshot(id) {
   };
 }
 
-module.exports = { isEnabled, setEnabled, saveSnapshot, listSnapshots, getSnapshot };
+// Assets (emoji/sticker/soundboard binary data) live in their own table, separate from the
+// JSON snapshot blob, since they carry raw bytes rather than plain data.
+async function saveAsset(snapshotId, kind, name, meta, data) {
+  await db.ready;
+  await db.client.execute({
+    sql: `INSERT INTO serverbackup_assets (snapshot_id, kind, name, meta, data, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [snapshotId, kind, name, meta ? JSON.stringify(meta) : null, data, Date.now()],
+  });
+}
+
+async function getAssets(snapshotId, kind) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT id, kind, name, meta, data FROM serverbackup_assets WHERE snapshot_id = ? AND kind = ?',
+    args: [snapshotId, kind],
+  });
+  return result.rows.map((row) => ({
+    id: Number(row.id),
+    kind: row.kind,
+    name: row.name,
+    meta: row.meta ? JSON.parse(row.meta) : null,
+    // @libsql/client returns BLOB columns as a plain ArrayBuffer, not a Buffer/Uint8Array —
+    // downstream discord.js file-resolution code (Buffer.isBuffer checks) needs a real Buffer.
+    data: Buffer.from(row.data),
+  }));
+}
+
+async function getAssetCounts(snapshotId) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT kind, COUNT(*) AS count FROM serverbackup_assets WHERE snapshot_id = ? GROUP BY kind',
+    args: [snapshotId],
+  });
+  const counts = { emoji: 0, sticker: 0, soundboard: 0 };
+  for (const row of result.rows) {
+    counts[row.kind] = Number(row.count);
+  }
+  return counts;
+}
+
+module.exports = { isEnabled, setEnabled, saveSnapshot, listSnapshots, getSnapshot, saveAsset, getAssets, getAssetCounts };

@@ -8,7 +8,7 @@ const SNAPSHOT_VERSION = 1;
 // What a backup/restore covers. Shared between create and restore — a snapshot can be
 // taken with one scope and restored with a different (narrower) one; whichever data the
 // snapshot doesn't have for the requested scope is just empty, nothing to restore there.
-const SCOPES = ['all', 'roles', 'channels'];
+const SCOPES = ['all', 'roles', 'channels', 'assets'];
 function normalizeScope(scope) {
   return SCOPES.includes(scope) ? scope : 'all';
 }
@@ -32,10 +32,14 @@ async function setEnabled(guildId, enabled) {
   await repo.setEnabled(guildId, enabled);
 }
 
-function assertCanManage(guild) {
-  const botMember = guild.members.me;
-  if (!botMember?.permissions.has(PermissionFlagsBits.ManageRoles) || !botMember?.permissions.has(PermissionFlagsBits.ManageChannels)) {
-    throw new ValidationError('I need both "Manage Roles" and "Manage Channels" to back up or restore this server\'s structure.');
+function assertCanManage(guild, scope = 'all') {
+  const perms = guild.members.me?.permissions;
+  const missing = [];
+  if ((scope === 'all' || scope === 'roles') && !perms?.has(PermissionFlagsBits.ManageRoles)) missing.push('Manage Roles');
+  if ((scope === 'all' || scope === 'channels') && !perms?.has(PermissionFlagsBits.ManageChannels)) missing.push('Manage Channels');
+  if ((scope === 'all' || scope === 'assets') && !perms?.has(PermissionFlagsBits.ManageGuildExpressions)) missing.push('Manage Guild Expressions');
+  if (missing.length > 0) {
+    throw new ValidationError(`I need the following permission${missing.length === 1 ? '' : 's'} to do this: ${missing.join(', ')}.`);
   }
 }
 
@@ -119,11 +123,11 @@ async function reassignMemberRoles(guild, data, nameToRoleId, reason, membersSum
 // `scope` limits what's captured: 'roles' skips categories/channels entirely, 'channels'
 // skips roles, 'all' (default) captures everything.
 async function createSnapshot(guild, label, createdBy, scope = 'all') {
-  assertCanManage(guild);
   scope = normalizeScope(scope);
+  assertCanManage(guild, scope);
 
   const roles =
-    scope === 'channels'
+    scope === 'channels' || scope === 'assets'
       ? []
       : [...guild.roles.cache.values()]
           .filter((role) => role.id !== guild.id)
@@ -146,7 +150,7 @@ async function createSnapshot(guild, label, createdBy, scope = 'all') {
   // their persistent Discord user ID. Skipped along with roles for a 'channels'-only
   // backup, since there'd be nothing to match role names against.
   let members = [];
-  if (scope !== 'channels') {
+  if (scope !== 'channels' && scope !== 'assets') {
     try {
       await guild.members.fetch();
     } catch (err) {
@@ -165,7 +169,7 @@ async function createSnapshot(guild, label, createdBy, scope = 'all') {
   let categories = [];
   let channels = [];
 
-  if (scope !== 'roles') {
+  if (scope !== 'roles' && scope !== 'assets') {
     // Threads (and any other channel-like entity without its own overwrites) aren't real
     // "structure" — they inherit permissions from their parent channel, which is already
     // captured on its own. Filtering by the presence of permissionOverwrites is more
@@ -199,7 +203,167 @@ async function createSnapshot(guild, label, createdBy, scope = 'all') {
   const data = { version: SNAPSHOT_VERSION, scope, roles, categories, channels, members };
   const id = await repo.saveSnapshot(guild.id, guild.name, label, JSON.stringify(data), createdBy);
 
-  return { id, scope, roleCount: roles.length, categoryCount: categories.length, channelCount: channels.length, memberCount: members.length };
+  let assetCounts = { emoji: 0, sticker: 0, soundboard: 0 };
+  if (scope === 'assets' || scope === 'all') {
+    assetCounts = await captureAssets(guild, id);
+  }
+
+  return {
+    id,
+    scope,
+    roleCount: roles.length,
+    categoryCount: categories.length,
+    channelCount: channels.length,
+    memberCount: members.length,
+    assetCounts,
+  };
+}
+
+async function downloadUrl(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return Buffer.from(await res.arrayBuffer());
+}
+
+// Downloads and stores the actual bytes of every custom emoji, sticker, and soundboard
+// sound — unlike roles/channels these can't be reconstructed from just a name, and their
+// CDN URL stops working once the original is deleted, so the raw file has to be saved.
+// Best-effort per item: one failed download doesn't abort the rest of the backup.
+async function captureAssets(guild, snapshotId) {
+  const counts = { emoji: 0, sticker: 0, soundboard: 0 };
+
+  try {
+    const emojis = await guild.emojis.fetch();
+    for (const emoji of emojis.values()) {
+      try {
+        const data = await downloadUrl(emoji.imageURL({ extension: emoji.animated ? 'gif' : 'png' }));
+        await repo.saveAsset(snapshotId, 'emoji', emoji.name, { animated: emoji.animated }, data);
+        counts.emoji++;
+      } catch (err) {
+        console.error(`[serverbackup] Failed to capture emoji "${emoji.name}":`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error('[serverbackup] Could not fetch emojis:', err.message);
+  }
+
+  try {
+    const stickers = await guild.stickers.fetch();
+    for (const sticker of stickers.values()) {
+      try {
+        const data = await downloadUrl(sticker.url);
+        await repo.saveAsset(
+          snapshotId,
+          'sticker',
+          sticker.name,
+          { description: sticker.description, tags: sticker.tags, format: sticker.format },
+          data
+        );
+        counts.sticker++;
+      } catch (err) {
+        console.error(`[serverbackup] Failed to capture sticker "${sticker.name}":`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error('[serverbackup] Could not fetch stickers:', err.message);
+  }
+
+  try {
+    const sounds = await guild.soundboardSounds.fetch();
+    for (const sound of sounds.values()) {
+      try {
+        const data = await downloadUrl(sound.url);
+        await repo.saveAsset(
+          snapshotId,
+          'soundboard',
+          sound.name,
+          { volume: sound.volume, emojiId: sound.emoji?.id ?? null, emojiName: sound.emoji?.name ?? null },
+          data
+        );
+        counts.soundboard++;
+      } catch (err) {
+        console.error(`[serverbackup] Failed to capture soundboard sound "${sound.name}":`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error('[serverbackup] Could not fetch soundboard sounds:', err.message);
+  }
+
+  return counts;
+}
+
+// StickerFormatType: PNG=1, APNG=2, Lottie=3, GIF=4 — needed to give the re-uploaded file
+// the right extension, since discord.js infers the format from the filename.
+const STICKER_EXT_BY_FORMAT = { 1: 'png', 2: 'png', 3: 'json', 4: 'gif' };
+
+// Re-uploads whatever emoji/stickers/soundboard sounds from the snapshot aren't already
+// present in the target server by name — additive only, same philosophy as the rest of a
+// restore. Each item gets a brand-new ID; any old message referencing the original emoji/
+// sticker will still render broken since Discord has no way to reuse the old ID.
+async function restoreAssets(guild, snapshotId, reason, summary) {
+  const existingEmojiNames = new Set([...guild.emojis.cache.values()].map((e) => e.name));
+  for (const asset of await repo.getAssets(snapshotId, 'emoji')) {
+    if (existingEmojiNames.has(asset.name)) {
+      summary.emoji.skipped++;
+      continue;
+    }
+    try {
+      const created = await guild.emojis.create({ attachment: asset.data, name: asset.name, reason });
+      existingEmojiNames.add(created.name);
+      summary.emoji.created.push(created.name);
+      await sleep(CREATE_DELAY_MS);
+    } catch (err) {
+      summary.emoji.failed.push(`${asset.name} (${err.message})`);
+    }
+  }
+
+  const existingStickerNames = new Set([...guild.stickers.cache.values()].map((s) => s.name));
+  for (const asset of await repo.getAssets(snapshotId, 'sticker')) {
+    if (existingStickerNames.has(asset.name)) {
+      summary.stickers.skipped++;
+      continue;
+    }
+    try {
+      const ext = STICKER_EXT_BY_FORMAT[asset.meta?.format] ?? 'png';
+      const created = await guild.stickers.create({
+        file: { attachment: asset.data, name: `${asset.name}.${ext}` },
+        name: asset.name,
+        description: asset.meta?.description || undefined,
+        tags: asset.meta?.tags || asset.name,
+        reason,
+      });
+      existingStickerNames.add(created.name);
+      summary.stickers.created.push(created.name);
+      await sleep(CREATE_DELAY_MS);
+    } catch (err) {
+      summary.stickers.failed.push(`${asset.name} (${err.message})`);
+    }
+  }
+
+  const existingSoundNames = new Set([...guild.soundboardSounds.cache.values()].map((s) => s.name));
+  for (const asset of await repo.getAssets(snapshotId, 'soundboard')) {
+    if (existingSoundNames.has(asset.name)) {
+      summary.soundboard.skipped++;
+      continue;
+    }
+    try {
+      const created = await guild.soundboardSounds.create({
+        file: asset.data,
+        name: asset.name,
+        volume: asset.meta?.volume ?? undefined,
+        reason,
+      });
+      existingSoundNames.add(created.name);
+      summary.soundboard.created.push(created.name);
+      await sleep(CREATE_DELAY_MS);
+    } catch (err) {
+      summary.soundboard.failed.push(`${asset.name} (${err.message})`);
+    }
+  }
+}
+
+async function getAssetCounts(snapshotId) {
+  return repo.getAssetCounts(snapshotId);
 }
 
 async function listSnapshots() {
@@ -220,11 +384,19 @@ async function loadSnapshot(snapshotId) {
 // these roles gets silently dropped instead of resolved (see resolveOverwrites) — this
 // is meant to be shown to the admin *before* they confirm a restore, so they can invite
 // the missing apps first if full fidelity matters, or knowingly proceed without them.
-async function previewRestore(guild, snapshotId) {
+async function previewRestore(guild, snapshotId, scope = 'all') {
   const { row, data } = await loadSnapshot(snapshotId);
+  scope = normalizeScope(scope);
 
-  const existingNames = new Set([...guild.roles.cache.values()].map((r) => r.name));
-  const missingBots = (data.roles ?? []).filter((r) => r.managed && !existingNames.has(r.name)).map((r) => r.name);
+  // An assets-only restore never touches roles/channel overwrites, so there's nothing
+  // for a missing bot to affect — skip the check entirely.
+  const missingBots =
+    scope === 'assets'
+      ? []
+      : (() => {
+          const existingNames = new Set([...guild.roles.cache.values()].map((r) => r.name));
+          return (data.roles ?? []).filter((r) => r.managed && !existingNames.has(r.name)).map((r) => r.name);
+        })();
 
   return { label: row.label, sourceGuildName: row.sourceGuildName, scope: data.scope ?? 'all', missingBots };
 }
@@ -235,7 +407,7 @@ async function previewRestore(guild, snapshotId) {
 // channel creation attempts, nothing to confirm, just reassigns roles by name using
 // whatever roles already exist in this server right now.
 async function syncMembers(guild, snapshotId, executedBy) {
-  assertCanManage(guild);
+  assertCanManage(guild, 'roles');
 
   const { row, data } = await loadSnapshot(snapshotId);
   const reason = `Server Backup: member sync from backup #${snapshotId} by ${executedBy}`;
@@ -263,8 +435,8 @@ async function syncMembers(guild, snapshotId, executedBy) {
 // `scope` limits what this run actually restores, independent of what the snapshot
 // contains — e.g. a snapshot taken with scope 'all' can still be restored 'roles'-only.
 async function restoreSnapshot(guild, snapshotId, executedBy, scope = 'all') {
-  assertCanManage(guild);
   scope = normalizeScope(scope);
+  assertCanManage(guild, scope);
 
   const { row, data } = await loadSnapshot(snapshotId);
   const reason = `Server Backup: restored from backup #${snapshotId} by ${executedBy}`;
@@ -277,6 +449,9 @@ async function restoreSnapshot(guild, snapshotId, executedBy, scope = 'all') {
     members: { updated: [], noChangeNeeded: 0, notYetJoined: 0, failed: [] },
     categories: { created: [], skipped: 0, failed: [] },
     channels: { created: [], skipped: 0, failed: [] },
+    emoji: { created: [], skipped: 0, failed: [] },
+    stickers: { created: [], skipped: 0, failed: [] },
+    soundboard: { created: [], skipped: 0, failed: [] },
     positionWarning: null,
   };
 
@@ -284,7 +459,7 @@ async function restoreSnapshot(guild, snapshotId, executedBy, scope = 'all') {
   const nameToRoleId = new Map();
   for (const role of guild.roles.cache.values()) nameToRoleId.set(role.name, role.id);
 
-  if (scope !== 'channels') {
+  if (scope === 'roles' || scope === 'all') {
     for (const roleData of data.roles ?? []) {
       if (nameToRoleId.has(roleData.name)) {
         summary.roles.skipped++;
@@ -344,67 +519,73 @@ async function restoreSnapshot(guild, snapshotId, executedBy, scope = 'all') {
     return summary;
   }
 
-  // --- categories ---
-  const nameToCategoryId = new Map();
-  for (const channel of guild.channels.cache.values()) {
-    if (channel.type === ChannelType.GuildCategory) nameToCategoryId.set(channel.name, channel.id);
+  if (scope === 'channels' || scope === 'all') {
+    // --- categories ---
+    const nameToCategoryId = new Map();
+    for (const channel of guild.channels.cache.values()) {
+      if (channel.type === ChannelType.GuildCategory) nameToCategoryId.set(channel.name, channel.id);
+    }
+
+    for (const catData of data.categories ?? []) {
+      if (nameToCategoryId.has(catData.name)) {
+        summary.categories.skipped++;
+        continue;
+      }
+      try {
+        const created = await guild.channels.create({
+          name: catData.name,
+          type: ChannelType.GuildCategory,
+          permissionOverwrites: resolveOverwrites(catData.permissionOverwrites, nameToRoleId, guild),
+          reason,
+        });
+        nameToCategoryId.set(created.name, created.id);
+        summary.categories.created.push(created.name);
+        await sleep(CREATE_DELAY_MS);
+      } catch (err) {
+        summary.categories.failed.push(`${catData.name} (${err.message})`);
+      }
+    }
+
+    // --- channels ---
+    const channelKey = (name, type, parentName) => `${type}::${parentName ?? ''}::${name}`;
+    const existingKeys = new Set();
+    for (const channel of guild.channels.cache.values()) {
+      if (channel.type === ChannelType.GuildCategory || !channel.permissionOverwrites) continue;
+      existingKeys.add(channelKey(channel.name, channel.type, channel.parent?.name ?? null));
+    }
+
+    for (const chData of data.channels ?? []) {
+      const key = channelKey(chData.name, chData.type, chData.parentName);
+      if (existingKeys.has(key)) {
+        summary.channels.skipped++;
+        continue;
+      }
+      try {
+        const options = {
+          name: chData.name,
+          type: chData.type,
+          parent: chData.parentName ? nameToCategoryId.get(chData.parentName) : undefined,
+          permissionOverwrites: resolveOverwrites(chData.permissionOverwrites, nameToRoleId, guild),
+          reason,
+        };
+        if (chData.topic != null) options.topic = chData.topic;
+        if (chData.nsfw) options.nsfw = true;
+        if (chData.rateLimitPerUser) options.rateLimitPerUser = chData.rateLimitPerUser;
+        if (chData.bitrate != null) options.bitrate = chData.bitrate;
+        if (chData.userLimit != null) options.userLimit = chData.userLimit;
+
+        const created = await guild.channels.create(options);
+        existingKeys.add(key);
+        summary.channels.created.push(created.name);
+        await sleep(CREATE_DELAY_MS);
+      } catch (err) {
+        summary.channels.failed.push(`${chData.name} (${err.message})`);
+      }
+    }
   }
 
-  for (const catData of data.categories ?? []) {
-    if (nameToCategoryId.has(catData.name)) {
-      summary.categories.skipped++;
-      continue;
-    }
-    try {
-      const created = await guild.channels.create({
-        name: catData.name,
-        type: ChannelType.GuildCategory,
-        permissionOverwrites: resolveOverwrites(catData.permissionOverwrites, nameToRoleId, guild),
-        reason,
-      });
-      nameToCategoryId.set(created.name, created.id);
-      summary.categories.created.push(created.name);
-      await sleep(CREATE_DELAY_MS);
-    } catch (err) {
-      summary.categories.failed.push(`${catData.name} (${err.message})`);
-    }
-  }
-
-  // --- channels ---
-  const channelKey = (name, type, parentName) => `${type}::${parentName ?? ''}::${name}`;
-  const existingKeys = new Set();
-  for (const channel of guild.channels.cache.values()) {
-    if (channel.type === ChannelType.GuildCategory || !channel.permissionOverwrites) continue;
-    existingKeys.add(channelKey(channel.name, channel.type, channel.parent?.name ?? null));
-  }
-
-  for (const chData of data.channels ?? []) {
-    const key = channelKey(chData.name, chData.type, chData.parentName);
-    if (existingKeys.has(key)) {
-      summary.channels.skipped++;
-      continue;
-    }
-    try {
-      const options = {
-        name: chData.name,
-        type: chData.type,
-        parent: chData.parentName ? nameToCategoryId.get(chData.parentName) : undefined,
-        permissionOverwrites: resolveOverwrites(chData.permissionOverwrites, nameToRoleId, guild),
-        reason,
-      };
-      if (chData.topic != null) options.topic = chData.topic;
-      if (chData.nsfw) options.nsfw = true;
-      if (chData.rateLimitPerUser) options.rateLimitPerUser = chData.rateLimitPerUser;
-      if (chData.bitrate != null) options.bitrate = chData.bitrate;
-      if (chData.userLimit != null) options.userLimit = chData.userLimit;
-
-      const created = await guild.channels.create(options);
-      existingKeys.add(key);
-      summary.channels.created.push(created.name);
-      await sleep(CREATE_DELAY_MS);
-    } catch (err) {
-      summary.channels.failed.push(`${chData.name} (${err.message})`);
-    }
+  if (scope === 'assets' || scope === 'all') {
+    await restoreAssets(guild, snapshotId, reason, summary);
   }
 
   return summary;
@@ -421,4 +602,5 @@ module.exports = {
   previewRestore,
   restoreSnapshot,
   syncMembers,
+  getAssetCounts,
 };

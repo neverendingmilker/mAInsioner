@@ -406,6 +406,21 @@ async function createTables() {
         created_by TEXT,
         created_at INTEGER NOT NULL
       )`,
+      // Emoji/sticker/soundboard files (kind: 'emoji' | 'sticker' | 'soundboard'), each
+      // with its actual binary data — unlike the rest of a snapshot, these can't be
+      // reconstructed from just names/IDs, and the CDN URL stops working once the
+      // original is deleted, so the raw bytes have to be stored. `meta` carries
+      // kind-specific extras (animated, description/tags/format, volume/emoji) as JSON.
+      `CREATE TABLE IF NOT EXISTS serverbackup_assets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        snapshot_id INTEGER NOT NULL,
+        kind TEXT NOT NULL,
+        name TEXT NOT NULL,
+        meta TEXT,
+        data BLOB NOT NULL,
+        created_at INTEGER NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS serverbackup_assets_snapshot_idx ON serverbackup_assets (snapshot_id)`,
     ],
     'write'
   );

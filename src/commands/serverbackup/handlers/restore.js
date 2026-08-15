@@ -22,7 +22,7 @@ async function runRestore(responder, guild, backupId, what, executedBy) {
     const lines = [
       `✅ Restored backup **#${backupId}**${summary.label ? ` (${summary.label})` : ''}${source} — only creates what's missing, never touches or deletes anything that already exists.`,
     ];
-    if (summary.scope !== 'channels') {
+    if (summary.scope === 'roles' || summary.scope === 'all') {
       lines.push(`Roles: ${summarizeSection(summary.roles, 'role')}.`);
       const m = summary.members;
       if (m.updated.length + m.noChangeNeeded + m.notYetJoined + m.failed.length > 0) {
@@ -34,14 +34,27 @@ async function runRestore(responder, guild, backupId, what, executedBy) {
         lines.push(`Members: ${memberParts.join(', ')}.`);
       }
     }
-    if (summary.scope !== 'roles') {
+    if (summary.scope === 'channels' || summary.scope === 'all') {
       lines.push(`Categories: ${summarizeSection(summary.categories, 'category')}.`);
       lines.push(`Channels: ${summarizeSection(summary.channels, 'channel')}.`);
+    }
+    if (summary.scope === 'assets' || summary.scope === 'all') {
+      lines.push(`Emoji: ${summarizeSection(summary.emoji, 'emoji')}.`);
+      lines.push(`Stickers: ${summarizeSection(summary.stickers, 'sticker')}.`);
+      lines.push(`Soundboard: ${summarizeSection(summary.soundboard, 'sound')}.`);
     }
 
     if (summary.positionWarning) lines.push(`⚠️ ${summary.positionWarning}`);
 
-    const failures = [...summary.roles.failed, ...summary.members.failed, ...summary.categories.failed, ...summary.channels.failed];
+    const failures = [
+      ...summary.roles.failed,
+      ...summary.members.failed,
+      ...summary.categories.failed,
+      ...summary.channels.failed,
+      ...summary.emoji.failed,
+      ...summary.stickers.failed,
+      ...summary.soundboard.failed,
+    ];
     if (failures.length > 0) {
       lines.push(`⚠️ Failed: ${failures.slice(0, 10).join('; ')}${failures.length > 10 ? `, +${failures.length - 10} more` : ''}`);
     }
@@ -69,7 +82,7 @@ async function handleRestore(interaction) {
 
   let preview;
   try {
-    preview = await serverBackupManager.previewRestore(interaction.guild, backupId);
+    preview = await serverBackupManager.previewRestore(interaction.guild, backupId, what);
   } catch (err) {
     if (err instanceof serverBackupManager.ValidationError) {
       await interaction.editReply({ content: `⚠️ ${err.message}` });

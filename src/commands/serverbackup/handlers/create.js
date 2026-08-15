@@ -3,8 +3,16 @@ const serverBackupManager = require('../../../features/serverbackup/serverBackup
 
 function describeCounts(result) {
   const parts = [];
-  if (result.scope !== 'channels') parts.push(`${result.roleCount} roles (${result.memberCount} members' role assignments)`);
-  if (result.scope !== 'roles') parts.push(`${result.categoryCount} categories, ${result.channelCount} other channels`);
+  if (result.scope === 'roles' || result.scope === 'all') {
+    parts.push(`${result.roleCount} roles (${result.memberCount} members' role assignments)`);
+  }
+  if (result.scope === 'channels' || result.scope === 'all') {
+    parts.push(`${result.categoryCount} categories, ${result.channelCount} other channels`);
+  }
+  if (result.scope === 'assets' || result.scope === 'all') {
+    const a = result.assetCounts;
+    parts.push(`${a.emoji} emoji, ${a.sticker} stickers, ${a.soundboard} soundboard sounds`);
+  }
   return parts.join(', ');
 }
 
@@ -24,7 +32,7 @@ async function handleCreate(interaction) {
     await interaction.editReply({
       content:
         `✅ Backup **#${result.id}**${label ? ` (${label})` : ''} saved — ${describeCounts(result)}. Restorable on any server I'm in ` +
-        `with \`/serverbackup restore\`. Doesn't include emoji, stickers, or soundboard sounds.`,
+        `with \`/serverbackup restore\`.`,
     });
   } catch (err) {
     if (err instanceof serverBackupManager.ValidationError) {

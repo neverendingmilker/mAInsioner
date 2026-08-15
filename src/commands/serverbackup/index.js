@@ -9,9 +9,10 @@ const { buildDisableSubcommand, createDisableHandler } = require('../shared/disa
 const handleDisable = createDisableHandler(serverBackupManager, PermissionFlagsBits.Administrator, 'Server Backup');
 
 const SCOPE_CHOICES = [
-  { name: 'Everything (roles + categories/channels)', value: 'all' },
-  { name: 'Roles only (+ member role assignments)', value: 'roles' },
+  { name: 'Everything (roles + channels + emoji/stickers/soundboard)', value: 'all' },
   { name: 'Categories & channels only', value: 'channels' },
+  { name: 'Emoji, stickers & soundboard only', value: 'assets' },
+  { name: 'Roles only (+ member role assignments)', value: 'roles' },
 ];
 
 function addScopeOption(sub, description) {
@@ -20,13 +21,13 @@ function addScopeOption(sub, description) {
 
 const data = new SlashCommandBuilder()
   .setName('serverbackup')
-  .setDescription('[Admin] Snapshots and restores the server\'s roles, categories, and channels')
+  .setDescription('[Admin] Snapshots and restores roles, channels, emoji, stickers & soundboard')
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .addSubcommand((sub) =>
     addScopeOption(
       sub
         .setName('create')
-        .setDescription('Saves a snapshot of the current roles, categories, and channels')
+        .setDescription('Saves a snapshot of the current roles, categories, channels, emoji, stickers & soundboard')
         .addStringOption((opt) => opt.setName('label').setDescription('Optional note to remember this backup by').setRequired(false)),
       'What to save (default: everything)'
     )
