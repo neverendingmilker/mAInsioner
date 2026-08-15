@@ -24,7 +24,7 @@ src/
   deploy-commands.js  (registers slash commands with Discord, runs before index.js on every start)
 ```
 
-Feature folders (alphabetical): animenight, autoresponder, birthday, boosterlinks, comboroles, goosepizza, highlight, honeypot, incident, reactionlimit, rolelinks, slowmode, starboard, sticky, suggestion, verify, waifuwarlr, warning. Plus standalone single-file commands with no subcommands: commandlist, disablefeature, 2faroles, modroles, verbal, warn (shares its data with warning).
+Feature folders (alphabetical): animenight, autoresponder, birthday, boosterlinks, comboroles, goosepizza, highlight, honeypot, incident, invitetracker, reactionlimit, rolelinks, serverbackup, slowmode, starboard, sticky, suggestion, verify, waifuwarlr, warning. Plus standalone single-file commands with no subcommands: commandlist, disablefeature, 2faroles, modroles, verbal, warn (shares its data with warning).
 
 Right-click (Apps menu) commands: **Sticky: Add/Edit/Remove**, **Suggestion: Approve/Reject** — thin wrappers that resolve context from the clicked message, calling the same handlers as their slash-command equivalents.
 
@@ -157,6 +157,13 @@ Losing role1 auto-removes role2 (optionally the reverse too).
 - `remove link:<...>` `Admin` — removes a link (same autocomplete).
 - `list` `Mod` — lists all configured links.
 - `disable` `Admin` — turns the feature on/off.
+
+### Server Backup (`/serverbackup`)
+`Admin` only. Snapshots the server's roles, categories, and channels (names, colors/settings, and permission overwrites) — not emoji, stickers, or soundboard sounds. Backups aren't tied to one server: any is restorable on any server the bot is in, including an empty one, which is the main way to test a backup safely without touching the real server.
+- `create [label]` — saves a snapshot of the current structure.
+- `list` — lists every saved backup, across all servers the bot backs up.
+- `restore backup:<...>` — recreates whatever's missing from a backup (autocomplete over saved ones); matches roles by name and channels by name+type+category, so it never deletes or overwrites anything already there — safe to run more than once. Role hierarchy is restored best-effort (can't move a role above the bot's own). Needs **Manage Roles** and **Manage Channels**.
+- `disable` — turns the feature on/off.
 
 ### Slowmode (`/slowmode`)
 Per-person posting cooldown per channel, beyond Discord's own 6h cap. Mods/Admins exempt.

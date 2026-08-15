@@ -393,6 +393,19 @@ async function createTables() {
         channel_id TEXT NOT NULL,
         PRIMARY KEY (trigger_id, channel_id)
       )`,
+      `CREATE TABLE IF NOT EXISTS serverbackup_config (
+        guild_id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS serverbackup_snapshots (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id TEXT NOT NULL,
+        guild_name TEXT,
+        label TEXT,
+        data TEXT NOT NULL,
+        created_by TEXT,
+        created_at INTEGER NOT NULL
+      )`,
     ],
     'write'
   );

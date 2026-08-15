@@ -16,6 +16,7 @@ const FEATURES = {
   invitetracker: { label: 'Invite Tracker', manager: require('../../features/invitetracker/inviteTrackerManager') },
   reactionlimit: { label: 'Reaction Limit', manager: require('../../features/reactionlimit/reactionLimitManager') },
   rolelink: { label: 'Role Links', manager: require('../../features/rolelinks/roleLinkManager') },
+  serverbackup: { label: 'Server Backup', manager: require('../../features/serverbackup/serverBackupManager') },
   slowmode: { label: 'Slowmode', manager: require('../../features/slowmode/slowModeManager') },
   starboard: { label: 'Starboard', manager: require('../../features/starboard/starboardManager') },
   sticky: { label: 'Sticky Messages', manager: require('../../features/sticky/stickyManager') },

@@ -145,6 +145,17 @@ Losing role1 automatically removes role2 (optionally the reverse too).
 - **`/rolelink list`** `Mod` — Lists all configured links.
 - **`/rolelink disable`** `Admin` — Turns the feature on/off.
 
+## 🗄️ Server Backup (`/serverbackup`)
+
+Snapshots the server's roles, categories, and channels — names, colors/settings, and permission overwrites. Doesn't cover emoji, stickers, or soundboard sounds (those are binary files, not just structure — a separate backup would be needed for them).
+
+- **`/serverbackup create`** `Admin` — Saves a snapshot, with an optional label to remember it by.
+- **`/serverbackup list`** `Admin` — Lists every saved backup, across every server the bot backs up (not just this one).
+- **`/serverbackup restore`** `Admin` — Recreates whatever's missing from a chosen backup (autocomplete over saved ones). Matches roles by name and channels by name/type/category, so it only ever adds what's missing — nothing already there gets touched or deleted, and it's safe to run more than once. Role hierarchy is restored best-effort: a role positioned above the bot's own can't be moved there automatically.
+- **`/serverbackup disable`** `Admin` — Turns the feature on/off.
+
+A backup isn't tied to the server it came from — any saved backup can be restored on **any** server the bot is in. That's what makes it possible to test a restore safely: take a backup of the real server, invite the bot to an empty test server, and restore there without any risk to the original. Needs the **Manage Roles** and **Manage Channels** permissions.
+
 ## ⏳ Slowmode (`/slowmode`)
 
 Per-person posting cooldown per channel, beyond Discord's own 6h slowmode cap. Mods/Admins always exempt.
