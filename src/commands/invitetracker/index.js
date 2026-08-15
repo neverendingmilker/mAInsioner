@@ -52,7 +52,7 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) => sub.setName('leaderboard').setDescription('Shows the top inviters in this server'))
-  .addSubcommand((sub) => sub.setName('list').setDescription('[Admin] Lists every invite currently assigned, and to whom'))
+  .addSubcommand((sub) => sub.setName('list').setDescription('[Mod] Lists every invite currently assigned, and to whom'))
   .addSubcommand((sub) =>
     sub
       .setName('revoke')

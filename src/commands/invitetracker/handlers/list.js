@@ -1,11 +1,12 @@
-const { PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const inviteTrackerManager = require('../../../features/invitetracker/inviteTrackerManager');
+const { isMod } = require('../../../utils/modRole');
 
 const EMBED_COLOR = 0x5865f2;
 
 async function handleList(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
+  if (!isMod(interaction.member)) {
+    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
     return;
   }
 

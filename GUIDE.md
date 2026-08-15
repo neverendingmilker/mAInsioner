@@ -107,7 +107,7 @@ Tracks who invited who: when someone joins, the bot works out which invite they 
 
 - **`/invites create`** `Admin` — Makes a brand-new invite link and credits it to a specific user, regardless of who actually created or shares it. Useful for handing out personal "referral" links — e.g. to give a booster or a partner their own trackable invite. Optional max uses, and an expiry either as a relative `expires_in_hours` or an exact `expires_at` date/time (up to Discord's own 7-day cap). Already made an invite yourself and just want to credit it to someone? Pass `code` (the invite code or full link) instead of `channel` — the bot assigns your existing invite rather than making a new one; only joins from that point on are counted, since anything before wasn't logged.
 - **`/invites leaderboard`** — Top inviters, showing both how many people they brought in that are still here now, and the total ever (including people who later left).
-- **`/invites list`** `Admin` — Every currently assigned invite in one place: code, who it's credited to, current uses, and expiry. The admin overview, versus `/invites user`'s one-person view.
+- **`/invites list`** `Mod` — Every currently assigned invite in one place: code, who it's credited to, current uses, and expiry. The overview, versus `/invites user`'s one-person view.
 - **`/invites revoke`** `Admin` — Deletes a previously created assigned invite (autocomplete over the active ones).
 - **`/invites user`** — Same stats for one person (defaults to yourself), plus any invite links currently credited to them.
 - **`/invites disable`** `Admin` — Turns the feature on/off.
