@@ -35,7 +35,8 @@ async function createTables() {
       )`,
       `CREATE TABLE IF NOT EXISTS invitetracker_config (
         guild_id TEXT PRIMARY KEY,
-        enabled INTEGER NOT NULL DEFAULT 1
+        enabled INTEGER NOT NULL DEFAULT 1,
+        default_channel_id TEXT
       )`,
       `CREATE TABLE IF NOT EXISTS invitetracker_joins (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -705,6 +706,16 @@ async function migrate() {
   const honeypotChannelsColumnNames = honeypotChannelsColumns.rows.map((row) => row.name);
   if (!honeypotChannelsColumnNames.includes('emoji')) {
     await client.execute('ALTER TABLE honeypot_channels ADD COLUMN emoji TEXT');
+  }
+
+  // Invite Tracker: the channel new invites open into is now a single server-wide
+  // default (set via `/invites channel`) instead of picked per-invite in `create`/
+  // `create_self`. Existing installs just start with no default set (NULL) until an
+  // Admin configures one.
+  const invitetrackerConfigColumns = await client.execute('PRAGMA table_info(invitetracker_config)');
+  const invitetrackerConfigColumnNames = invitetrackerConfigColumns.rows.map((row) => row.name);
+  if (!invitetrackerConfigColumnNames.includes('default_channel_id')) {
+    await client.execute('ALTER TABLE invitetracker_config ADD COLUMN default_channel_id TEXT');
   }
 }
 

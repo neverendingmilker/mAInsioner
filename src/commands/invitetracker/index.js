@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
+const { handleChannel } = require('./handlers/channel');
 const { handleCreate } = require('./handlers/create');
 const { handleCreateSelf } = require('./handlers/createSelf');
 const { handleLeaderboard } = require('./handlers/leaderboard');
@@ -18,16 +19,21 @@ const data = new SlashCommandBuilder()
   .setDescription('Tracks who invited who, and how many people each inviter brought into the server')
   .addSubcommand((sub) =>
     sub
-      .setName('create')
-      .setDescription('[Mod] Credits an invite to any user, no limit — see create_self for your own')
-      .addUserOption((opt) => opt.setName('user').setDescription('Who this invite should be credited to').setRequired(true))
+      .setName('channel')
+      .setDescription('[Admin] Sets which channel /invites create(_self) open into')
       .addChannelOption((opt) =>
         opt
           .setName('channel')
-          .setDescription('Which channel the invite opens into (required unless "code" is set)')
+          .setDescription('The channel new invites should open into')
           .addChannelTypes(...INVITE_CHANNEL_TYPES)
-          .setRequired(false)
+          .setRequired(true)
       )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('create')
+      .setDescription('[Mod] Credits an invite to any user, no limit — see create_self for your own')
+      .addUserOption((opt) => opt.setName('user').setDescription('Who this invite should be credited to').setRequired(true))
       .addStringOption((opt) =>
         opt
           .setName('code')
@@ -56,13 +62,6 @@ const data = new SlashCommandBuilder()
     sub
       .setName('create_self')
       .setDescription('Makes (or credits) your own invite — everyone, once at a time')
-      .addChannelOption((opt) =>
-        opt
-          .setName('channel')
-          .setDescription('Which channel the invite opens into (required unless "code" is set)')
-          .addChannelTypes(...INVITE_CHANNEL_TYPES)
-          .setRequired(false)
-      )
       .addStringOption((opt) =>
         opt
           .setName('code')
@@ -113,6 +112,8 @@ async function execute(interaction) {
   }
 
   switch (sub) {
+    case 'channel':
+      return handleChannel(interaction);
     case 'create':
       return handleCreate(interaction);
     case 'create_self':

@@ -40,7 +40,7 @@ async function handleCreateSelfNew(interaction, channel) {
 }
 
 async function handleCreateSelfExisting(interaction, rawCode) {
-  const disallowed = ['channel', 'max_uses', 'expires_in_hours', 'expires_at'].filter((name) => interaction.options.get(name));
+  const disallowed = ['max_uses', 'expires_in_hours', 'expires_at'].filter((name) => interaction.options.get(name));
   if (disallowed.length > 0) {
     throw new inviteTrackerManager.ValidationError(
       `\`code\` credits an invite you already made — its settings are already fixed, so ${disallowed.map((n) => `\`${n}\``).join(', ')} ${disallowed.length === 1 ? "doesn't" : "don't"} apply here.`
@@ -59,7 +59,6 @@ async function handleCreateSelfExisting(interaction, rawCode) {
 }
 
 async function handleCreateSelf(interaction) {
-  const channel = interaction.options.getChannel('channel');
   const existingCode = interaction.options.getString('code');
 
   try {
@@ -75,10 +74,7 @@ async function handleCreateSelf(interaction) {
       return;
     }
 
-    if (!channel) {
-      throw new inviteTrackerManager.ValidationError('`channel` is required unless you set `code` to credit yourself with one you already made.');
-    }
-
+    const channel = await inviteTrackerManager.resolveTargetChannel(interaction.guild);
     await handleCreateSelfNew(interaction, channel);
   } catch (err) {
     if (err instanceof inviteTrackerManager.ValidationError) {

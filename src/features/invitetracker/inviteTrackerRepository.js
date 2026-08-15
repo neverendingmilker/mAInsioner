@@ -20,6 +20,25 @@ async function setEnabled(guildId, enabled) {
   });
 }
 
+async function getDefaultChannel(guildId) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT default_channel_id FROM invitetracker_config WHERE guild_id = ?',
+    args: [guildId],
+  });
+  return result.rows[0]?.default_channel_id ?? null;
+}
+
+async function setDefaultChannel(guildId, channelId) {
+  await db.ready;
+  await db.client.execute({
+    sql: `INSERT INTO invitetracker_config (guild_id, default_channel_id)
+          VALUES (?, ?)
+          ON CONFLICT(guild_id) DO UPDATE SET default_channel_id = excluded.default_channel_id`,
+    args: [guildId, channelId],
+  });
+}
+
 async function recordJoin(guildId, memberId, inviterId, inviteCode) {
   await db.ready;
   await db.client.execute({
@@ -153,6 +172,8 @@ async function getAllAssignedInvites(guildId) {
 module.exports = {
   isEnabled,
   setEnabled,
+  getDefaultChannel,
+  setDefaultChannel,
   recordJoin,
   recordLeave,
   getLeaderboard,

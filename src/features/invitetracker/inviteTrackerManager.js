@@ -12,6 +12,31 @@ async function setEnabled(guildId, enabled) {
   await repo.setEnabled(guildId, enabled);
 }
 
+async function getDefaultChannel(guildId) {
+  return repo.getDefaultChannel(guildId);
+}
+
+async function setDefaultChannel(guildId, channelId) {
+  await repo.setDefaultChannel(guildId, channelId);
+}
+
+// Resolves the channel every new invite should open into: the server-wide default set
+// via `/invites channel`. There's no per-invite override anymore — one consistent entry
+// point keeps invites predictable instead of scattering them across the server.
+async function resolveTargetChannel(guild) {
+  const channelId = await repo.getDefaultChannel(guild.id);
+  if (!channelId) {
+    throw new ValidationError('No invite channel is set up yet — ask an Admin to run `/invites channel` first.');
+  }
+
+  const channel = guild.channels.cache.get(channelId);
+  if (!channel) {
+    throw new ValidationError('The configured invite channel no longer exists — ask an Admin to set a new one with `/invites channel`.');
+  }
+
+  return channel;
+}
+
 function assertCanTrack(guild) {
   const botMember = guild.members.me;
   if (!botMember?.permissions.has(PermissionFlagsBits.ManageGuild)) {
@@ -241,6 +266,9 @@ module.exports = {
   ValidationError,
   isEnabled,
   setEnabled,
+  getDefaultChannel,
+  setDefaultChannel,
+  resolveTargetChannel,
   warmInviteCache,
   cacheInvite,
   forgetInvite,

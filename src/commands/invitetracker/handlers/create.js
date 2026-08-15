@@ -35,7 +35,7 @@ async function handleCreateNew(interaction, user, channel) {
 }
 
 async function handleAssignExisting(interaction, user, rawCode) {
-  const disallowed = ['channel', 'max_uses', 'expires_in_hours', 'expires_at'].filter((name) => interaction.options.get(name));
+  const disallowed = ['max_uses', 'expires_in_hours', 'expires_at'].filter((name) => interaction.options.get(name));
   if (disallowed.length > 0) {
     throw new inviteTrackerManager.ValidationError(
       `\`code\` assigns an invite you already made — its settings are already fixed, so ${disallowed.map((n) => `\`${n}\``).join(', ')} ${disallowed.length === 1 ? "doesn't" : "don't"} apply here.`
@@ -63,7 +63,6 @@ async function handleCreate(interaction) {
   }
 
   const user = interaction.options.getUser('user');
-  const channel = interaction.options.getChannel('channel');
   const existingCode = interaction.options.getString('code');
 
   try {
@@ -72,10 +71,7 @@ async function handleCreate(interaction) {
       return;
     }
 
-    if (!channel) {
-      throw new inviteTrackerManager.ValidationError('`channel` is required when creating a new invite (omit it only when using `code` to assign one you already made).');
-    }
-
+    const channel = await inviteTrackerManager.resolveTargetChannel(interaction.guild);
     await handleCreateNew(interaction, user, channel);
   } catch (err) {
     if (err instanceof inviteTrackerManager.ValidationError) {
