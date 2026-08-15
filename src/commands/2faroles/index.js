@@ -23,7 +23,7 @@ const MFA_PERMISSIONS = [
 const MAX_CHANNELS_SHOWN_PER_ROLE = 10;
 
 const data = new SlashCommandBuilder()
-  .setName('mfaroles')
+  .setName('2faroles')
   .setDescription('[Admin] Lists roles that have permissions requiring 2FA for moderation')
   .addBooleanOption((opt) =>
     opt.setName('ignore_bots').setDescription("Skip bots' own auto-created roles and their overrides (default: false)").setRequired(false)

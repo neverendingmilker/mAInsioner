@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, OverwriteType, EmbedBuilder, MessageFlags } = require('discord.js');
 
-// A broader, less formally-defined list than /mfaroles' Discord-mandated 2FA set —
+// A broader, less formally-defined list than /2faroles' Discord-mandated 2FA set —
 // includes permissions commonly THOUGHT of as "moderator-level" that Discord's 2FA
 // requirement doesn't actually cover (View Audit Log, Manage Nicknames, Manage
 // Expressions, Timeout Members).
@@ -27,7 +27,7 @@ const MAX_ENTRIES_SHOWN_PER_ROW = 10;
 const MAX_FIELDS = 25;
 
 const data = new SlashCommandBuilder()
-  .setName('modaccess')
+  .setName('modroles')
   .setDescription('[Admin] Lists roles/people with permissions commonly considered moderator-level')
   .addBooleanOption((opt) =>
     opt.setName('ignore_bots').setDescription("Skip bots' own auto-created roles and their overrides (default: false)").setRequired(false)
@@ -52,7 +52,7 @@ async function execute(interaction) {
     if (held.length > 0) baseHeldByRoleId.set(role.id, held);
   }
 
-  // Per-channel overrides — both ROLE-targeted (like /mfaroles checks) AND
+  // Per-channel overrides — both ROLE-targeted (like /2faroles checks) AND
   // MEMBER-targeted: an individual person granted a permission on just one channel,
   // which a role-only audit would never catch.
   const roleOverridesByRoleId = new Map(); // roleId -> Array<{ channelName, labels }>
@@ -100,7 +100,7 @@ async function execute(interaction) {
     .setColor(0xed4245)
     .setTitle('Roles & individual members with moderator-level permissions')
     .setDescription(
-      "A broader check than `/mfaroles` — includes permissions commonly thought of as \"mod-only\" that Discord's 2FA " +
+      "A broader check than `/2faroles` — includes permissions commonly thought of as \"mod-only\" that Discord's 2FA " +
         "requirement doesn't actually cover (View Audit Log, Manage Nicknames, Manage Expressions, Timeout). Also checks " +
         'per-channel overrides granted to an **individual person** directly, not just roles — those appear as their own entries below (👤).'
     );

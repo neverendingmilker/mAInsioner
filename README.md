@@ -24,7 +24,7 @@ src/
   deploy-commands.js  (registers slash commands with Discord, runs before index.js on every start)
 ```
 
-Feature folders (alphabetical): animenight, autoresponder, birthday, boosterlinks, comboroles, goosepizza, highlight, honeypot, incident, reactionlimit, rolelinks, slowmode, starboard, sticky, suggestion, verify, waifuwarlr, warning. Plus standalone single-file commands with no subcommands: commandlist, disablefeature, mfaroles, modaccess, verbal, warn (shares its data with warning).
+Feature folders (alphabetical): animenight, autoresponder, birthday, boosterlinks, comboroles, goosepizza, highlight, honeypot, incident, reactionlimit, rolelinks, slowmode, starboard, sticky, suggestion, verify, waifuwarlr, warning. Plus standalone single-file commands with no subcommands: commandlist, disablefeature, 2faroles, modroles, verbal, warn (shares its data with warning).
 
 Right-click (Apps menu) commands: **Sticky: Add/Edit/Remove**, **Suggestion: Approve/Reject** — thin wrappers that resolve context from the clicked message, calling the same handlers as their slash-command equivalents.
 
@@ -120,11 +120,12 @@ Needs **Kick Members** server-wide, plus View Channel/Send Messages in the targe
 
 Auto-increments daily via a scheduled job; the sign image is rendered with `@napi-rs/canvas`.
 
-### MFA Roles (`/mfaroles`)
-`Admin`. `[ignore_bots]` — lists roles with at least one permission Discord requires 2FA for (server-wide + per-channel overrides). Doesn't check member-specific overrides (see Mod Access).
+### Permission Audits (`/2faroles`, `/modroles`)
 
-### Mod Access (`/modaccess`)
-`Admin`. `[ignore_bots]` — broader than MFA Roles: also flags commonly-assumed "mod" permissions that aren't actually 2FA-gated (Audit Log, Nicknames, Expressions, Timeout), and catches per-channel overrides granted to individual people, not just roles.
+Two related security-audit commands, always documented together. Both `Admin`, both take an optional `[ignore_bots]`.
+
+- `/2faroles [ignore_bots]` — lists roles with at least one permission Discord requires 2FA for (server-wide + per-channel overrides). Doesn't check member-specific overrides (see `/modroles`).
+- `/modroles [ignore_bots]` — broader than `/2faroles`: also flags commonly-assumed "mod" permissions that aren't actually 2FA-gated (Audit Log, Nicknames, Expressions, Timeout), and catches per-channel overrides granted to individual people, not just roles.
 
 ### Reaction Limit (`/reactionlimit`)
 Caps reactions per person per thread — configurable per channel (1–100, default 5). Mods/Admins exempt.

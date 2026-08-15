@@ -125,13 +125,13 @@ const COMMAND_MANIFEST = [
     ],
   },
   {
-    feature: 'MFA Roles',
-    command: '/mfaroles',
+    feature: '2FA Roles',
+    command: '/2faroles',
     subcommands: [{ name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator }],
   },
   {
-    feature: 'Mod Access',
-    command: '/modaccess',
+    feature: 'Mod Roles',
+    command: '/modroles',
     subcommands: [{ name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator }],
   },
   {

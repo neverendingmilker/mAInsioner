@@ -100,13 +100,14 @@ Keeps a "days since last incident" sign updated in a channel, auto-incrementing 
 - **`/incident reset`** `Admin` — Resets to 0 (an incident just happened).
 - **`/incident disable`** `Admin` — Turns the feature on/off.
 
-## 🔐 MFA Roles (`/mfaroles`)
+## 🔐 Permission Audits (`/2faroles`, `/modroles`)
 
-`Admin`. Security audit: lists roles with at least one permission Discord requires 2FA for (server-wide and per-channel overrides). `ignore_bots:true` skips bot-owned roles.
+Both `Admin`. Two related security-audit commands, always used together:
 
-## 🛡️ Mod Access (`/modaccess`)
+- **`/2faroles [ignore_bots]`** — lists roles with at least one permission Discord requires 2FA for (server-wide and per-channel overrides).
+- **`/modroles [ignore_bots]`** — broader companion: also flags commonly-assumed "mod" permissions (Audit Log, Nicknames, Expressions, Timeout) that aren't actually 2FA-gated, and catches per-channel overrides granted to individual people, not just roles.
 
-`Admin`. Broader companion to `/mfaroles` — also flags commonly-assumed "mod" permissions (Audit Log, Nicknames, Expressions, Timeout) that aren't actually 2FA-gated, and catches per-channel overrides granted to individual people, not just roles.
+Both take an optional `ignore_bots:true` to skip bot-owned roles.
 
 ## 🖐️ Reaction Limit (`/reactionlimit`)
 
