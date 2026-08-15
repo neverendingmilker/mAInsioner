@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const { handleCreate } = require('./handlers/create');
 const { handleLeaderboard } = require('./handlers/leaderboard');
+const { handleList } = require('./handlers/list');
 const { handleRevoke } = require('./handlers/revoke');
 const { handleUser } = require('./handlers/user');
 const inviteTrackerManager = require('../../features/invitetracker/inviteTrackerManager');
@@ -51,6 +52,7 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) => sub.setName('leaderboard').setDescription('Shows the top inviters in this server'))
+  .addSubcommand((sub) => sub.setName('list').setDescription('[Admin] Lists every invite currently assigned, and to whom'))
   .addSubcommand((sub) =>
     sub
       .setName('revoke')
@@ -78,6 +80,8 @@ async function execute(interaction) {
       return handleCreate(interaction);
     case 'leaderboard':
       return handleLeaderboard(interaction);
+    case 'list':
+      return handleList(interaction);
     case 'revoke':
       return handleRevoke(interaction);
     case 'user':

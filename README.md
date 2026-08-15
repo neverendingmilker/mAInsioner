@@ -122,11 +122,12 @@ Needs **Kick Members** server-wide, plus View Channel/Send Messages in the targe
 Auto-increments daily via a scheduled job; the sign image is rendered with `@napi-rs/canvas`.
 
 ### Invite Tracker (`/invites`)
-`leaderboard`/`user` are open to everyone; `create`/`revoke`/`disable` are `Admin`. Tracks which invite each new member used and by whom it was created, so you know who's bringing people in.
+`leaderboard`/`user` are open to everyone; `create`/`list`/`revoke`/`disable` are `Admin`. Tracks which invite each new member used and by whom it was created, so you know who's bringing people in.
 - `create user:<@user> channel:<#channel> [max_uses] [expires_in_hours or expires_at]` — makes a brand-new invite credited to `user`, no matter who actually shares/clicks it. `expires_at` takes an exact `YYYY-MM-DD HH:mm` (Europe/Rome) instead of a relative `expires_in_hours` — pick one, both are capped at Discord's own 7-day max age.
 - `create user:<@user> code:<invite or link>` — instead of making a new one, credits `user` with an invite you already created yourself (channel/max_uses/expiry don't apply — those are fixed at creation and can't be changed after the fact). Only joins from that point on count; past uses aren't retroactive.
-- `revoke code:<...>` — deletes a previously created assigned invite (autocomplete over active ones).
 - `leaderboard` — top inviters, "still here now" vs "total ever joined".
+- `list` — every currently assigned invite (code, who it's credited to, uses, expiry) in one place — the admin-facing overview, as opposed to `user`'s one-person view.
+- `revoke code:<...>` — deletes a previously created assigned invite (autocomplete over active ones).
 - `user [user]` — same stats for one person (defaults to yourself), plus any active invite links credited to them.
 - `disable` `Admin` — turns the feature on/off.
 

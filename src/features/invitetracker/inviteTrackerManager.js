@@ -115,6 +115,28 @@ async function getAllAssignedInvites(guildId) {
   return repo.getAllAssignedInvites(guildId);
 }
 
+// Every assigned invite, cross-referenced with its live Discord state (uses, max uses,
+// expiry) for `/invites list`. An assignment whose invite no longer exists (expired, hit
+// its max uses and got auto-deleted, or was removed some other way without going through
+// `/invites revoke`) is still listed, just flagged as no longer active.
+async function getAssignedInvitesOverview(guild) {
+  assertCanTrack(guild);
+
+  const [liveInvites, assigned] = await Promise.all([guild.invites.fetch(), repo.getAllAssignedInvites(guild.id)]);
+
+  return assigned.map((a) => {
+    const invite = liveInvites.get(a.code);
+    return {
+      code: a.code,
+      assignedUserId: a.assignedUserId,
+      active: Boolean(invite),
+      uses: invite?.uses ?? null,
+      maxUses: invite?.maxUses || null, // 0 means unlimited — normalize to null like "no limit"
+      expiresTimestamp: invite?.expiresTimestamp ?? null,
+    };
+  });
+}
+
 // Diffs the live invite list against the last known snapshot to figure out which
 // invite a member who just joined must have used (the one whose `uses` went up).
 // Falls back to a couple of edge cases Discord doesn't make obvious:
@@ -203,6 +225,7 @@ module.exports = {
   revokeAssignedInvite,
   getAssignedInvites,
   getAllAssignedInvites,
+  getAssignedInvitesOverview,
   handleMemberAdd,
   handleMemberRemove,
   getLeaderboard,
