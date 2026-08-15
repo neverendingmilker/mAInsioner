@@ -1,9 +1,9 @@
+const { PermissionFlagsBits } = require('discord.js');
 const boosterLinkManager = require('../../../features/boosterlinks/boosterLinkManager');
-const { isMod } = require('../../../utils/modRole');
 
 async function handleExemptAdd(interaction) {
-  if (!isMod(interaction.member)) {
-    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
     return;
   }
 
@@ -16,8 +16,8 @@ async function handleExemptAdd(interaction) {
 }
 
 async function handleExemptRemove(interaction) {
-  if (!isMod(interaction.member)) {
-    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
     return;
   }
 
@@ -31,8 +31,8 @@ async function handleExemptRemove(interaction) {
 }
 
 async function handleExemptList(interaction) {
-  if (!isMod(interaction.member)) {
-    await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
     return;
   }
 

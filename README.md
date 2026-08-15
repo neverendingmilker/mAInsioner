@@ -62,7 +62,7 @@ Alphabetical by feature. `Admin` = Administrator permission. `Mod` = the server'
 - `add day:<...> month:<...> [year] [user]` `Everyone` (Mod for `user`) — sets your own birthday, or someone else's if you're a Mod.
 - `edit [...] [user]` `Everyone` (Mod for `user`) — same rule, editing.
 - `remove [user]` `Everyone` (Mod for `user`) — same rule, removing.
-- `config [role] [remove_after] [channel]` `Mod` — sets the birthday role, how long it stays assigned, and an optional announcement channel.
+- `config [role] [remove_after] [channel]` `Admin` — sets the birthday role, how long it stays assigned, and an optional announcement channel.
 - `list` `Everyone` — lists all stored birthdays, grouped by month.
 
 ### Booster Links (`/boosterlink`)
@@ -70,7 +70,7 @@ Alphabetical by feature. `Admin` = Administrator permission. `Mod` = the server'
 - `edit user:<...> old_role:<...> new_role:<role>` `Mod` — re-points a link to a different role (autocomplete on user/role).
 - `remove user:<...> [role]` `Mod` — stops tracking a link (or all of a user's links if `role` omitted); doesn't remove the role itself.
 - `list [user]` `Mod` — lists tracked links, ephemeral.
-- `exempt add/remove/list` `Mod` — manages roles exempt from the auto-removal.
+- `exempt add/remove/list` `Admin` — manages roles exempt from the auto-removal.
 - `disable` `Admin` — turns the feature on/off.
 
 ### Combined Role Search (`/comboroles`)

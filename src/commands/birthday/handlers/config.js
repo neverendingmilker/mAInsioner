@@ -2,14 +2,13 @@ const { PermissionFlagsBits } = require('discord.js');
 const birthdayManager = require('../../../features/birthday/birthdayManager');
 const { celebrateDueTodayForGuild } = require('../../../features/birthday/birthdayScheduler');
 const { formatSeconds } = require('../../../utils/duration');
-const { isMod } = require('../../../utils/modRole');
 
 // Merges the old /birthday role, /birthday removerole and /birthday channel subcommands
 // into one: all three settings are optional, provide any combination.
 async function handleConfig(interaction) {
-  if (!isMod(interaction.member)) {
+  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
     await interaction.reply({
-      content: '❌ You need to be a Mod or Admin to use this command.',
+      content: '❌ You need the "Administrator" permission to use this command.',
       ephemeral: true,
     });
     return;

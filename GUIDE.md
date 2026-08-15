@@ -30,7 +30,7 @@ Assigns a role on someone's birthday and removes it after a set time.
 - **`/birthday add`** `Everyone` (Mod for others) — Sets your own birthday, or someone else's if you're a Mod.
 - **`/birthday edit`** `Everyone` (Mod for others) — Same rule, for editing.
 - **`/birthday remove`** `Everyone` (Mod for others) — Same rule, for removing.
-- **`/birthday config`** `Mod` — Sets the birthday role, how long it stays on, and an optional announcement channel.
+- **`/birthday config`** `Admin` — Sets the birthday role, how long it stays on, and an optional announcement channel.
 - **`/birthday list`** `Everyone` — Lists every stored birthday, grouped by month.
 
 ## 🔗 Booster Links (`/boosterlink`)
@@ -66,26 +66,30 @@ A passive word-triggered responder — several independent trigger/channel/emoji
 
 ## 🔦 Highlight (`/highlight`)
 
-Personal keyword watcher — get DM'd (with context) when someone says a word/phrase from your list, anywhere in the server. Everyone can use it; `disable` is Admin only.
+Personal keyword watcher — get DM'd (with context) when someone says a word/phrase from your list, anywhere in the server.
 
-- **`/highlight add`** — Adds a word/phrase (2–100 chars, up to 25). Matched case-insensitively on word boundaries. Never triggers on your own messages.
-- **`/highlight remove`** — Removes one (autocomplete over your list).
-- **`/highlight list`** — Shows your words, channel list + mode, and ignored users.
-- **`/highlight ignorechannel`** — Toggles a channel on/off your list.
-- **`/highlight mode`** — Switches whether that list means "everywhere except these" (default) or "only these".
-- **`/highlight ignoreuser`** — Toggles a user on/off your ignore list.
+- **`/highlight add`** `Everyone` — Adds a word/phrase (2–100 chars, up to 25). Matched case-insensitively on word boundaries. Never triggers on your own messages.
+- **`/highlight remove`** `Everyone` — Removes one (autocomplete over your list).
+- **`/highlight list`** `Everyone` — Shows your words, channel list + mode, and ignored users.
+- **`/highlight ignorechannel`** `Everyone` — Toggles a channel on/off your list.
+- **`/highlight mode`** `Everyone` — Switches whether that list means "everywhere except these" (default) or "only these".
+- **`/highlight ignoreuser`** `Everyone` — Toggles a user on/off your ignore list.
 - **`/highlight disable`** `Admin` — Turns the feature on/off.
+
+Every subcommand above (except `disable`) is strictly personal: it only ever reads or changes the words/lists belonging to whoever ran the command — there's no way, even for a Mod or Admin, to see or edit someone else's highlight list through these commands.
 
 Notifications: a DM with a couple messages of context, the trigger itself, matched word(s), and a jump link. Capped at one notification per channel every 5 minutes.
 
 ## 🍯 Honeypot (`/honeypot`)
 
-`Admin`. Turns a channel into a trap: posts a message with a button, then kicks anyone who isn't Mod/Admin the moment they write there, react to anything there, or click the button.
+Turns a channel into a trap: posts a message with a button, then kicks anyone who isn't Mod/Admin the moment they write there, react to anything there, or click the button.
 
-- **`/honeypot add`** — Sets up the trap channel and posts the bait message (custom text/button label optional).
-- **`/honeypot remove`** — Removes the trap and deletes the bait message.
-- **`/honeypot list`** — Lists active honeypot channels.
-- **`/honeypot disable`** — Turns the feature on/off.
+- **`/honeypot add`** `Admin` — Sets up the trap channel and posts the bait message (custom text/button label optional).
+- **`/honeypot remove`** `Admin` — Removes the trap and deletes the bait message.
+- **`/honeypot list`** `Admin` — Lists active honeypot channels.
+- **`/honeypot disable`** `Admin` — Turns the feature on/off.
+
+Every subcommand requires the **Administrator** permission — setting up a channel that auto-kicks people is serious enough that it isn't left to Mods.
 
 ## 🪧 Incident Counter (`/incident`)
 
