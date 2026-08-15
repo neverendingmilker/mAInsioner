@@ -72,6 +72,11 @@ async function createSnapshot(guild, label, createdBy) {
       hoist: role.hoist,
       mentionable: role.mentionable,
       permissions: role.permissions.bitfield.toString(),
+      // "Managed" roles belong to a bot/integration/booster tier — Discord creates and
+      // owns them, they can't be created through the API. Kept in the snapshot (so a
+      // channel overwrite referencing one can still be matched by name) but never
+      // recreated on restore — see the role loop below.
+      managed: role.managed,
     }));
 
   // Threads (and any other channel-like entity without its own overwrites) aren't real
@@ -145,6 +150,16 @@ async function restoreSnapshot(guild, snapshotId, executedBy) {
 
   for (const roleData of data.roles ?? []) {
     if (nameToRoleId.has(roleData.name)) {
+      summary.roles.skipped++;
+      continue;
+    }
+    // Bot/integration/booster roles can't be created through the API, and shouldn't be
+    // faked with a lookalike — invite the bot (or wait for the integration/boost) and
+    // Discord creates the real one with a matching name, which then gets picked up by
+    // name for any channel overwrite that references it. Invite bots *before* restoring
+    // wherever possible, so those overwrites resolve on the first pass instead of being
+    // silently skipped below.
+    if (roleData.managed) {
       summary.roles.skipped++;
       continue;
     }

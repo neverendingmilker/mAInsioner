@@ -156,6 +156,8 @@ Snapshots the server's roles, categories, and channels — names, colors/setting
 
 A backup isn't tied to the server it came from — any saved backup can be restored on **any** server the bot is in. That's what makes it possible to test a restore safely: take a backup of the real server, invite the bot to an empty test server, and restore there without any risk to the original. Needs the **Manage Roles** and **Manage Channels** permissions.
 
+Other bots' own roles (and any booster/integration role — anything Discord marks "managed") are never recreated, since the API has no way to make a real one. **Invite those bots to the target server before restoring**: Discord creates their managed role automatically with the right name, so any channel overwrite from the backup that referenced it resolves correctly during the restore. Invite a bot afterward instead, and that one overwrite is just quietly skipped — everything else restores normally, and the bot's own permissions still come from its OAuth invite as usual.
+
 ## ⏳ Slowmode (`/slowmode`)
 
 Per-person posting cooldown per channel, beyond Discord's own 6h slowmode cap. Mods/Admins always exempt.

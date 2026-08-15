@@ -165,6 +165,8 @@ Losing role1 auto-removes role2 (optionally the reverse too).
 - `restore backup:<...>` — recreates whatever's missing from a backup (autocomplete over saved ones); matches roles by name and channels by name+type+category, so it never deletes or overwrites anything already there — safe to run more than once. Role hierarchy is restored best-effort (can't move a role above the bot's own). Needs **Manage Roles** and **Manage Channels**.
 - `disable` — turns the feature on/off.
 
+Bot/integration/booster ("managed") roles are never recreated — Discord owns those, the API can't create a lookalike. Invite other bots to the target server **before** restoring: their own managed role gets created automatically with the right name, and any channel overwrite that referenced it in the backup then resolves correctly. Invite them after instead, and that specific overwrite is just silently skipped (no error, no fake role) — the bot's other permissions still work fine via its own OAuth invite scopes.
+
 ### Slowmode (`/slowmode`)
 Per-person posting cooldown per channel, beyond Discord's own 6h cap. Mods/Admins exempt.
 - `add channel:<#channel> duration:<...>` `Mod` — sets the cooldown (`12h`, `1d`, `3d`, ..., min 1 minute).
