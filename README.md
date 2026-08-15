@@ -108,7 +108,7 @@ Notifications: a DM embed with a couple messages of context, the trigger message
 - `add channel:<#channel> [message] [button_label] [emoji]` — sets up the trap and posts the bait message; `emoji`, if given, makes the bot react to its own message with it as extra bait (not required — any reaction already triggers a kick). That reaction gets removed again after it's used to catch someone.
 - `remove channel:<...>` — removes the trap, deletes the bait message if present (autocomplete over active traps).
 - `list` — lists active honeypot channels.
-- `log` — total kick count plus the 10 most recent (who, where, how, when).
+- `log` — total kick count plus the 10 most recent (who, how, when).
 - `disable` — turns the feature on/off.
 
 Needs **Kick Members** server-wide, plus View Channel/Send Messages in the target channel.

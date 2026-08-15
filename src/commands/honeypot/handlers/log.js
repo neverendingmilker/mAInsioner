@@ -5,9 +5,9 @@ const EMBED_COLOR = 0xed4245;
 const RECENT_LIMIT = 10;
 
 const TRIGGER_LABEL = {
-  message: 'posted in the channel',
-  reaction: 'reacted',
-  button: 'clicked the button',
+  message: 'text',
+  reaction: 'react',
+  button: 'button',
 };
 
 async function handleLog(interaction) {
@@ -26,7 +26,7 @@ async function handleLog(interaction) {
   const lines = recent.map((k) => {
     const who = k.userTag ? `${k.userTag} (${k.userId})` : k.userId;
     const reason = TRIGGER_LABEL[k.trigger] ?? k.trigger;
-    return `**${who}** — ${reason} in <#${k.channelId}> — <t:${Math.floor(k.kickedAt / 1000)}:R>`;
+    return `**${who}** — ${reason} — <t:${Math.floor(k.kickedAt / 1000)}:R>`;
   });
 
   const embed = new EmbedBuilder()
