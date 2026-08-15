@@ -7,25 +7,41 @@ const { buildDisableSubcommand, createDisableHandler } = require('../shared/disa
 
 const handleDisable = createDisableHandler(serverBackupManager, PermissionFlagsBits.Administrator, 'Server Backup');
 
+const SCOPE_CHOICES = [
+  { name: 'Everything (roles + categories/channels)', value: 'all' },
+  { name: 'Roles only (+ member role assignments)', value: 'roles' },
+  { name: 'Categories & channels only', value: 'channels' },
+];
+
+function addScopeOption(sub, description) {
+  return sub.addStringOption((opt) => opt.setName('what').setDescription(description).setRequired(false).addChoices(...SCOPE_CHOICES));
+}
+
 const data = new SlashCommandBuilder()
   .setName('serverbackup')
   .setDescription('[Admin] Snapshots and restores the server\'s roles, categories, and channels')
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .addSubcommand((sub) =>
-    sub
-      .setName('create')
-      .setDescription('Saves a snapshot of the current roles, categories, and channels')
-      .addStringOption((opt) => opt.setName('label').setDescription('Optional note to remember this backup by').setRequired(false))
+    addScopeOption(
+      sub
+        .setName('create')
+        .setDescription('Saves a snapshot of the current roles, categories, and channels')
+        .addStringOption((opt) => opt.setName('label').setDescription('Optional note to remember this backup by').setRequired(false)),
+      'What to save (default: everything)'
+    )
   )
   .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) => sub.setName('list').setDescription('Lists all saved backups for this server'))
   .addSubcommand((sub) =>
-    sub
-      .setName('restore')
-      .setDescription('Recreates whatever is missing from a backup — never deletes or overwrites')
-      .addIntegerOption((opt) =>
-        opt.setName('backup').setDescription('Which backup to restore from').setRequired(true).setAutocomplete(true)
-      )
+    addScopeOption(
+      sub
+        .setName('restore')
+        .setDescription('Recreates whatever is missing from a backup — never deletes or overwrites')
+        .addIntegerOption((opt) =>
+          opt.setName('backup').setDescription('Which backup to restore from').setRequired(true).setAutocomplete(true)
+        ),
+      'What to restore (default: everything)'
+    )
   );
 
 async function execute(interaction) {

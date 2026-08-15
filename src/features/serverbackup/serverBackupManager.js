@@ -5,10 +5,21 @@ class ValidationError extends Error {}
 
 const SNAPSHOT_VERSION = 1;
 
+// What a backup/restore covers. Shared between create and restore — a snapshot can be
+// taken with one scope and restored with a different (narrower) one; whichever data the
+// snapshot doesn't have for the requested scope is just empty, nothing to restore there.
+const SCOPES = ['all', 'roles', 'channels'];
+function normalizeScope(scope) {
+  return SCOPES.includes(scope) ? scope : 'all';
+}
+
 // Small delay between each create call during a restore — this is a burst of several
 // sequential role/channel creations, and a little breathing room avoids tripping
 // Discord's rate limits on a server with a lot to restore.
 const CREATE_DELAY_MS = 300;
+// One member.roles.add() call already batches every role for that member into a single
+// request, so a lighter delay between members is enough.
+const MEMBER_DELAY_MS = 150;
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -60,62 +71,117 @@ function resolveOverwrites(overwrites, nameToRoleId, guild) {
 // restore, only channel-level overwrites referencing it), categories, and every other
 // channel type, each with its permission overwrites. Doesn't cover emoji, stickers, or
 // soundboard sounds — those need their own backup (binary files, not just structure).
-async function createSnapshot(guild, label, createdBy) {
+// `scope` limits what's captured: 'roles' skips categories/channels entirely, 'channels'
+// skips roles, 'all' (default) captures everything.
+async function createSnapshot(guild, label, createdBy, scope = 'all') {
   assertCanManage(guild);
+  scope = normalizeScope(scope);
 
-  const roles = [...guild.roles.cache.values()]
-    .filter((role) => role.id !== guild.id)
-    .sort((a, b) => a.position - b.position)
-    .map((role) => ({
-      name: role.name,
-      color: role.color,
-      hoist: role.hoist,
-      mentionable: role.mentionable,
-      permissions: role.permissions.bitfield.toString(),
-      // "Managed" roles belong to a bot/integration/booster tier — Discord creates and
-      // owns them, they can't be created through the API. Kept in the snapshot (so a
-      // channel overwrite referencing one can still be matched by name) but never
-      // recreated on restore — see the role loop below.
-      managed: role.managed,
-    }));
+  const roles =
+    scope === 'channels'
+      ? []
+      : [...guild.roles.cache.values()]
+          .filter((role) => role.id !== guild.id)
+          .sort((a, b) => a.position - b.position)
+          .map((role) => ({
+            name: role.name,
+            color: role.color,
+            hoist: role.hoist,
+            mentionable: role.mentionable,
+            permissions: role.permissions.bitfield.toString(),
+            // "Managed" roles belong to a bot/integration/booster tier — Discord creates
+            // and owns them, they can't be created through the API. Kept in the snapshot
+            // (so a channel overwrite referencing one can still be matched by name) but
+            // never recreated on restore — see the role loop below.
+            managed: role.managed,
+          }));
 
-  // Threads (and any other channel-like entity without its own overwrites) aren't real
-  // "structure" — they inherit permissions from their parent channel, which is already
-  // captured on its own. Filtering by the presence of permissionOverwrites is more
-  // robust than listing thread type IDs by hand.
-  const allChannels = [...guild.channels.cache.values()].filter((c) => c.permissionOverwrites);
+  // Which (non-managed) roles each human member currently holds, by role name — lets a
+  // restore on a new server reassign roles to whoever's already joined there, matched by
+  // their persistent Discord user ID. Skipped along with roles for a 'channels'-only
+  // backup, since there'd be nothing to match role names against.
+  let members = [];
+  if (scope !== 'channels') {
+    try {
+      await guild.members.fetch();
+    } catch (err) {
+      console.error('[serverbackup] Could not fetch the full member list, snapshot may be missing some members:', err.message);
+    }
 
-  const categories = allChannels
-    .filter((c) => c.type === ChannelType.GuildCategory)
-    .sort((a, b) => a.rawPosition - b.rawPosition)
-    .map((c) => ({
-      name: c.name,
-      permissionOverwrites: serializeOverwrites(c.permissionOverwrites.cache, guild),
-    }));
+    members = [...guild.members.cache.values()]
+      .filter((m) => !m.user.bot)
+      .map((m) => ({
+        id: m.id,
+        roles: [...m.roles.cache.values()].filter((r) => r.id !== guild.id && !r.managed).map((r) => r.name),
+      }))
+      .filter((m) => m.roles.length > 0);
+  }
 
-  const channels = allChannels
-    .filter((c) => c.type !== ChannelType.GuildCategory)
-    .sort((a, b) => a.rawPosition - b.rawPosition)
-    .map((c) => ({
-      name: c.name,
-      type: c.type,
-      parentName: c.parent?.name ?? null,
-      topic: 'topic' in c ? c.topic ?? null : null,
-      nsfw: 'nsfw' in c ? Boolean(c.nsfw) : false,
-      rateLimitPerUser: 'rateLimitPerUser' in c ? c.rateLimitPerUser ?? 0 : 0,
-      bitrate: 'bitrate' in c ? c.bitrate ?? null : null,
-      userLimit: 'userLimit' in c ? c.userLimit ?? null : null,
-      permissionOverwrites: serializeOverwrites(c.permissionOverwrites.cache, guild),
-    }));
+  let categories = [];
+  let channels = [];
 
-  const data = { version: SNAPSHOT_VERSION, roles, categories, channels };
+  if (scope !== 'roles') {
+    // Threads (and any other channel-like entity without its own overwrites) aren't real
+    // "structure" — they inherit permissions from their parent channel, which is already
+    // captured on its own. Filtering by the presence of permissionOverwrites is more
+    // robust than listing thread type IDs by hand.
+    const allChannels = [...guild.channels.cache.values()].filter((c) => c.permissionOverwrites);
+
+    categories = allChannels
+      .filter((c) => c.type === ChannelType.GuildCategory)
+      .sort((a, b) => a.rawPosition - b.rawPosition)
+      .map((c) => ({
+        name: c.name,
+        permissionOverwrites: serializeOverwrites(c.permissionOverwrites.cache, guild),
+      }));
+
+    channels = allChannels
+      .filter((c) => c.type !== ChannelType.GuildCategory)
+      .sort((a, b) => a.rawPosition - b.rawPosition)
+      .map((c) => ({
+        name: c.name,
+        type: c.type,
+        parentName: c.parent?.name ?? null,
+        topic: 'topic' in c ? c.topic ?? null : null,
+        nsfw: 'nsfw' in c ? Boolean(c.nsfw) : false,
+        rateLimitPerUser: 'rateLimitPerUser' in c ? c.rateLimitPerUser ?? 0 : 0,
+        bitrate: 'bitrate' in c ? c.bitrate ?? null : null,
+        userLimit: 'userLimit' in c ? c.userLimit ?? null : null,
+        permissionOverwrites: serializeOverwrites(c.permissionOverwrites.cache, guild),
+      }));
+  }
+
+  const data = { version: SNAPSHOT_VERSION, scope, roles, categories, channels, members };
   const id = await repo.saveSnapshot(guild.id, guild.name, label, JSON.stringify(data), createdBy);
 
-  return { id, roleCount: roles.length, categoryCount: categories.length, channelCount: channels.length };
+  return { id, scope, roleCount: roles.length, categoryCount: categories.length, channelCount: channels.length, memberCount: members.length };
 }
 
 async function listSnapshots() {
   return repo.listSnapshots();
+}
+
+async function loadSnapshot(snapshotId) {
+  const row = await repo.getSnapshot(snapshotId);
+  if (!row) {
+    throw new ValidationError(`No backup found with id **${snapshotId}**.`);
+  }
+  return { row, data: JSON.parse(row.data) };
+}
+
+// Bot/integration/booster ("managed") roles from the snapshot that aren't currently
+// present in the target server by name — i.e. apps the admin hasn't (re-)invited yet.
+// Restoring without them still works, but any channel overwrite that referenced one of
+// these roles gets silently dropped instead of resolved (see resolveOverwrites) — this
+// is meant to be shown to the admin *before* they confirm a restore, so they can invite
+// the missing apps first if full fidelity matters, or knowingly proceed without them.
+async function previewRestore(guild, snapshotId) {
+  const { row, data } = await loadSnapshot(snapshotId);
+
+  const existingNames = new Set([...guild.roles.cache.values()].map((r) => r.name));
+  const missingBots = (data.roles ?? []).filter((r) => r.managed && !existingNames.has(r.name)).map((r) => r.name);
+
+  return { label: row.label, sourceGuildName: row.sourceGuildName, scope: data.scope ?? 'all', missingBots };
 }
 
 // Never deletes or overwrites anything that already exists — matches roles by name and
@@ -124,21 +190,21 @@ async function listSnapshots() {
 // server that already has some channels/roles of its own. Not guild-scoped: a backup
 // taken on one server can be restored on any other server the bot is in (e.g. an empty
 // test server) — that's the whole point of a portable structure backup.
-async function restoreSnapshot(guild, snapshotId, executedBy) {
+// `scope` limits what this run actually restores, independent of what the snapshot
+// contains — e.g. a snapshot taken with scope 'all' can still be restored 'roles'-only.
+async function restoreSnapshot(guild, snapshotId, executedBy, scope = 'all') {
   assertCanManage(guild);
+  scope = normalizeScope(scope);
 
-  const row = await repo.getSnapshot(snapshotId);
-  if (!row) {
-    throw new ValidationError(`No backup found with id **${snapshotId}**.`);
-  }
-
-  const data = JSON.parse(row.data);
+  const { row, data } = await loadSnapshot(snapshotId);
   const reason = `Server Backup: restored from backup #${snapshotId} by ${executedBy}`;
 
   const summary = {
     label: row.label,
     sourceGuildName: row.sourceGuildName,
+    scope,
     roles: { created: [], skipped: 0, failed: [] },
+    members: { updated: [], noChangeNeeded: 0, notYetJoined: 0, failed: [] },
     categories: { created: [], skipped: 0, failed: [] },
     channels: { created: [], skipped: 0, failed: [] },
     positionWarning: null,
@@ -148,51 +214,100 @@ async function restoreSnapshot(guild, snapshotId, executedBy) {
   const nameToRoleId = new Map();
   for (const role of guild.roles.cache.values()) nameToRoleId.set(role.name, role.id);
 
-  for (const roleData of data.roles ?? []) {
-    if (nameToRoleId.has(roleData.name)) {
-      summary.roles.skipped++;
-      continue;
+  if (scope !== 'channels') {
+    for (const roleData of data.roles ?? []) {
+      if (nameToRoleId.has(roleData.name)) {
+        summary.roles.skipped++;
+        continue;
+      }
+      // Bot/integration/booster roles can't be created through the API, and shouldn't be
+      // faked with a lookalike — invite the bot (or wait for the integration/boost) and
+      // Discord creates the real one with a matching name, which then gets picked up by
+      // name for any channel overwrite that references it. Invite bots *before* restoring
+      // wherever possible, so those overwrites resolve on the first pass instead of being
+      // silently skipped below.
+      if (roleData.managed) {
+        summary.roles.skipped++;
+        continue;
+      }
+      try {
+        const created = await guild.roles.create({
+          name: roleData.name,
+          color: roleData.color || undefined,
+          hoist: roleData.hoist,
+          mentionable: roleData.mentionable,
+          permissions: BigInt(roleData.permissions),
+          reason,
+        });
+        nameToRoleId.set(created.name, created.id);
+        summary.roles.created.push(created.name);
+        await sleep(CREATE_DELAY_MS);
+      } catch (err) {
+        summary.roles.failed.push(`${roleData.name} (${err.message})`);
+      }
     }
-    // Bot/integration/booster roles can't be created through the API, and shouldn't be
-    // faked with a lookalike — invite the bot (or wait for the integration/boost) and
-    // Discord creates the real one with a matching name, which then gets picked up by
-    // name for any channel overwrite that references it. Invite bots *before* restoring
-    // wherever possible, so those overwrites resolve on the first pass instead of being
-    // silently skipped below.
-    if (roleData.managed) {
-      summary.roles.skipped++;
-      continue;
-    }
+
+    // Best-effort: put every role from the snapshot (pre-existing or just-created) back in
+    // its relative order. Can silently fail to move roles positioned above the bot's own
+    // highest role — Discord just won't allow that, no way around it but moving the bot's
+    // role up first.
     try {
-      const created = await guild.roles.create({
-        name: roleData.name,
-        color: roleData.color || undefined,
-        hoist: roleData.hoist,
-        mentionable: roleData.mentionable,
-        permissions: BigInt(roleData.permissions),
-        reason,
-      });
-      nameToRoleId.set(created.name, created.id);
-      summary.roles.created.push(created.name);
-      await sleep(CREATE_DELAY_MS);
+      const positions = (data.roles ?? [])
+        .filter((r) => nameToRoleId.has(r.name))
+        .map((r, index) => ({ role: nameToRoleId.get(r.name), position: index + 1 }));
+      if (positions.length > 0) {
+        await guild.roles.setPositions(positions);
+      }
     } catch (err) {
-      summary.roles.failed.push(`${roleData.name} (${err.message})`);
+      summary.positionWarning = `Couldn't fully restore role order (${err.message}) — likely some roles sit above my own; move my role higher and reorder manually if needed.`;
+    }
+
+    // --- member role assignments ---
+    // Only ever adds roles, never removes any — matches the "additive only" philosophy
+    // of the rest of a restore. Anyone from the snapshot not currently in this server is
+    // just skipped (nothing to reassign yet); running restore again later picks up
+    // whoever's joined since, so this keeps being useful as people migrate over time.
+    if ((data.members ?? []).length > 0) {
+      try {
+        await guild.members.fetch();
+      } catch (err) {
+        console.error('[serverbackup] Could not fetch the full member list before reassigning roles:', err.message);
+      }
+
+      for (const memberData of data.members) {
+        const member = guild.members.cache.get(memberData.id);
+        if (!member) {
+          summary.members.notYetJoined++;
+          continue;
+        }
+
+        const roleIdsToAdd = [];
+        for (const roleName of memberData.roles) {
+          const roleId = nameToRoleId.get(roleName);
+          if (!roleId) continue; // that role wasn't (re)created/invited yet — nothing to assign
+          const role = guild.roles.cache.get(roleId);
+          if (!role || role.managed || member.roles.cache.has(roleId)) continue;
+          roleIdsToAdd.push(roleId);
+        }
+
+        if (roleIdsToAdd.length === 0) {
+          summary.members.noChangeNeeded++;
+          continue;
+        }
+
+        try {
+          await member.roles.add(roleIdsToAdd, reason);
+          summary.members.updated.push(member.user.tag ?? memberData.id);
+          await sleep(MEMBER_DELAY_MS);
+        } catch (err) {
+          summary.members.failed.push(`${member.user.tag ?? memberData.id} (${err.message})`);
+        }
+      }
     }
   }
 
-  // Best-effort: put every role from the snapshot (pre-existing or just-created) back in
-  // its relative order. Can silently fail to move roles positioned above the bot's own
-  // highest role — Discord just won't allow that, no way around it but moving the bot's
-  // role up first.
-  try {
-    const positions = (data.roles ?? [])
-      .filter((r) => nameToRoleId.has(r.name))
-      .map((r, index) => ({ role: nameToRoleId.get(r.name), position: index + 1 }));
-    if (positions.length > 0) {
-      await guild.roles.setPositions(positions);
-    }
-  } catch (err) {
-    summary.positionWarning = `Couldn't fully restore role order (${err.message}) — likely some roles sit above my own; move my role higher and reorder manually if needed.`;
+  if (scope === 'roles') {
+    return summary;
   }
 
   // --- categories ---
@@ -263,10 +378,12 @@ async function restoreSnapshot(guild, snapshotId, executedBy) {
 
 module.exports = {
   ValidationError,
+  SCOPES,
   isEnabled,
   setEnabled,
   assertCanManage,
   createSnapshot,
   listSnapshots,
+  previewRestore,
   restoreSnapshot,
 };

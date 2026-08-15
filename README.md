@@ -159,13 +159,15 @@ Losing role1 auto-removes role2 (optionally the reverse too).
 - `disable` `Admin` — turns the feature on/off.
 
 ### Server Backup (`/serverbackup`)
-`Admin` only. Snapshots the server's roles, categories, and channels (names, colors/settings, and permission overwrites) — not emoji, stickers, or soundboard sounds. Backups aren't tied to one server: any is restorable on any server the bot is in, including an empty one, which is the main way to test a backup safely without touching the real server.
-- `create [label]` — saves a snapshot of the current structure.
+`Admin` only. Snapshots the server's roles (+ which members held which, by ID), categories, and channels (names, colors/settings, and permission overwrites) — not emoji, stickers, or soundboard sounds. Backups aren't tied to one server: any is restorable on any server the bot is in, including an empty one, which is the main way to test a backup safely without touching the real server.
+- `create [label] [what]` — saves a snapshot; `what` picks the scope (`all` default, `roles`, or `channels`).
 - `list` — lists every saved backup, across all servers the bot backs up.
-- `restore backup:<...>` — recreates whatever's missing from a backup (autocomplete over saved ones); matches roles by name and channels by name+type+category, so it never deletes or overwrites anything already there — safe to run more than once. Role hierarchy is restored best-effort (can't move a role above the bot's own). Needs **Manage Roles** and **Manage Channels**.
+- `restore backup:<...> [what]` — recreates whatever's missing from a backup (autocomplete over saved ones); matches roles by name and channels by name+type+category, so it never deletes or overwrites anything already there — safe to run more than once. `what` restores a narrower scope than what was backed up if you want. Role hierarchy is restored best-effort (can't move a role above the bot's own). Needs **Manage Roles** and **Manage Channels**.
 - `disable` — turns the feature on/off.
 
-Bot/integration/booster ("managed") roles are never recreated — Discord owns those, the API can't create a lookalike. Invite other bots to the target server **before** restoring: their own managed role gets created automatically with the right name, and any channel overwrite that referenced it in the backup then resolves correctly. Invite them after instead, and that specific overwrite is just silently skipped (no error, no fake role) — the bot's other permissions still work fine via its own OAuth invite scopes.
+Members already present in the target server get their roles reassigned automatically (matched by their Discord user ID, additive only — never removes a role). Anyone from the backup who hasn't joined yet is just skipped; re-running `restore` later picks up whoever's joined since.
+
+Bot/integration/booster ("managed") roles are never recreated — Discord owns those, the API can't create a lookalike. Invite other bots to the target server **before** restoring: their own managed role gets created automatically with the right name, and any channel overwrite that referenced it in the backup then resolves correctly. If some are still missing, `restore` lists them and asks for confirmation before proceeding — say no and go invite them first, or proceed and that one overwrite is just silently skipped (no error, no fake role).
 
 ### Slowmode (`/slowmode`)
 Per-person posting cooldown per channel, beyond Discord's own 6h cap. Mods/Admins exempt.

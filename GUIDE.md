@@ -147,14 +147,18 @@ Losing role1 automatically removes role2 (optionally the reverse too).
 
 ## 🗄️ Server Backup (`/serverbackup`)
 
-Snapshots the server's roles, categories, and channels — names, colors/settings, and permission overwrites. Doesn't cover emoji, stickers, or soundboard sounds (those are binary files, not just structure — a separate backup would be needed for them).
+Snapshots the server's roles (plus which members held which, by Discord user ID), categories, and channels — names, colors/settings, and permission overwrites. Doesn't cover emoji, stickers, or soundboard sounds (those are binary files, not just structure — a separate backup would be needed for them).
 
-- **`/serverbackup create`** `Admin` — Saves a snapshot, with an optional label to remember it by.
+- **`/serverbackup create`** `Admin` — Saves a snapshot, with an optional label to remember it by. `what` picks the scope: everything (default), roles only, or categories/channels only.
 - **`/serverbackup list`** `Admin` — Lists every saved backup, across every server the bot backs up (not just this one).
-- **`/serverbackup restore`** `Admin` — Recreates whatever's missing from a chosen backup (autocomplete over saved ones). Matches roles by name and channels by name/type/category, so it only ever adds what's missing — nothing already there gets touched or deleted, and it's safe to run more than once. Role hierarchy is restored best-effort: a role positioned above the bot's own can't be moved there automatically.
+- **`/serverbackup restore`** `Admin` — Recreates whatever's missing from a chosen backup (autocomplete over saved ones). Matches roles by name and channels by name/type/category, so it only ever adds what's missing — nothing already there gets touched or deleted, and it's safe to run more than once. `what` lets you restore a narrower scope than the backup contains. Role hierarchy is restored best-effort: a role positioned above the bot's own can't be moved there automatically.
 - **`/serverbackup disable`** `Admin` — Turns the feature on/off.
 
 A backup isn't tied to the server it came from — any saved backup can be restored on **any** server the bot is in. That's what makes it possible to test a restore safely: take a backup of the real server, invite the bot to an empty test server, and restore there without any risk to the original. Needs the **Manage Roles** and **Manage Channels** permissions.
+
+Restoring roles also reassigns them to whoever from the backup is already a member of the target server, matched by their Discord user ID — additive only, it never removes a role. Anyone who hasn't joined the target server yet is just skipped for now; running `restore` again later (as more people migrate over) picks them up automatically once they have.
+
+Bot/integration/booster ("managed") roles are never recreated — only Discord can create those. If the backup references one that isn't in the target server yet, `restore` lists which apps are missing and asks you to confirm before proceeding: cancel and invite them first for a full restore, or go ahead anyway — that one permission is silently skipped, nothing else is affected.
 
 Other bots' own roles (and any booster/integration role — anything Discord marks "managed") are never recreated, since the API has no way to make a real one. **Invite those bots to the target server before restoring**: Discord creates their managed role automatically with the right name, so any channel overwrite from the backup that referenced it resolves correctly during the restore. Invite a bot afterward instead, and that one overwrite is just quietly skipped — everything else restores normally, and the bot's own permissions still come from its OAuth invite as usual.
 
