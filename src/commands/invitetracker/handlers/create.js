@@ -1,5 +1,6 @@
 const { PermissionFlagsBits } = require('discord.js');
 const inviteTrackerManager = require('../../../features/invitetracker/inviteTrackerManager');
+const { isMod } = require('../../../utils/modRole');
 const config = require('../../../config/config');
 const { zonedTimeToUtc } = require('../../../utils/timezoneDate');
 
@@ -92,16 +93,28 @@ async function handleAssignExisting(interaction, user, rawCode) {
 }
 
 async function handleCreate(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
-    return;
-  }
-
   const user = interaction.options.getUser('user');
   const channel = interaction.options.getChannel('channel');
   const existingCode = interaction.options.getString('code');
+  const mod = isMod(interaction.member);
 
   try {
+    // Mods/Admin can credit anyone, as often as they like. Everyone else can only credit
+    // themselves, and only once at a time — a second attempt has to wait until the first
+    // is revoked (checked below).
+    if (!mod && user.id !== interaction.user.id) {
+      throw new inviteTrackerManager.ValidationError('You can only create or assign an invite for yourself — ask a Mod/Admin to do it for someone else.');
+    }
+
+    if (!mod) {
+      const activeOwn = await inviteTrackerManager.getActiveOwnInvite(interaction.guild, interaction.user.id);
+      if (activeOwn) {
+        throw new inviteTrackerManager.ValidationError(
+          `You already have your own invite — **https://discord.gg/${activeOwn}**. Revoke it with \`/invites revoke\` before making another.`
+        );
+      }
+    }
+
     if (existingCode) {
       await handleAssignExisting(interaction, user, existingCode);
       return;
@@ -109,6 +122,16 @@ async function handleCreate(interaction) {
 
     if (!channel) {
       throw new inviteTrackerManager.ValidationError('`channel` is required when creating a new invite (omit it only when using `code` to assign one you already made).');
+    }
+
+    // Non-Mods can only point the bot at a channel they could already invite people to
+    // themselves — otherwise this would be a backdoor to generate invites into channels
+    // they can't normally share (the bot's own permission alone isn't enough here).
+    if (!mod) {
+      const memberPerms = channel.permissionsFor(interaction.member);
+      if (!memberPerms?.has(PermissionFlagsBits.CreateInstantInvite)) {
+        throw new inviteTrackerManager.ValidationError('You need the "Create Invite" permission in that channel yourself to make an invite there.');
+      }
     }
 
     await handleCreateNew(interaction, user, channel);

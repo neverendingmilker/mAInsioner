@@ -129,6 +129,18 @@ async function getAssignedInvites(guildId, userId) {
   return result.rows.map((row) => row.code);
 }
 
+// The invite (if any) a user made/assigned for themselves — created_by = assigned_user_id
+// distinguishes "I made this for me" from "a Mod made this for me", since only the
+// former counts against the self-service one-at-a-time limit in /invites create.
+async function getOwnAssignedInvite(guildId, userId) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT code FROM invitetracker_assigned_invites WHERE guild_id = ? AND assigned_user_id = ? AND created_by = ? LIMIT 1',
+    args: [guildId, userId, userId],
+  });
+  return result.rows[0]?.code ?? null;
+}
+
 async function getAllAssignedInvites(guildId) {
   await db.ready;
   const result = await db.client.execute({
@@ -149,5 +161,6 @@ module.exports = {
   getAssignedUser,
   removeAssignedInvite,
   getAssignedInvites,
+  getOwnAssignedInvite,
   getAllAssignedInvites,
 };

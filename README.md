@@ -122,12 +122,12 @@ Needs **Kick Members** server-wide, plus View Channel/Send Messages in the targe
 Auto-increments daily via a scheduled job; the sign image is rendered with `@napi-rs/canvas`.
 
 ### Invite Tracker (`/invites`)
-`leaderboard`/`user` are open to everyone, `list` is `Mod`, `create`/`revoke`/`disable` are `Admin`. Tracks which invite each new member used and by whom it was created, so you know who's bringing people in.
-- `create user:<@user> channel:<#channel> [max_uses] [expires_in_hours or expires_at]` — makes a brand-new invite credited to `user`, no matter who actually shares/clicks it. `expires_at` takes an exact `YYYY-MM-DD HH:mm` (Europe/Rome) instead of a relative `expires_in_hours` — pick one, both are capped at Discord's own 7-day max age.
-- `create user:<@user> code:<invite or link>` — instead of making a new one, credits `user` with an invite you already created yourself (channel/max_uses/expiry don't apply — those are fixed at creation and can't be changed after the fact). Only joins from that point on count; past uses aren't retroactive.
+`leaderboard`/`user` are open to everyone; `list` is `Mod`; `create`/`revoke` are open to everyone but limited (see below) and unrestricted for `Mod`; `disable` is `Admin`. Tracks which invite each new member used and by whom it was created, so you know who's bringing people in.
+- `create user:<@user> channel:<#channel> [max_uses] [expires_in_hours or expires_at]` — makes a brand-new invite credited to `user`, no matter who actually shares/clicks it. `expires_at` takes an exact `YYYY-MM-DD HH:mm` (Europe/Rome) instead of a relative `expires_in_hours` — pick one, both are capped at Discord's own 7-day max age. Mods/Admin can do this for anyone, any time; everyone else only for themselves, and only once — a second attempt is rejected until the first is `revoke`d. Non-Mods also need **Create Invite** themselves in the target channel (not just the bot).
+- `create user:<@user> code:<invite or link>` — instead of making a new one, credits `user` with an invite you already created yourself (channel/max_uses/expiry don't apply — those are fixed at creation and can't be changed after the fact). Only joins from that point on count; past uses aren't retroactive. Same one-per-person limit for non-Mods as above.
 - `leaderboard` — top inviters, "still here now" vs "total ever joined".
 - `list` `Mod` — every currently assigned invite (code, who it's credited to, uses, expiry) in one place — an overview, as opposed to `user`'s one-person view.
-- `revoke code:<...>` — deletes a previously created assigned invite (autocomplete over active ones).
+- `revoke code:<...>` — deletes a previously assigned invite (autocomplete over active ones). Mods/Admin can revoke anyone's; everyone else only their own.
 - `user [user]` — same stats for one person (defaults to yourself), plus any active invite links credited to them.
 - `disable` `Admin` — turns the feature on/off.
 

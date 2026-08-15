@@ -1,13 +1,17 @@
-const { PermissionFlagsBits } = require('discord.js');
 const inviteTrackerManager = require('../../../features/invitetracker/inviteTrackerManager');
+const { isMod } = require('../../../utils/modRole');
 
 async function handleRevoke(interaction) {
-  if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
-    await interaction.reply({ content: '❌ You need the "Administrator" permission to use this command.', ephemeral: true });
-    return;
+  const code = interaction.options.getString('code');
+
+  if (!isMod(interaction.member)) {
+    const assignedUserId = await inviteTrackerManager.getAssignedUser(interaction.guildId, code);
+    if (assignedUserId !== interaction.user.id) {
+      await interaction.reply({ content: "❌ You can only revoke your own invite — ask a Mod/Admin for anyone else's.", ephemeral: true });
+      return;
+    }
   }
 
-  const code = interaction.options.getString('code');
   await interaction.deferReply({ ephemeral: true });
   await inviteTrackerManager.revokeAssignedInvite(interaction.guild, code);
 

@@ -6,6 +6,7 @@ const { handleRevoke } = require('./handlers/revoke');
 const { handleUser } = require('./handlers/user');
 const inviteTrackerManager = require('../../features/invitetracker/inviteTrackerManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
+const { isMod } = require('../../utils/modRole');
 
 const handleDisable = createDisableHandler(inviteTrackerManager, PermissionFlagsBits.Administrator, 'Invite Tracker');
 
@@ -17,7 +18,7 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('create')
-      .setDescription('[Admin] Credits a user with a new invite, or with one you already made (set "code" for that)')
+      .setDescription('Credits an invite to a user — Mods: anyone, anytime. Everyone: once, for yourself')
       .addUserOption((opt) => opt.setName('user').setDescription('Who this invite should be credited to').setRequired(true))
       .addChannelOption((opt) =>
         opt
@@ -56,7 +57,7 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('revoke')
-      .setDescription('[Admin] Deletes a previously created assigned invite')
+      .setDescription('Deletes an assigned invite — Mods: any; everyone else: only their own')
       .addStringOption((opt) =>
         opt.setName('code').setDescription('Which assigned invite to revoke (start typing to see active ones)').setRequired(true).setAutocomplete(true)
       )
@@ -100,7 +101,8 @@ async function autocomplete(interaction) {
     return;
   }
 
-  const assigned = await inviteTrackerManager.getAllAssignedInvites(interaction.guildId);
+  const allAssigned = await inviteTrackerManager.getAllAssignedInvites(interaction.guildId);
+  const assigned = isMod(interaction.member) ? allAssigned : allAssigned.filter((a) => a.assignedUserId === interaction.user.id);
   const query = focused.value.toLowerCase();
 
   const choices = assigned

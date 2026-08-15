@@ -111,6 +111,30 @@ async function getAssignedInvites(guildId, userId) {
   return repo.getAssignedInvites(guildId, userId);
 }
 
+async function getAssignedUser(guildId, code) {
+  return repo.getAssignedUser(guildId, code);
+}
+
+// The self-service quota check for /invites create: does this user already have an
+// invite they made for themselves? Cross-checks against the live invite list first, and
+// silently cleans up (then reports "none") if the stored one turned out to be stale —
+// expired, hit its max uses and got auto-deleted, or was removed outside of
+// /invites revoke — so a dead DB row never permanently locks someone out.
+async function getActiveOwnInvite(guild, userId) {
+  const code = await repo.getOwnAssignedInvite(guild.id, userId);
+  if (!code) return null;
+
+  // Let a genuine fetch failure (e.g. the bot lost the Manage Server permission) surface
+  // as an error — only an explicit "fetch worked, code just isn't in the list anymore"
+  // counts as stale. Otherwise a temporary API hiccup could wipe someone's real record.
+  assertCanTrack(guild);
+  const liveInvites = await guild.invites.fetch();
+  if (liveInvites.has(code)) return code;
+
+  await forgetInvite(guild.id, code);
+  return null;
+}
+
 async function getAllAssignedInvites(guildId) {
   return repo.getAllAssignedInvites(guildId);
 }
@@ -224,6 +248,8 @@ module.exports = {
   assignExistingInvite,
   revokeAssignedInvite,
   getAssignedInvites,
+  getAssignedUser,
+  getActiveOwnInvite,
   getAllAssignedInvites,
   getAssignedInvitesOverview,
   handleMemberAdd,
