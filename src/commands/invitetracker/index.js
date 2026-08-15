@@ -16,20 +16,36 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('create')
-      .setDescription('[Admin] Creates a fresh invite link credited to a specific user')
+      .setDescription('[Admin] Credits a user with a new invite, or with one you already made (set "code" for that)')
       .addUserOption((opt) => opt.setName('user').setDescription('Who this invite should be credited to').setRequired(true))
       .addChannelOption((opt) =>
-        opt.setName('channel').setDescription('Which channel the invite opens into').addChannelTypes(...INVITE_CHANNEL_TYPES).setRequired(true)
+        opt
+          .setName('channel')
+          .setDescription('Which channel the invite opens into (required unless "code" is set)')
+          .addChannelTypes(...INVITE_CHANNEL_TYPES)
+          .setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('code')
+          .setDescription('An invite you already made yourself (code or full link) — assigns it instead of creating a new one')
+          .setRequired(false)
       )
       .addIntegerOption((opt) =>
-        opt.setName('max_uses').setDescription('Max number of times it can be used (optional, default: unlimited)').setMinValue(1).setRequired(false)
+        opt.setName('max_uses').setDescription('Max number of times it can be used (optional, default: unlimited; only for a new invite)').setMinValue(1).setRequired(false)
       )
       .addIntegerOption((opt) =>
         opt
           .setName('expires_in_hours')
-          .setDescription('Hours until it expires, max 168 (optional, default: never)')
+          .setDescription('Hours until it expires, max 168 (new invite only, default: never)')
           .setMinValue(1)
           .setMaxValue(168)
+          .setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('expires_at')
+          .setDescription('Exact expiry, "YYYY-MM-DD HH:mm" Europe/Rome (new invite only)')
           .setRequired(false)
       )
   )

@@ -88,11 +88,17 @@ async function getUserStats(guildId, userId) {
 // is the source of truth for who a given code is credited to; resolveUsedInvite in the
 // manager checks it before falling back to Discord's native inviter.
 
+// Upsert: also used to re-assign a code that was already assigned to someone else (e.g.
+// fixing a mistake), or to hand out a code manually via `/invites create code:<...>`.
 async function assignInviteCode(guildId, code, assignedUserId, createdBy) {
   await db.ready;
   await db.client.execute({
     sql: `INSERT INTO invitetracker_assigned_invites (guild_id, code, assigned_user_id, created_by, created_at)
-          VALUES (?, ?, ?, ?, ?)`,
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(guild_id, code) DO UPDATE SET
+            assigned_user_id = excluded.assigned_user_id,
+            created_by = excluded.created_by,
+            created_at = excluded.created_at`,
     args: [guildId, code, assignedUserId, createdBy ?? null, Date.now()],
   });
 }

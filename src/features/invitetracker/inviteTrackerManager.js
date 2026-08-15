@@ -80,6 +80,24 @@ async function createAssignedInvite(guild, channel, user, { maxUses, maxAgeSecon
   return invite;
 }
 
+// Assigns a code the admin already created some other way (e.g. straight from Discord's
+// own UI) instead of making a new one. Only future joins count towards `user` — any uses
+// the invite already had before this point aren't retroactively credited, since they
+// were never logged as joins in the first place.
+async function assignExistingInvite(guild, code, user, createdBy) {
+  assertCanTrack(guild);
+
+  const invite = await guild.invites.fetch(code).catch(() => null);
+  if (!invite) {
+    throw new ValidationError(`Couldn't find an active invite with code "${code}" in this server.`);
+  }
+
+  cache.upsertInvite(guild.id, invite);
+  await repo.assignInviteCode(guild.id, invite.code, user.id, createdBy);
+
+  return invite;
+}
+
 // Deletes both the real Discord invite and our assignment record. The Discord-side
 // delete also fires inviteDelete, which would clean up the assignment on its own — this
 // just does it immediately instead of waiting on the gateway round-trip.
@@ -181,6 +199,7 @@ module.exports = {
   cacheInvite,
   forgetInvite,
   createAssignedInvite,
+  assignExistingInvite,
   revokeAssignedInvite,
   getAssignedInvites,
   getAllAssignedInvites,
