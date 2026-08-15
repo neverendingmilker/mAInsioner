@@ -30,6 +30,7 @@ async function createTables() {
         message_id TEXT NOT NULL,
         created_by TEXT,
         created_at INTEGER,
+        emoji TEXT,
         PRIMARY KEY (guild_id, channel_id)
       )`,
       `CREATE TABLE IF NOT EXISTS birthday_guild_config (
@@ -665,6 +666,15 @@ async function migrate() {
       }
       await client.execute('ALTER TABLE goosepizza_triggers DROP COLUMN channel_id');
     }
+  }
+
+  // Honeypot: `/honeypot add` can now optionally give the bot an emoji to react to its
+  // own bait message with, on top of the existing button. Existing traps just have no
+  // emoji until re-added.
+  const honeypotChannelsColumns = await client.execute('PRAGMA table_info(honeypot_channels)');
+  const honeypotChannelsColumnNames = honeypotChannelsColumns.rows.map((row) => row.name);
+  if (!honeypotChannelsColumnNames.includes('emoji')) {
+    await client.execute('ALTER TABLE honeypot_channels ADD COLUMN emoji TEXT');
   }
 }
 

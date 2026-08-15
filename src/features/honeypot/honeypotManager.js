@@ -32,7 +32,12 @@ function assertCanSetUp(guild, channel) {
 // Re-running this for a channel that's already a honeypot replaces the old message with
 // a fresh one (the old message, if it still exists, is left as-is — remove it first if
 // you want it cleaned up).
-async function addChannel(guild, channel, messageText, buttonLabel, createdBy) {
+//
+// `emoji` is optional: if given, the bot reacts to its own bait message with it, purely
+// as extra bait. It's not required for the trap to work — reacting with ANY emoji on
+// the honeypot message already triggers a kick (see handleReactionAdd) — it's just used
+// afterwards to know which of the message's reactions is "ours" to clean up post-kick.
+async function addChannel(guild, channel, messageText, buttonLabel, createdBy, emoji) {
   assertCanSetUp(guild, channel);
 
   const row = new ActionRowBuilder().addComponents(
@@ -40,7 +45,17 @@ async function addChannel(guild, channel, messageText, buttonLabel, createdBy) {
   );
 
   const message = await channel.send({ content: messageText || DEFAULT_MESSAGE, components: [row] });
-  await repo.addChannel(guild.id, channel.id, message.id, createdBy);
+
+  if (emoji) {
+    try {
+      await message.react(emoji);
+    } catch (err) {
+      await message.delete().catch(() => {});
+      throw new ValidationError(`That doesn't look like a valid emoji I can react with: ${err.message}`);
+    }
+  }
+
+  await repo.addChannel(guild.id, channel.id, message.id, createdBy, emoji || null);
   return message;
 }
 
@@ -78,6 +93,28 @@ async function kickIfNotMod(guild, member) {
   }
 }
 
+// True if `reaction` is the one matching the emoji the bot itself reacted with when the
+// trap was set up (see addChannel's `emoji` param) — used to find "our" reaction again
+// after a kick, to remove it. `storedEmoji` is whatever raw string was passed to
+// message.react() back then, either a unicode emoji or a `<a:name:id>`/`<:name:id>` mention.
+function reactionMatchesStoredEmoji(reaction, storedEmoji) {
+  if (!storedEmoji) return false;
+  const customMatch = storedEmoji.match(/^<a?:\w+:(\d+)>$/);
+  if (customMatch) return reaction.emoji.id === customMatch[1];
+  return reaction.emoji.name === storedEmoji;
+}
+
+// Removes the bot's own reaction (the one added in addChannel, if any) from the honeypot
+// message once it's done its job — best-effort, never throws.
+async function cleanUpOwnReaction(guild, message, honeypot) {
+  if (!honeypot.emoji) return;
+  const botId = guild.members.me?.id;
+  if (!botId) return;
+
+  const ownReaction = message.reactions.cache.find((r) => reactionMatchesStoredEmoji(r, honeypot.emoji));
+  await ownReaction?.users.remove(botId).catch(() => {});
+}
+
 // --- Event hooks, one per trigger type ---
 
 async function handleMessage(message) {
@@ -90,7 +127,10 @@ async function handleMessage(message) {
   const member = message.member ?? (await message.guild.members.fetch(message.author.id).catch(() => null));
   if (!member) return;
 
-  await kickIfNotMod(message.guild, member);
+  const kicked = await kickIfNotMod(message.guild, member);
+  if (kicked) {
+    await message.delete().catch(() => {});
+  }
 }
 
 async function handleReactionAdd(reaction, user, guild) {
@@ -103,7 +143,10 @@ async function handleReactionAdd(reaction, user, guild) {
   const member = await guild.members.fetch(user.id).catch(() => null);
   if (!member) return;
 
-  await kickIfNotMod(guild, member);
+  const kicked = await kickIfNotMod(guild, member);
+  if (kicked) {
+    await cleanUpOwnReaction(guild, reaction.message, honeypot);
+  }
 }
 
 // Returns true if this interaction was the honeypot button (so interactionCreate.js

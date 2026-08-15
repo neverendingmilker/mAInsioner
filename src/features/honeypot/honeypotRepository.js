@@ -20,16 +20,17 @@ async function setEnabled(guildId, enabled) {
   });
 }
 
-async function addChannel(guildId, channelId, messageId, createdBy) {
+async function addChannel(guildId, channelId, messageId, createdBy, emoji) {
   await db.ready;
   await db.client.execute({
-    sql: `INSERT INTO honeypot_channels (guild_id, channel_id, message_id, created_by, created_at)
-          VALUES (?, ?, ?, ?, ?)
+    sql: `INSERT INTO honeypot_channels (guild_id, channel_id, message_id, created_by, created_at, emoji)
+          VALUES (?, ?, ?, ?, ?, ?)
           ON CONFLICT(guild_id, channel_id) DO UPDATE SET
             message_id = excluded.message_id,
             created_by = excluded.created_by,
-            created_at = excluded.created_at`,
-    args: [guildId, channelId, messageId, createdBy, Date.now()],
+            created_at = excluded.created_at,
+            emoji = excluded.emoji`,
+    args: [guildId, channelId, messageId, createdBy, Date.now(), emoji || null],
   });
 }
 
@@ -49,7 +50,7 @@ async function getChannel(guildId, channelId) {
     args: [guildId, channelId],
   });
   const row = result.rows[0];
-  return row ? { channelId: row.channel_id, messageId: row.message_id } : null;
+  return row ? { channelId: row.channel_id, messageId: row.message_id, emoji: row.emoji || null } : null;
 }
 
 async function getAllChannels(guildId) {
@@ -58,7 +59,7 @@ async function getAllChannels(guildId) {
     sql: 'SELECT * FROM honeypot_channels WHERE guild_id = ?',
     args: [guildId],
   });
-  return result.rows.map((row) => ({ channelId: row.channel_id, messageId: row.message_id }));
+  return result.rows.map((row) => ({ channelId: row.channel_id, messageId: row.message_id, emoji: row.emoji || null }));
 }
 
 module.exports = {

@@ -82,14 +82,14 @@ Notifications: a DM with a couple messages of context, the trigger itself, match
 
 ## 🍯 Honeypot (`/honeypot`)
 
-Turns a channel into a trap: posts a message with a button, then kicks anyone who isn't Mod/Admin the moment they write there, react to anything there, or click the button.
+Turns a channel into a trap: posts a message with a button, then kicks anyone who isn't Mod/Admin the moment they write there, react to anything there, or click the button. Mods and the Admin (server owner) are always exempt from the kick, no matter which of the three ways they'd otherwise trigger it.
 
-- **`/honeypot add`** `Admin` — Sets up the trap channel and posts the bait message (custom text/button label optional).
+- **`/honeypot add`** `Admin` — Sets up the trap channel and posts the bait message (custom text/button label optional). You can also give it an `emoji`, which makes the bot react to its own bait message with it — purely extra bait, since reacting with *any* emoji already triggers a kick either way. Once that reaction is used to catch someone, the bot removes its own reaction again.
 - **`/honeypot remove`** `Admin` — Removes the trap and deletes the bait message.
 - **`/honeypot list`** `Admin` — Lists active honeypot channels.
 - **`/honeypot disable`** `Admin` — Turns the feature on/off.
 
-Every subcommand requires the **Administrator** permission — setting up a channel that auto-kicks people is serious enough that it isn't left to Mods.
+Whoever gets kicked for posting in the trap channel also has that message deleted. Every subcommand requires the **Administrator** permission — setting up a channel that auto-kicks people is serious enough that it isn't left to Mods.
 
 ## 🪧 Incident Counter (`/incident`)
 

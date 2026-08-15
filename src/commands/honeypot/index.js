@@ -25,6 +25,9 @@ const data = new SlashCommandBuilder()
       .addStringOption((opt) =>
         opt.setName('button_label').setDescription('Label on the trap button (optional, default: "Click here")').setRequired(false)
       )
+      .addStringOption((opt) =>
+        opt.setName('emoji').setDescription('Emoji the bot reacts to its own bait message with (optional, extra bait)').setRequired(false)
+      )
   )
   .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) => sub.setName('list').setDescription('Lists every channel currently set up as a honeypot'))

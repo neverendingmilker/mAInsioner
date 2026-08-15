@@ -104,8 +104,8 @@ Personal keyword watcher — DM'd (with context) when someone says a word/phrase
 Notifications: a DM embed with a couple messages of context, the trigger message, matched word(s), and a jump link. Capped at one notification per channel every 5 minutes.
 
 ### Honeypot (`/honeypot`)
-`Admin`. Traps a channel: posts a message with a button, then kicks anyone who isn't Mod/Admin the instant they post there, react to anything there, or click the button.
-- `add channel:<#channel> [message] [button_label]` — sets up the trap and posts the bait message.
+`Admin`. Traps a channel: posts a message with a button, then kicks anyone who isn't Mod/Admin the instant they post there, react to anything there, or click the button. Their post gets deleted too if that's what triggered the kick.
+- `add channel:<#channel> [message] [button_label] [emoji]` — sets up the trap and posts the bait message; `emoji`, if given, makes the bot react to its own message with it as extra bait (not required — any reaction already triggers a kick). That reaction gets removed again after it's used to catch someone.
 - `remove channel:<...>` — removes the trap, deletes the bait message if present (autocomplete over active traps).
 - `list` — lists active honeypot channels.
 - `disable` — turns the feature on/off.
