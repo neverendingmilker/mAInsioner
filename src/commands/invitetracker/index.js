@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const { handleCreate } = require('./handlers/create');
+const { handleCreateSelf } = require('./handlers/createSelf');
 const { handleLeaderboard } = require('./handlers/leaderboard');
 const { handleList } = require('./handlers/list');
 const { handleRevoke } = require('./handlers/revoke');
@@ -18,7 +19,7 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('create')
-      .setDescription('Credits an invite to a user — Mods: anyone, anytime. Everyone: once, for yourself')
+      .setDescription('[Mod] Credits an invite to any user, no limit — see create_self for your own')
       .addUserOption((opt) => opt.setName('user').setDescription('Who this invite should be credited to').setRequired(true))
       .addChannelOption((opt) =>
         opt
@@ -31,6 +32,41 @@ const data = new SlashCommandBuilder()
         opt
           .setName('code')
           .setDescription('An invite you already made yourself (code or full link) — assigns it instead of creating a new one')
+          .setRequired(false)
+      )
+      .addIntegerOption((opt) =>
+        opt.setName('max_uses').setDescription('Max number of times it can be used (optional, default: unlimited; only for a new invite)').setMinValue(1).setRequired(false)
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName('expires_in_hours')
+          .setDescription('Hours until it expires, max 168 (new invite only, default: never)')
+          .setMinValue(1)
+          .setMaxValue(168)
+          .setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('expires_at')
+          .setDescription('Exact expiry, "YYYY-MM-DD HH:mm" Europe/Rome (new invite only)')
+          .setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName('create_self')
+      .setDescription('Makes (or credits) your own invite — everyone, once at a time')
+      .addChannelOption((opt) =>
+        opt
+          .setName('channel')
+          .setDescription('Which channel the invite opens into (required unless "code" is set)')
+          .addChannelTypes(...INVITE_CHANNEL_TYPES)
+          .setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName('code')
+          .setDescription('An invite you already made yourself (code or full link) — credits it instead of creating a new one')
           .setRequired(false)
       )
       .addIntegerOption((opt) =>
@@ -79,6 +115,8 @@ async function execute(interaction) {
   switch (sub) {
     case 'create':
       return handleCreate(interaction);
+    case 'create_self':
+      return handleCreateSelf(interaction);
     case 'leaderboard':
       return handleLeaderboard(interaction);
     case 'list':
