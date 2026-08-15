@@ -101,6 +101,16 @@ Keeps a "days since last incident" sign updated in a channel, auto-incrementing 
 - **`/incident reset`** `Admin` — Resets to 0 (an incident just happened).
 - **`/incident disable`** `Admin` — Turns the feature on/off.
 
+## 🔗 Invite Tracker (`/invites`)
+
+Tracks who invited who: when someone joins, the bot works out which invite they used (by comparing use counts against the last known snapshot — Discord doesn't say directly) and credits whoever created it.
+
+- **`/invites leaderboard`** — Top inviters, showing both how many people they brought in that are still here now, and the total ever (including people who later left).
+- **`/invites user`** — Same stats for one person (defaults to yourself).
+- **`/invites disable`** `Admin` — Turns the feature on/off.
+
+Needs the **Manage Server** permission so the bot can see the server's invites. Also catches joins through the server's vanity URL, if it has one — those aren't tied to a specific inviter, just recorded as "vanity". Joins that can't be attributed at all (Discord Discovery, the widget, or two invites changing at the exact same instant) are still counted overall but recorded with no inviter.
+
 ## 🔐 Permission Audits (`/2faroles`, `/modroles`)
 
 Both `Admin`. Two related security-audit commands, always used together:

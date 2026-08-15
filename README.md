@@ -121,6 +121,14 @@ Needs **Kick Members** server-wide, plus View Channel/Send Messages in the targe
 
 Auto-increments daily via a scheduled job; the sign image is rendered with `@napi-rs/canvas`.
 
+### Invite Tracker (`/invites`)
+Open to everyone except `disable`. Tracks which invite each new member used and by whom it was created, so you know who's bringing people in.
+- `leaderboard` — top inviters, "still here now" vs "total ever joined".
+- `user [user]` — same stats for one person (defaults to yourself).
+- `disable` `Admin` — turns the feature on/off.
+
+Needs **Manage Server** so the bot can see the server's invites. Works out which invite was used by diffing use counts on join (also covers the server's vanity URL, if it has one); joins via Discovery/widget, or where two invites changed in the same instant, can't be attributed and are recorded with no inviter.
+
 ### Permission Audits (`/2faroles`, `/modroles`)
 
 Two related security-audit commands, always documented together. Both `Admin`, both take an optional `[ignore_bots]`.

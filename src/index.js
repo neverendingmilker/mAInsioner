@@ -16,6 +16,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages, // needed for the sticky-message feature to detect new activity
     GatewayIntentBits.GuildMessageReactions, // needed for the suggestion feature's react-to-decide buttons
     GatewayIntentBits.MessageContent, // needed for GoosePizza to read message text and match its trigger word
+    GatewayIntentBits.GuildInvites, // needed for the invite tracker to hear inviteCreate/inviteDelete
   ],
   // Needed so reactionAdd still fires for messages/reactions the bot hasn't
   // got in its own cache (e.g. a suggestion posted days ago, before a

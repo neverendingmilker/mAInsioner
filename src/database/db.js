@@ -33,6 +33,19 @@ async function createTables() {
         emoji TEXT,
         PRIMARY KEY (guild_id, channel_id)
       )`,
+      `CREATE TABLE IF NOT EXISTS invitetracker_config (
+        guild_id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS invitetracker_joins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id TEXT NOT NULL,
+        member_id TEXT NOT NULL,
+        inviter_id TEXT,
+        invite_code TEXT,
+        joined_at INTEGER NOT NULL,
+        left_at INTEGER
+      )`,
       `CREATE TABLE IF NOT EXISTS honeypot_kicks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         guild_id TEXT NOT NULL,

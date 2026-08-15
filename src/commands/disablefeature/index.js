@@ -13,6 +13,7 @@ const FEATURES = {
   highlight: { label: 'Highlight', manager: require('../../features/highlight/highlightManager') },
   honeypot: { label: 'Honeypot', manager: require('../../features/honeypot/honeypotManager') },
   incident: { label: 'Incident Counter', manager: require('../../features/incident/incidentManager') },
+  invitetracker: { label: 'Invite Tracker', manager: require('../../features/invitetracker/inviteTrackerManager') },
   reactionlimit: { label: 'Reaction Limit', manager: require('../../features/reactionlimit/reactionLimitManager') },
   rolelink: { label: 'Role Links', manager: require('../../features/rolelinks/roleLinkManager') },
   slowmode: { label: 'Slowmode', manager: require('../../features/slowmode/slowModeManager') },
