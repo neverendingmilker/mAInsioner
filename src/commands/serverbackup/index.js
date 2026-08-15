@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const { handleCreate } = require('./handlers/create');
 const { handleList } = require('./handlers/list');
+const { handleMembers } = require('./handlers/members');
 const { handleRestore } = require('./handlers/restore');
 const serverBackupManager = require('../../features/serverbackup/serverBackupManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
@@ -32,6 +33,14 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) => sub.setName('list').setDescription('Lists all saved backups for this server'))
+  .addSubcommand((sub) =>
+    sub
+      .setName('members')
+      .setDescription('Reassigns roles from a backup to members already in this server')
+      .addIntegerOption((opt) =>
+        opt.setName('backup').setDescription('Which backup to sync member roles from').setRequired(true).setAutocomplete(true)
+      )
+  )
   .addSubcommand((sub) =>
     addScopeOption(
       sub
@@ -66,6 +75,8 @@ async function execute(interaction) {
       return handleCreate(interaction);
     case 'list':
       return handleList(interaction);
+    case 'members':
+      return handleMembers(interaction);
     case 'restore':
       return handleRestore(interaction);
     default:

@@ -67,6 +67,51 @@ function resolveOverwrites(overwrites, nameToRoleId, guild) {
   return resolved;
 }
 
+// Reassigns roles (by name, via nameToRoleId) to whoever from `data.members` is already
+// in the guild — additive only, never removes a role. Shared by restoreSnapshot (right
+// after it creates/matches roles) and syncMembers (which skips role creation entirely and
+// just uses whatever roles already exist) — same logic either way, only how nameToRoleId
+// gets built differs.
+async function reassignMemberRoles(guild, data, nameToRoleId, reason, membersSummary) {
+  if (!(data.members ?? []).length) return;
+
+  try {
+    await guild.members.fetch();
+  } catch (err) {
+    console.error('[serverbackup] Could not fetch the full member list before reassigning roles:', err.message);
+  }
+
+  for (const memberData of data.members) {
+    const member = guild.members.cache.get(memberData.id);
+    if (!member) {
+      membersSummary.notYetJoined++;
+      continue;
+    }
+
+    const roleIdsToAdd = [];
+    for (const roleName of memberData.roles) {
+      const roleId = nameToRoleId.get(roleName);
+      if (!roleId) continue; // that role wasn't (re)created/invited yet — nothing to assign
+      const role = guild.roles.cache.get(roleId);
+      if (!role || role.managed || member.roles.cache.has(roleId)) continue;
+      roleIdsToAdd.push(roleId);
+    }
+
+    if (roleIdsToAdd.length === 0) {
+      membersSummary.noChangeNeeded++;
+      continue;
+    }
+
+    try {
+      await member.roles.add(roleIdsToAdd, reason);
+      membersSummary.updated.push(member.user.tag ?? memberData.id);
+      await sleep(MEMBER_DELAY_MS);
+    } catch (err) {
+      membersSummary.failed.push(`${member.user.tag ?? memberData.id} (${err.message})`);
+    }
+  }
+}
+
 // Snapshots roles (everything except @everyone — its permissions aren't touched on
 // restore, only channel-level overwrites referencing it), categories, and every other
 // channel type, each with its permission overwrites. Doesn't cover emoji, stickers, or
@@ -184,6 +229,31 @@ async function previewRestore(guild, snapshotId) {
   return { label: row.label, sourceGuildName: row.sourceGuildName, scope: data.scope ?? 'all', missingBots };
 }
 
+// Just the member-role-reassignment part of a restore, without touching roles/channels at
+// all — for catching up members who joined *after* a restore already ran (they were
+// "not yet joined" back then and got skipped). Much cheaper than a full restore: no role/
+// channel creation attempts, nothing to confirm, just reassigns roles by name using
+// whatever roles already exist in this server right now.
+async function syncMembers(guild, snapshotId, executedBy) {
+  assertCanManage(guild);
+
+  const { row, data } = await loadSnapshot(snapshotId);
+  const reason = `Server Backup: member sync from backup #${snapshotId} by ${executedBy}`;
+
+  const summary = {
+    label: row.label,
+    sourceGuildName: row.sourceGuildName,
+    members: { updated: [], noChangeNeeded: 0, notYetJoined: 0, failed: [] },
+  };
+
+  const nameToRoleId = new Map();
+  for (const role of guild.roles.cache.values()) nameToRoleId.set(role.name, role.id);
+
+  await reassignMemberRoles(guild, data, nameToRoleId, reason, summary.members);
+
+  return summary;
+}
+
 // Never deletes or overwrites anything that already exists — matches roles by name and
 // channels by (type, category, name), and only creates whatever's missing. Safe to run
 // more than once (a second run just skips everything already restored), and safe on a
@@ -265,45 +335,9 @@ async function restoreSnapshot(guild, snapshotId, executedBy, scope = 'all') {
     // --- member role assignments ---
     // Only ever adds roles, never removes any — matches the "additive only" philosophy
     // of the rest of a restore. Anyone from the snapshot not currently in this server is
-    // just skipped (nothing to reassign yet); running restore again later picks up
-    // whoever's joined since, so this keeps being useful as people migrate over time.
-    if ((data.members ?? []).length > 0) {
-      try {
-        await guild.members.fetch();
-      } catch (err) {
-        console.error('[serverbackup] Could not fetch the full member list before reassigning roles:', err.message);
-      }
-
-      for (const memberData of data.members) {
-        const member = guild.members.cache.get(memberData.id);
-        if (!member) {
-          summary.members.notYetJoined++;
-          continue;
-        }
-
-        const roleIdsToAdd = [];
-        for (const roleName of memberData.roles) {
-          const roleId = nameToRoleId.get(roleName);
-          if (!roleId) continue; // that role wasn't (re)created/invited yet — nothing to assign
-          const role = guild.roles.cache.get(roleId);
-          if (!role || role.managed || member.roles.cache.has(roleId)) continue;
-          roleIdsToAdd.push(roleId);
-        }
-
-        if (roleIdsToAdd.length === 0) {
-          summary.members.noChangeNeeded++;
-          continue;
-        }
-
-        try {
-          await member.roles.add(roleIdsToAdd, reason);
-          summary.members.updated.push(member.user.tag ?? memberData.id);
-          await sleep(MEMBER_DELAY_MS);
-        } catch (err) {
-          summary.members.failed.push(`${member.user.tag ?? memberData.id} (${err.message})`);
-        }
-      }
-    }
+    // just skipped (nothing to reassign yet); running syncMembers (or restore) again
+    // later picks up whoever's joined since, so this keeps being useful over time.
+    await reassignMemberRoles(guild, data, nameToRoleId, reason, summary.members);
   }
 
   if (scope === 'roles') {
@@ -386,4 +420,5 @@ module.exports = {
   listSnapshots,
   previewRestore,
   restoreSnapshot,
+  syncMembers,
 };
