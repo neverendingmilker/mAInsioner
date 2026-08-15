@@ -61,30 +61,7 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('create_self')
-      .setDescription('Makes (or credits) your own invite — everyone, once at a time')
-      .addStringOption((opt) =>
-        opt
-          .setName('code')
-          .setDescription('An invite you already made yourself (code or full link) — credits it instead of creating a new one')
-          .setRequired(false)
-      )
-      .addIntegerOption((opt) =>
-        opt.setName('max_uses').setDescription('Max number of times it can be used (optional, default: unlimited; only for a new invite)').setMinValue(1).setRequired(false)
-      )
-      .addIntegerOption((opt) =>
-        opt
-          .setName('expires_in_hours')
-          .setDescription('Hours until it expires, max 168 (new invite only, default: never)')
-          .setMinValue(1)
-          .setMaxValue(168)
-          .setRequired(false)
-      )
-      .addStringOption((opt) =>
-        opt
-          .setName('expires_at')
-          .setDescription('Exact expiry, "YYYY-MM-DD HH:mm" Europe/Rome (new invite only)')
-          .setRequired(false)
-      )
+      .setDescription('Makes your own invite — everyone, once at a time, default settings')
   )
   .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) => sub.setName('leaderboard').setDescription('Shows the top inviters in this server'))
