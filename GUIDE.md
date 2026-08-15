@@ -103,13 +103,15 @@ Keeps a "days since last incident" sign updated in a channel, auto-incrementing 
 
 ## 🔗 Invite Tracker (`/invites`)
 
-Tracks who invited who: when someone joins, the bot works out which invite they used (by comparing use counts against the last known snapshot — Discord doesn't say directly) and credits whoever created it.
+Tracks who invited who: when someone joins, the bot works out which invite they used (by comparing use counts against the last known snapshot — Discord doesn't say directly) and credits whoever it's attributed to.
 
+- **`/invites create`** `Admin` — Makes a brand-new invite link and credits it to a specific user, regardless of who actually created or shares it. Useful for handing out personal "referral" links — e.g. to give a booster or a partner their own trackable invite. Optional max uses / expiry (up to Discord's own 7-day cap).
+- **`/invites revoke`** `Admin` — Deletes a previously created assigned invite (autocomplete over the active ones).
 - **`/invites leaderboard`** — Top inviters, showing both how many people they brought in that are still here now, and the total ever (including people who later left).
-- **`/invites user`** — Same stats for one person (defaults to yourself).
+- **`/invites user`** — Same stats for one person (defaults to yourself), plus any invite links currently credited to them.
 - **`/invites disable`** `Admin` — Turns the feature on/off.
 
-Needs the **Manage Server** permission so the bot can see the server's invites. Also catches joins through the server's vanity URL, if it has one — those aren't tied to a specific inviter, just recorded as "vanity". Joins that can't be attributed at all (Discord Discovery, the widget, or two invites changing at the exact same instant) are still counted overall but recorded with no inviter.
+Needs the **Manage Server** permission so the bot can see the server's invites, plus **Create Invite** in any channel `/invites create` targets. A `create`d invite is always credited to whoever it was assigned to — Discord itself would otherwise record the bot as the "creator", since the bot is the one making the API call, not the person it's meant for. A normal invite someone makes themselves through Discord is still credited to them, same as before this existed. Also catches joins through the server's vanity URL, if it has one — those aren't tied to a specific inviter, just recorded as "vanity". Joins that can't be attributed at all (Discord Discovery, the widget, or two invites changing at the exact same instant) are still counted overall but recorded with no inviter.
 
 ## 🔐 Permission Audits (`/2faroles`, `/modroles`)
 

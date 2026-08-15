@@ -3,7 +3,9 @@ const inviteTrackerManager = require('../features/invitetracker/inviteTrackerMan
 module.exports = {
   name: 'inviteDelete',
   once: false,
-  execute(invite) {
-    inviteTrackerManager.forgetInvite(invite.guild?.id, invite.code);
+  async execute(invite) {
+    await inviteTrackerManager.forgetInvite(invite.guild?.id, invite.code).catch((err) => {
+      console.error('[invitetracker] Error handling invite delete:', err);
+    });
   },
 };

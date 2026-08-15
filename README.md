@@ -122,12 +122,14 @@ Needs **Kick Members** server-wide, plus View Channel/Send Messages in the targe
 Auto-increments daily via a scheduled job; the sign image is rendered with `@napi-rs/canvas`.
 
 ### Invite Tracker (`/invites`)
-Open to everyone except `disable`. Tracks which invite each new member used and by whom it was created, so you know who's bringing people in.
+`leaderboard`/`user` are open to everyone; `create`/`revoke`/`disable` are `Admin`. Tracks which invite each new member used and by whom it was created, so you know who's bringing people in.
+- `create user:<@user> channel:<#channel> [max_uses] [expires_in_hours]` — makes a brand-new invite credited to `user`, no matter who actually shares/clicks it. Overrides Discord's own "creator" record (which would otherwise just say the bot, since the bot is the one calling the API).
+- `revoke code:<...>` — deletes a previously created assigned invite (autocomplete over active ones).
 - `leaderboard` — top inviters, "still here now" vs "total ever joined".
-- `user [user]` — same stats for one person (defaults to yourself).
+- `user [user]` — same stats for one person (defaults to yourself), plus any active invite links credited to them.
 - `disable` `Admin` — turns the feature on/off.
 
-Needs **Manage Server** so the bot can see the server's invites. Works out which invite was used by diffing use counts on join (also covers the server's vanity URL, if it has one); joins via Discovery/widget, or where two invites changed in the same instant, can't be attributed and are recorded with no inviter.
+Needs **Manage Server** (to see the server's invites) and **Create Invite** in whichever channels `create` targets. Works out which invite was used by diffing use counts on join — a `create`d invite is attributed to whoever it was assigned to; a normal invite someone made themselves is attributed to them, same as before. Also covers the server's vanity URL, if it has one; joins via Discovery/widget, or where two invites changed in the same instant, can't be attributed and are recorded with no inviter.
 
 ### Permission Audits (`/2faroles`, `/modroles`)
 

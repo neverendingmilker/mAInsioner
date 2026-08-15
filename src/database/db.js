@@ -46,6 +46,14 @@ async function createTables() {
         joined_at INTEGER NOT NULL,
         left_at INTEGER
       )`,
+      `CREATE TABLE IF NOT EXISTS invitetracker_assigned_invites (
+        guild_id TEXT NOT NULL,
+        code TEXT NOT NULL,
+        assigned_user_id TEXT NOT NULL,
+        created_by TEXT,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (guild_id, code)
+      )`,
       `CREATE TABLE IF NOT EXISTS honeypot_kicks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         guild_id TEXT NOT NULL,

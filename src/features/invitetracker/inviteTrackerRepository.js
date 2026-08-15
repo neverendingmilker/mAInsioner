@@ -82,4 +82,66 @@ async function getUserStats(guildId, userId) {
   return { total: Number(row?.total ?? 0), current: Number(row?.current ?? 0) };
 }
 
-module.exports = { isEnabled, setEnabled, recordJoin, recordLeave, getLeaderboard, getUserStats };
+// --- Ad-hoc invites assigned to a specific user via `/invites create` ---
+// Discord's own `invite.inviter` is whoever's token actually called the create-invite
+// API — for these it's always the bot, not the person the invite is "for". This table
+// is the source of truth for who a given code is credited to; resolveUsedInvite in the
+// manager checks it before falling back to Discord's native inviter.
+
+async function assignInviteCode(guildId, code, assignedUserId, createdBy) {
+  await db.ready;
+  await db.client.execute({
+    sql: `INSERT INTO invitetracker_assigned_invites (guild_id, code, assigned_user_id, created_by, created_at)
+          VALUES (?, ?, ?, ?, ?)`,
+    args: [guildId, code, assignedUserId, createdBy ?? null, Date.now()],
+  });
+}
+
+async function getAssignedUser(guildId, code) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT assigned_user_id FROM invitetracker_assigned_invites WHERE guild_id = ? AND code = ?',
+    args: [guildId, code],
+  });
+  return result.rows[0]?.assigned_user_id ?? null;
+}
+
+async function removeAssignedInvite(guildId, code) {
+  await db.ready;
+  await db.client.execute({
+    sql: 'DELETE FROM invitetracker_assigned_invites WHERE guild_id = ? AND code = ?',
+    args: [guildId, code],
+  });
+}
+
+async function getAssignedInvites(guildId, userId) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT code FROM invitetracker_assigned_invites WHERE guild_id = ? AND assigned_user_id = ?',
+    args: [guildId, userId],
+  });
+  return result.rows.map((row) => row.code);
+}
+
+async function getAllAssignedInvites(guildId) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT code, assigned_user_id FROM invitetracker_assigned_invites WHERE guild_id = ?',
+    args: [guildId],
+  });
+  return result.rows.map((row) => ({ code: row.code, assignedUserId: row.assigned_user_id }));
+}
+
+module.exports = {
+  isEnabled,
+  setEnabled,
+  recordJoin,
+  recordLeave,
+  getLeaderboard,
+  getUserStats,
+  assignInviteCode,
+  getAssignedUser,
+  removeAssignedInvite,
+  getAssignedInvites,
+  getAllAssignedInvites,
+};

@@ -33,9 +33,68 @@ function cacheInvite(invite) {
   cache.upsertInvite(invite.guild.id, invite);
 }
 
-function forgetInvite(guildId, code) {
+async function forgetInvite(guildId, code) {
   if (!guildId) return;
   cache.removeInvite(guildId, code);
+  await repo.removeAssignedInvite(guildId, code).catch((err) => {
+    console.error(`[invitetracker] Could not clean up assignment for deleted invite ${code} in guild ${guildId}:`, err.message);
+  });
+}
+
+// Who a join through this code should be credited to: whoever it was explicitly
+// assigned to via `/invites create` (if anyone), otherwise Discord's own record of who
+// created it (a normal invite someone made themselves through Discord's UI/app).
+async function attributeInvite(guildId, code, discordInviterId) {
+  const assigned = await repo.getAssignedUser(guildId, code);
+  return assigned ?? discordInviterId;
+}
+
+const MAX_INVITE_AGE_SECONDS = 604800; // Discord's own cap: 7 days
+
+// Creates a brand-new, never-reused Discord invite (unique: true — otherwise Discord
+// can hand back an existing invite with the same settings instead of a fresh code) for
+// `channel`, credited to `user` regardless of who actually runs the command.
+async function createAssignedInvite(guild, channel, user, { maxUses, maxAgeSeconds } = {}, createdBy) {
+  assertCanTrack(guild);
+
+  if (maxAgeSeconds != null && (maxAgeSeconds < 0 || maxAgeSeconds > MAX_INVITE_AGE_SECONDS)) {
+    throw new ValidationError('Expiry has to be between 0 (never) and 168 hours (7 days) — that\'s Discord\'s own limit.');
+  }
+
+  const botMember = guild.members.me;
+  const channelPerms = botMember && channel.permissionsFor(botMember);
+  if (!channelPerms?.has(PermissionFlagsBits.CreateInstantInvite)) {
+    throw new ValidationError('I need the "Create Invite" permission in that channel.');
+  }
+
+  const invite = await channel.createInvite({
+    maxUses: maxUses ?? 0,
+    maxAge: maxAgeSeconds ?? 0,
+    unique: true,
+    reason: `Invite Tracker: assigned to ${user.tag} (${user.id}) by ${createdBy}`,
+  });
+
+  cache.upsertInvite(guild.id, invite);
+  await repo.assignInviteCode(guild.id, invite.code, user.id, createdBy);
+
+  return invite;
+}
+
+// Deletes both the real Discord invite and our assignment record. The Discord-side
+// delete also fires inviteDelete, which would clean up the assignment on its own — this
+// just does it immediately instead of waiting on the gateway round-trip.
+async function revokeAssignedInvite(guild, code) {
+  const invite = await guild.invites.fetch(code).catch(() => null);
+  await invite?.delete('Invite Tracker: revoked').catch(() => {});
+  await forgetInvite(guild.id, code);
+}
+
+async function getAssignedInvites(guildId, userId) {
+  return repo.getAssignedInvites(guildId, userId);
+}
+
+async function getAllAssignedInvites(guildId) {
+  return repo.getAllAssignedInvites(guildId);
 }
 
 // Diffs the live invite list against the last known snapshot to figure out which
@@ -56,14 +115,16 @@ async function resolveUsedInvite(guild) {
   for (const invite of liveInvites.values()) {
     const prev = before.get(invite.code);
     if (!prev || invite.uses > prev.uses) {
-      return { code: invite.code, inviterId: invite.inviter?.id ?? null };
+      const inviterId = await attributeInvite(guild.id, invite.code, invite.inviter?.id ?? null);
+      return { code: invite.code, inviterId };
     }
   }
 
   const missingCodes = [...before.keys()].filter((code) => !liveInvites.has(code));
   if (missingCodes.length === 1) {
     const [code] = missingCodes;
-    return { code, inviterId: before.get(code)?.inviterId ?? null };
+    const inviterId = await attributeInvite(guild.id, code, before.get(code)?.inviterId ?? null);
+    return { code, inviterId };
   }
 
   if (guild.vanityURLCode) {
@@ -119,6 +180,10 @@ module.exports = {
   warmInviteCache,
   cacheInvite,
   forgetInvite,
+  createAssignedInvite,
+  revokeAssignedInvite,
+  getAssignedInvites,
+  getAllAssignedInvites,
   handleMemberAdd,
   handleMemberRemove,
   getLeaderboard,
