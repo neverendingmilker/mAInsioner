@@ -62,6 +62,39 @@ async function getAllChannels(guildId) {
   return result.rows.map((row) => ({ channelId: row.channel_id, messageId: row.message_id, emoji: row.emoji || null }));
 }
 
+async function logKick(guildId, userId, userTag, channelId, triggerType) {
+  await db.ready;
+  await db.client.execute({
+    sql: `INSERT INTO honeypot_kicks (guild_id, user_id, user_tag, channel_id, trigger_type, kicked_at)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [guildId, userId, userTag ?? null, channelId, triggerType, Date.now()],
+  });
+}
+
+async function getKickCount(guildId) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT COUNT(*) AS count FROM honeypot_kicks WHERE guild_id = ?',
+    args: [guildId],
+  });
+  return Number(result.rows[0]?.count ?? 0);
+}
+
+async function getRecentKicks(guildId, limit) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT * FROM honeypot_kicks WHERE guild_id = ? ORDER BY kicked_at DESC LIMIT ?',
+    args: [guildId, limit],
+  });
+  return result.rows.map((row) => ({
+    userId: row.user_id,
+    userTag: row.user_tag,
+    channelId: row.channel_id,
+    trigger: row.trigger_type,
+    kickedAt: Number(row.kicked_at),
+  }));
+}
+
 module.exports = {
   isEnabled,
   setEnabled,
@@ -69,4 +102,7 @@ module.exports = {
   removeChannel,
   getChannel,
   getAllChannels,
+  logKick,
+  getKickCount,
+  getRecentKicks,
 };

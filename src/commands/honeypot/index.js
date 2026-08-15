@@ -2,6 +2,7 @@ const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('disco
 const { handleAdd } = require('./handlers/add');
 const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
+const { handleLog } = require('./handlers/log');
 const honeypotManager = require('../../features/honeypot/honeypotManager');
 const { buildDisableSubcommand, createDisableHandler } = require('../shared/disableSubcommand');
 
@@ -31,6 +32,7 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand(buildDisableSubcommand())
   .addSubcommand((sub) => sub.setName('list').setDescription('Lists every channel currently set up as a honeypot'))
+  .addSubcommand((sub) => sub.setName('log').setDescription('Shows how many people honeypot has kicked, and the most recent ones'))
   .addSubcommand((sub) =>
     sub
       .setName('remove')
@@ -54,6 +56,8 @@ async function execute(interaction) {
       return handleRemove(interaction);
     case 'list':
       return handleList(interaction);
+    case 'log':
+      return handleLog(interaction);
     default:
       return interaction.reply({ content: 'Unknown subcommand.', ephemeral: true });
   }

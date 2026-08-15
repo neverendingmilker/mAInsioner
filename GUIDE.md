@@ -87,6 +87,7 @@ Turns a channel into a trap: posts a message with a button, then kicks anyone wh
 - **`/honeypot add`** `Admin` — Sets up the trap channel and posts the bait message (custom text/button label optional). You can also give it an `emoji`, which makes the bot react to its own bait message with it — purely extra bait, since reacting with *any* emoji already triggers a kick either way. Once that reaction is used to catch someone, the bot removes its own reaction again.
 - **`/honeypot remove`** `Admin` — Removes the trap and deletes the bait message.
 - **`/honeypot list`** `Admin` — Lists active honeypot channels.
+- **`/honeypot log`** `Admin` — Shows the total number of people kicked, plus the 10 most recent (who, in which channel, how they triggered it, when).
 - **`/honeypot disable`** `Admin` — Turns the feature on/off.
 
 Whoever gets kicked for posting in the trap channel also has that message deleted. Every subcommand requires the **Administrator** permission — setting up a channel that auto-kicks people is serious enough that it isn't left to Mods.

@@ -81,16 +81,28 @@ async function listChannels(guildId) {
 // trigger below). Returns true if a kick happened, false if the member was exempt or
 // the kick failed (e.g. the bot's role isn't high enough — logged, not thrown, since
 // callers here are passive event handlers with no good way to surface an error).
-async function kickIfNotMod(guild, member) {
+// `channelId`/`trigger` (one of 'message'/'reaction'/'button') are recorded to the kick
+// log on success — see getKickLog.
+async function kickIfNotMod(guild, member, channelId, trigger) {
   if (isMod(member)) return false;
 
   try {
     await member.kick(KICK_REASON);
-    return true;
   } catch (err) {
     console.error(`[honeypot] Could not kick ${member.id} in guild ${guild.id}:`, err.message);
     return false;
   }
+
+  await repo.logKick(guild.id, member.id, member.user?.tag ?? null, channelId, trigger).catch((err) => {
+    console.error(`[honeypot] Kicked ${member.id} but failed to log it:`, err.message);
+  });
+  return true;
+}
+
+// Total kicks plus the most recent ones, for the `/honeypot log` subcommand.
+async function getKickLog(guildId, limit = 10) {
+  const [total, recent] = await Promise.all([repo.getKickCount(guildId), repo.getRecentKicks(guildId, limit)]);
+  return { total, recent };
 }
 
 // True if `reaction` is the one matching the emoji the bot itself reacted with when the
@@ -127,7 +139,7 @@ async function handleMessage(message) {
   const member = message.member ?? (await message.guild.members.fetch(message.author.id).catch(() => null));
   if (!member) return;
 
-  const kicked = await kickIfNotMod(message.guild, member);
+  const kicked = await kickIfNotMod(message.guild, member, message.channelId, 'message');
   if (kicked) {
     await message.delete().catch(() => {});
   }
@@ -143,7 +155,7 @@ async function handleReactionAdd(reaction, user, guild) {
   const member = await guild.members.fetch(user.id).catch(() => null);
   if (!member) return;
 
-  const kicked = await kickIfNotMod(guild, member);
+  const kicked = await kickIfNotMod(guild, member, reaction.message.channelId, 'reaction');
   if (kicked) {
     await cleanUpOwnReaction(guild, reaction.message, honeypot);
   }
@@ -159,7 +171,7 @@ async function handleButtonClick(interaction) {
     return true;
   }
 
-  const kicked = await kickIfNotMod(interaction.guild, interaction.member);
+  const kicked = await kickIfNotMod(interaction.guild, interaction.member, interaction.channelId, 'button');
   if (!kicked) {
     // Either they're a Mod/Admin (safe), or the kick failed — either way, don't leave
     // Discord's client showing the interaction as stuck/failed.
@@ -177,6 +189,7 @@ module.exports = {
   addChannel,
   removeChannel,
   listChannels,
+  getKickLog,
   handleMessage,
   handleReactionAdd,
   handleButtonClick,
