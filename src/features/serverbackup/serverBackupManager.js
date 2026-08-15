@@ -74,7 +74,11 @@ async function createSnapshot(guild, label, createdBy) {
       permissions: role.permissions.bitfield.toString(),
     }));
 
-  const allChannels = [...guild.channels.cache.values()];
+  // Threads (and any other channel-like entity without its own overwrites) aren't real
+  // "structure" — they inherit permissions from their parent channel, which is already
+  // captured on its own. Filtering by the presence of permissionOverwrites is more
+  // robust than listing thread type IDs by hand.
+  const allChannels = [...guild.channels.cache.values()].filter((c) => c.permissionOverwrites);
 
   const categories = allChannels
     .filter((c) => c.type === ChannelType.GuildCategory)
@@ -206,7 +210,7 @@ async function restoreSnapshot(guild, snapshotId, executedBy) {
   const channelKey = (name, type, parentName) => `${type}::${parentName ?? ''}::${name}`;
   const existingKeys = new Set();
   for (const channel of guild.channels.cache.values()) {
-    if (channel.type === ChannelType.GuildCategory) continue;
+    if (channel.type === ChannelType.GuildCategory || !channel.permissionOverwrites) continue;
     existingKeys.add(channelKey(channel.name, channel.type, channel.parent?.name ?? null));
   }
 
