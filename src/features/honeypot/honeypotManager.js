@@ -41,7 +41,7 @@ async function addChannel(guild, channel, messageText, buttonLabel, createdBy, e
   assertCanSetUp(guild, channel);
 
   const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(BUTTON_CUSTOM_ID).setLabel(buttonLabel || DEFAULT_BUTTON_LABEL).setStyle(ButtonStyle.Danger)
+    new ButtonBuilder().setCustomId(BUTTON_CUSTOM_ID).setLabel(buttonLabel || DEFAULT_BUTTON_LABEL).setStyle(ButtonStyle.Success)
   );
 
   const message = await channel.send({ content: messageText || DEFAULT_MESSAGE, components: [row] });
