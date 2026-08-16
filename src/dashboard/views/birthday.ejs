@@ -1,0 +1,112 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Birthday</h1>
+      <form method="POST" action="/birthday/toggle">
+        <input type="hidden" name="enabled" value="<%= enabled ? 'false' : 'true' %>" />
+        <button type="submit" class="badge-toggle <%= enabled ? 'on' : 'off' %>">
+          <%= enabled ? '● Attivo' : '○ Disattivo' %>
+        </button>
+      </form>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Configurazione</h2>
+      <form method="POST" action="/birthday/config" class="form">
+        <label>
+          Ruolo compleanno (assegnato il giorno del compleanno)
+          <select name="roleId">
+            <option value="">— Nessuno —</option>
+            <% roles.forEach((r) => { %>
+              <option value="<%= r.id %>" <%= r.id === config.roleId ? 'selected' : '' %>><%= r.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Rimuovi il ruolo dopo (es. 30s, 10m, 24h, 3d — min 10s, max 30d)
+          <input type="text" name="removeAfter" placeholder="<%= config.removeAfterLabel %>" />
+        </label>
+        <label>
+          Canale auguri
+          <select name="channelId">
+            <option value="">— Nessuno —</option>
+            <% textChannels.forEach((ch) => { %>
+              <option value="<%= ch.id %>" <%= ch.id === config.channelId ? 'selected' : '' %>><%= ch.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <p class="hint">Ogni campo è indipendente — lascia vuoto/su "Nessuno" quello che non vuoi cambiare.</p>
+        <button type="submit" class="btn-primary-sm">Salva</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Compleanni salvati</h2>
+      <% if (monthGroups.length === 0) { %>
+        <p class="hint">Nessun compleanno salvato.</p>
+      <% } else { %>
+        <table class="table">
+          <thead>
+            <tr><th>Mese</th><th>Giorno</th><th>Anno</th><th>Utente</th><th>Prossimo</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% monthGroups.forEach((g) => { %>
+              <% g.entries.forEach((e) => { %>
+                <tr>
+                  <td><%= g.monthLabel %></td>
+                  <td><%= e.day %></td>
+                  <td><%= e.year || '—' %></td>
+                  <td><%= e.userLabel %></td>
+                  <td><%= e.daysUntilLabel %></td>
+                  <td>
+                    <form method="POST" action="/birthday/remove" onsubmit="return confirm('Rimuovere questo compleanno?');">
+                      <input type="hidden" name="userId" value="<%= e.userId %>" />
+                      <button type="submit" class="btn-danger-sm">Rimuovi</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Aggiungi / aggiorna compleanno</h2>
+      <% if (members.length === 0) { %>
+        <p class="hint">Nessun membro disponibile.</p>
+      <% } else { %>
+        <form method="POST" action="/birthday/add" class="form">
+          <label>
+            Utente
+            <select name="userId" required>
+              <option value="" disabled selected>Scegli un utente…</option>
+              <% members.forEach((m) => { %>
+                <option value="<%= m.id %>"><%= m.label %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>
+            Giorno
+            <input type="number" name="day" min="1" max="31" required />
+          </label>
+          <label>
+            Mese
+            <input type="number" name="month" min="1" max="12" required />
+          </label>
+          <label>
+            Anno (opzionale)
+            <input type="number" name="year" min="1900" max="<%= new Date().getFullYear() %>" />
+          </label>
+          <button type="submit" class="btn-primary">Salva</button>
+        </form>
+      <% } %>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>

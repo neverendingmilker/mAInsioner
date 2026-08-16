@@ -107,7 +107,7 @@ async function getBirthdaysGroupedByMonth(guildId, today = new Date()) {
   const withDates = rows
     .map((row) => {
       const { date, daysUntil } = nextOccurrence(row.day, row.month, today);
-      return { userId: row.user_id, day: row.day, month: row.month, date, daysUntil };
+      return { userId: row.user_id, day: row.day, month: row.month, year: row.year, date, daysUntil };
     })
     .sort((a, b) => a.month - b.month || a.day - b.day);
 
