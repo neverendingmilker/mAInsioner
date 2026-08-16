@@ -1,0 +1,65 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Anime Night</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/animenight/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Sessioni (<%= sessions.length %>)</h2>
+      <% if (sessions.length === 0) { %>
+        <p class="hint">Nessuna sessione registrata.</p>
+      <% } else { %>
+        <% sessions.forEach((s) => { %>
+          <div class="config-card">
+            <div class="config-card-header">
+              <span class="config-name">Mystery Anime Night <%= s.number %></span>
+              <span class="config-meta"><%= s.date %> — <%= s.titles.length %> anime</span>
+              <form method="POST" action="/animenight/remove" onsubmit="return confirm('Rimuovere l\'intera sessione (tutti gli anime di questa data)?');">
+                <input type="hidden" name="sessionDate" value="<%= s.date %>" />
+                <button type="submit" class="btn-danger-sm">Rimuovi</button>
+              </form>
+            </div>
+            <p class="hint"><%= s.titles.join(', ') %></p>
+            <details class="config-edit">
+              <summary>Modifica</summary>
+              <form method="POST" action="/animenight/edit" class="form">
+                <input type="hidden" name="sessionDate" value="<%= s.date %>" />
+                <label>
+                  Titoli (separati da virgola o /)
+                  <textarea name="titles" rows="2" required><%= s.titles.join(', ') %></textarea>
+                </label>
+                <label>
+                  Data
+                  <input type="date" name="date" value="<%= s.date %>" required />
+                </label>
+                <button type="submit" class="btn-primary-sm">Salva</button>
+              </form>
+            </details>
+          </div>
+        <% }) %>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Aggiungi anime</h2>
+      <form method="POST" action="/animenight/add" class="form">
+        <label>
+          Titoli (separati da virgola o /, es. "Naruto, One Piece")
+          <textarea name="titles" rows="2" required placeholder="Naruto, One Piece"></textarea>
+        </label>
+        <label>
+          Data (vuoto = oggi)
+          <input type="date" name="date" />
+        </label>
+        <button type="submit" class="btn-primary">Aggiungi</button>
+      </form>
+      <p class="hint">Se la data coincide con una sessione già esistente, i titoli si aggiungono a quella invece di crearne una nuova.</p>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>

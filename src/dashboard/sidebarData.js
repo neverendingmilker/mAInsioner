@@ -4,6 +4,8 @@ const { FEATURES } = require('../commands/disablefeature');
 // here the same day a page ships, nothing else needs to change. Every other feature from
 // FEATURES just shows up in the sidebar as "coming soon" automatically.
 const FEATURE_PAGES = {
+  animenight: '/animenight',
+  autoresponder: '/autoresponder',
   birthday: '/birthday',
   comboroles: '/comboroles',
   honeypot: '/honeypot',
