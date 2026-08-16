@@ -6,6 +6,8 @@ const { FEATURES } = require('../commands/disablefeature');
 const FEATURE_PAGES = {
   birthday: '/birthday',
   honeypot: '/honeypot',
+  reactionlimit: '/reactionlimit',
+  slowmode: '/slowmode',
 };
 
 // FEATURES is already alphabetical by key at the source — reused as-is so the sidebar can

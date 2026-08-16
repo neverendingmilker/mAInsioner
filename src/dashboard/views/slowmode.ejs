@@ -1,0 +1,69 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Slowmode</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/slowmode/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Canali con limite (<%= channels.length %>)</h2>
+      <% if (channels.length === 0) { %>
+        <p class="hint">Nessun canale configurato.</p>
+      <% } else { %>
+        <% channels.forEach((c) => { %>
+          <div class="config-card">
+            <div class="config-card-header">
+              <span class="config-name"><%= c.channelName %></span>
+              <span class="config-meta">un messaggio ogni <%= c.cooldownLabel %></span>
+              <form method="POST" action="/slowmode/remove" onsubmit="return confirm('Rimuovere il limite da questo canale?');">
+                <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                <button type="submit" class="btn-danger-sm">Rimuovi</button>
+              </form>
+            </div>
+            <details class="config-edit">
+              <summary>Modifica</summary>
+              <form method="POST" action="/slowmode/add" class="form">
+                <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                <label>
+                  Ogni quanto si può postare (es. 30s, 10m, 24h, 3d — minimo 1m)
+                  <input type="text" name="duration" value="<%= c.cooldownSeconds %>s" required />
+                </label>
+                <button type="submit" class="btn-primary-sm">Salva</button>
+              </form>
+            </details>
+          </div>
+        <% }) %>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Aggiungi limite</h2>
+      <% if (textChannels.length === 0) { %>
+        <p class="hint">Nessun canale testuale disponibile.</p>
+      <% } else { %>
+        <form method="POST" action="/slowmode/add" class="form">
+          <label>
+            Canale
+            <select name="channelId" required>
+              <option value="" disabled selected>Scegli un canale…</option>
+              <% textChannels.forEach((ch) => { %>
+                <option value="<%= ch.id %>"><%= ch.name %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>
+            Ogni quanto si può postare (es. 30s, 10m, 24h, 3d — minimo 1m)
+            <input type="text" name="duration" placeholder="es. 12h" required />
+          </label>
+          <button type="submit" class="btn-primary">Aggiungi limite</button>
+        </form>
+        <p class="hint">Per limitare thread singoli invece di un intero canale, usa <code>/slowmode add</code> su Discord.</p>
+      <% } %>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>

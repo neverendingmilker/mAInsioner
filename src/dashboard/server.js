@@ -8,6 +8,8 @@ const authRoutes = require('./routes/auth');
 const overviewRoutes = require('./routes/overview');
 const honeypotRoutes = require('./routes/honeypot');
 const birthdayRoutes = require('./routes/birthday');
+const slowmodeRoutes = require('./routes/slowmode');
+const reactionlimitRoutes = require('./routes/reactionlimit');
 
 // Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator in
 // at least one server the bot is in — which one they're managing is then picked via
@@ -71,7 +73,7 @@ function start(client) {
   });
 
   app.use(authRoutes);
-  app.use(requireAdmin, overviewRoutes, honeypotRoutes, birthdayRoutes);
+  app.use(requireAdmin, overviewRoutes, honeypotRoutes, birthdayRoutes, slowmodeRoutes, reactionlimitRoutes);
 
   app.use((req, res) => {
     res.status(404).render('error', { title: 'Pagina non trovata', message: 'Questa pagina non esiste.' });

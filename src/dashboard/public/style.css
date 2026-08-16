@@ -361,6 +361,16 @@ a {
   color: var(--text-dim);
 }
 
+.form label.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.form label.checkbox-label input {
+  width: auto;
+}
+
 .form input,
 .form textarea,
 .form select {
@@ -618,4 +628,58 @@ a {
 
 .birthday-remove-form {
   margin-top: 10px;
+}
+
+/* --- Generic per-channel config card (Slowmode, Reaction Limit, list + inline edit) ---
+   Same look as .trap-card/.birthday-card above; introduced as a shared class so future
+   simple list-based feature pages don't need their own copy. */
+
+.config-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.config-card:last-child {
+  margin-bottom: 0;
+}
+
+.config-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.config-card-header form {
+  margin: 0 0 0 auto;
+}
+
+.config-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.config-meta {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.config-edit {
+  margin-top: 10px;
+}
+
+.config-edit summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.config-edit summary:hover {
+  color: var(--text);
+}
+
+.config-edit .form {
+  margin-top: 10px;
+  max-width: 420px;
 }
