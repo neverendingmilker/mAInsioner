@@ -235,3 +235,9 @@ Formal warnings escalate a user through two configured roles; verbals are logged
 - **`/warning edit`** `Mod` — Edits a warning/verbal you issued yourself.
 - **`/warning update`** `Admin` — Refreshes the posted warnings-list embed with current formatting/content.
 - **`/warning disable`** `Admin` — Shared toggle with `/verbal`.
+
+## 🖥️ Web Dashboard
+
+A web dashboard runs alongside the bot (same process, same URL Render gives it). Log in with Discord — access is granted to whoever has the **Administrator** permission on the server, no separate password or account.
+
+Right now it's just the login and the shell: a sidebar listing every feature, and an overview page with a few basic numbers (member count, how many features are enabled, total Honeypot kicks, bot uptime). Per-feature settings pages aren't there yet — that's next.

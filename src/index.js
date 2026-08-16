@@ -2,7 +2,7 @@ const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const config = require('./config/config');
 const { loadCommands } = require('./utils/loadCommands');
 const { loadEvents } = require('./utils/loadEvents');
-const health = require('./health');
+const dashboard = require('./dashboard/server');
 
 if (!config.token || !config.clientId) {
   console.error('❌ DISCORD_TOKEN and CLIENT_ID must be set in the .env file');
@@ -29,6 +29,6 @@ loadEvents(client);
 
 client.login(config.token);
 
-// No dashboard: just a small status page, to satisfy Render's requirement
-// (hosting configured as a "Web Service") of having an open HTTP port.
-health.start(client);
+// Also satisfies Render's requirement (hosting configured as a "Web Service") of having
+// an open HTTP port — see dashboard/server.js's /healthz for the status-check endpoint.
+dashboard.start(client);

@@ -1,0 +1,29 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <h1>Overview</h1>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">Membri</div>
+        <div class="card-value"><%= guild.memberCount %></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Feature attive</div>
+        <div class="card-value"><%= enabledCount %> / <%= totalFeatures %></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Honeypot: kick totali</div>
+        <div class="card-value"><%= honeypotTotal %></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Uptime bot</div>
+        <div class="card-value"><%= uptime %></div>
+      </div>
+    </div>
+
+    <p class="hint">Le pagine di configurazione per singola feature arriveranno nelle prossime versioni.</p>
+  </main>
+</div>
+<%- include('partials/footer') %>

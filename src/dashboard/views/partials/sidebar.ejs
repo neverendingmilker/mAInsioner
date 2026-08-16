@@ -1,0 +1,24 @@
+<aside class="sidebar">
+  <div class="brand">mAInsioner</div>
+
+  <% if (typeof guild !== 'undefined' && guild) { %>
+  <div class="guild-card">
+    <% if (guild.iconURL) { %><img src="<%= guild.iconURL %>" alt="" class="guild-icon" /><% } %>
+    <span class="guild-name"><%= guild.name %></span>
+  </div>
+  <% } %>
+
+  <nav class="nav">
+    <a class="nav-link active" href="/">Overview</a>
+    <div class="nav-section">Feature</div>
+    <% features.forEach((f) => { %>
+      <div class="nav-link disabled" title="Presto disponibile"><%= f.label %></div>
+    <% }) %>
+  </nav>
+
+  <div class="sidebar-footer">
+    <% if (user.avatarURL) { %><img src="<%= user.avatarURL %>" alt="" class="user-avatar" /><% } %>
+    <span class="user-name"><%= user.username %></span>
+    <a class="logout" href="/logout">Esci</a>
+  </div>
+</aside>

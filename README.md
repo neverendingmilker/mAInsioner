@@ -35,11 +35,19 @@ Right-click (Apps menu) commands: **Sticky: Add/Edit/Remove**, **Suggestion: App
 3. Generate an invite link (OAuth2 → URL Generator), scopes `bot` + `applications.commands`, permissions at least `Manage Roles`, `Kick Members`, `Send Messages`, `Use Application Commands`. Invite the bot.
    - ⚠️ The bot's role must be **higher** than any role it needs to assign/remove (birthday role, verify roles, booster-linked roles, etc.).
 4. **Create a database on Turso** (https://turso.tech): create an account + database, copy the **Database URL** (`libsql://...`) and an **Auth Token**.
-5. Copy `.env.example` to `.env`, fill in `DISCORD_TOKEN`, `CLIENT_ID`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` (optionally `GUILD_ID` for instant per-guild command registration while testing).
+5. Copy `.env.example` to `.env`, fill in `DISCORD_TOKEN`, `CLIENT_ID`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `DISCORD_CLIENT_SECRET`, `SESSION_SECRET` (see [Web Dashboard](#web-dashboard) — required, the process won't start without them), and `GUILD_ID` (which server the dashboard manages — optional if the bot is only in one server, required otherwise; also gives instant per-guild command registration while testing).
 6. `npm install`
-7. `npm start` — registers slash commands, then connects to Discord.
+7. `npm start` — registers slash commands, then connects to Discord and starts the dashboard.
 
 Every feature can be turned on/off with `/disablefeature feature:<pick one> enabled:true|false` (Admin only), or that feature's own `disable` subcommand — same flag either way. `/verbal` shares its toggle with `/warning`.
+
+## Web Dashboard
+
+Server-rendered (Express + EJS) web dashboard, running in the **same process and port** as the bot — it's what now satisfies Render's "Web Service needs an open HTTP port" requirement (previously a bare status page). Login is Discord OAuth2, gated to whoever has the **Administrator** permission in the configured server; no separate account system.
+
+- **Setup**: Discord Developer Portal → your app → OAuth2 → add a redirect `https://<your-render-url>/auth/discord/callback`, copy the **Client Secret** into `DISCORD_CLIENT_SECRET`. Set `SESSION_SECRET` to any long random string (signs the session cookie). If the bot is in more than one server (e.g. a test server for Server Backup), set `GUILD_ID` to the one the dashboard should manage.
+- **Health check / keep-alive ping**: point Render's health check path (and any external uptime ping, e.g. cron-job.org) at `/healthz`, not `/` — the root path now requires login.
+- **v1 scope**: login + shell only — sidebar listing every feature (from the same registry `/disablefeature` uses, so it can't drift), and an overview page with basic stats (member count, features enabled/total, Honeypot kick total, bot uptime). Per-feature configuration pages aren't built yet.
 
 ## Available commands
 

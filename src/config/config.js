@@ -11,4 +11,12 @@ module.exports = {
     url: process.env.TURSO_DATABASE_URL,
     authToken: process.env.TURSO_AUTH_TOKEN,
   },
+
+  dashboard: {
+    // OAuth2 client secret from the Discord Developer Portal (Bot & OAuth2 share the
+    // same client, so clientId above is reused as the OAuth2 client_id).
+    clientSecret: process.env.DISCORD_CLIENT_SECRET,
+    // Signs the dashboard's session cookie — any long random string, generated once.
+    sessionSecret: process.env.SESSION_SECRET,
+  },
 };
