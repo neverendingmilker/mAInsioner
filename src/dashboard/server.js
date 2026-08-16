@@ -5,6 +5,7 @@ const config = require('../config/config');
 const { requireAdmin } = require('./middleware/requireAdmin');
 const authRoutes = require('./routes/auth');
 const overviewRoutes = require('./routes/overview');
+const honeypotRoutes = require('./routes/honeypot');
 
 // Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator in
 // the configured guild (see guild.js + middleware/requireAdmin.js). Runs in the same
@@ -43,14 +44,24 @@ function start(client) {
     })
   );
 
+  // Needed to read <form> POST bodies (feature pages submit plain HTML forms, no JS
+  // fetch/JSON) — extended:false keeps it to the built-in querystring parser, plenty for
+  // the flat key/value forms every page uses so far.
+  app.use(express.urlencoded({ extended: false }));
+
   app.use((req, res, next) => {
     req.client = client;
     res.locals.user = req.session.user || null;
+    // One-shot success/error banner for the page a POST redirects back to (e.g. "Trappola
+    // creata."). Cheap alternative to a flash-message library: stash it on the session
+    // right before redirecting, read-and-clear it here on the very next request.
+    res.locals.flash = req.session.flash || null;
+    delete req.session.flash;
     next();
   });
 
   app.use(authRoutes);
-  app.use(requireAdmin, overviewRoutes);
+  app.use(requireAdmin, overviewRoutes, honeypotRoutes);
 
   app.use((req, res) => {
     res.status(404).render('error', { title: 'Pagina non trovata', message: 'Questa pagina non esiste.' });

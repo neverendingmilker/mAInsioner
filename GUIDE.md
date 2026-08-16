@@ -240,4 +240,6 @@ Formal warnings escalate a user through two configured roles; verbals are logged
 
 A web dashboard runs alongside the bot (same process, same URL Render gives it). Log in with Discord — access is granted to whoever has the **Administrator** permission on the server, no separate password or account.
 
-Right now it's just the login and the shell: a sidebar listing every feature, and an overview page with a few basic numbers (member count, how many features are enabled, total Honeypot kicks, bot uptime). Per-feature settings pages aren't there yet — that's next.
+There's a sidebar listing every feature, and an overview page with a few basic numbers (member count, how many features are enabled, total Honeypot kicks, bot uptime). Per-feature settings pages are being added one at a time — the ones that exist so far show as normal sidebar links, the rest are greyed out ("coming soon").
+
+- **Honeypot** — turn it on/off, see and manage every trap channel (add a new one with an optional custom message/button label/bait emoji, or remove an existing one), and the full kick log with totals.

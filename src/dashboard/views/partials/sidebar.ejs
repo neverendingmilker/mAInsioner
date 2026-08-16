@@ -9,10 +9,14 @@
   <% } %>
 
   <nav class="nav">
-    <a class="nav-link active" href="/">Overview</a>
+    <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'overview' ? 'active' : '' %>" href="/">Overview</a>
     <div class="nav-section">Feature</div>
     <% features.forEach((f) => { %>
-      <div class="nav-link disabled" title="Presto disponibile"><%= f.label %></div>
+      <% if (f.href) { %>
+        <a class="nav-link <%= f.active ? 'active' : '' %>" href="<%= f.href %>"><%= f.label %></a>
+      <% } else { %>
+        <div class="nav-link disabled" title="Presto disponibile"><%= f.label %></div>
+      <% } %>
     <% }) %>
   </nav>
 

@@ -1,0 +1,100 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Honeypot</h1>
+      <form method="POST" action="/honeypot/toggle">
+        <input type="hidden" name="enabled" value="<%= enabled ? 'false' : 'true' %>" />
+        <button type="submit" class="badge-toggle <%= enabled ? 'on' : 'off' %>">
+          <%= enabled ? '● Attivo' : '○ Disattivo' %>
+        </button>
+      </form>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Canali trappola (<%= channels.length %>)</h2>
+      <% if (channels.length === 0) { %>
+        <p class="hint">Nessun canale configurato.</p>
+      <% } else { %>
+        <table class="table">
+          <thead>
+            <tr><th>Canale</th><th>Emoji bait</th><th></th></tr>
+          </thead>
+          <tbody>
+            <% channels.forEach((c) => { %>
+              <tr>
+                <td><%= c.channelName %></td>
+                <td><%= c.emoji || '—' %></td>
+                <td>
+                  <form method="POST" action="/honeypot/remove" onsubmit="return confirm('Rimuovere la trappola da questo canale?');">
+                    <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                    <button type="submit" class="btn-danger-sm">Rimuovi</button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Aggiungi trappola</h2>
+      <% if (textChannels.length === 0) { %>
+        <p class="hint">Nessun canale testuale disponibile.</p>
+      <% } else { %>
+        <form method="POST" action="/honeypot/add" class="form">
+          <label>
+            Canale
+            <select name="channelId" required>
+              <option value="" disabled selected>Scegli un canale…</option>
+              <% textChannels.forEach((ch) => { %>
+                <option value="<%= ch.id %>"><%= ch.name %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>
+            Messaggio esca (opzionale)
+            <textarea name="message" rows="2" placeholder="<%= defaultMessage %>"></textarea>
+          </label>
+          <label>
+            Etichetta bottone (opzionale)
+            <input type="text" name="buttonLabel" placeholder="<%= defaultButtonLabel %>" />
+          </label>
+          <label>
+            Emoji reazione (opzionale)
+            <input type="text" name="emoji" placeholder="es. 🎯" />
+          </label>
+          <button type="submit" class="btn-primary">Crea trappola</button>
+        </form>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Log kick — <%= kickTotal %> totali</h2>
+      <% if (recentKicks.length === 0) { %>
+        <p class="hint">Nessun kick registrato.</p>
+      <% } else { %>
+        <table class="table">
+          <thead>
+            <tr><th>Utente</th><th>Canale</th><th>Trigger</th><th>Quando</th></tr>
+          </thead>
+          <tbody>
+            <% recentKicks.forEach((k) => { %>
+              <tr>
+                <td><%= k.userTag %></td>
+                <td><%= k.channelName %></td>
+                <td><%= k.trigger %></td>
+                <td><%= k.when %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>

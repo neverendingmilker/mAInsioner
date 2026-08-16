@@ -207,3 +207,150 @@ a {
   font-weight: 600;
   font-size: 14px;
 }
+
+/* --- Shared components for feature pages (honeypot.ejs and, going forward, every
+   other per-feature page) --- */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.page-header h1 {
+  margin: 0;
+}
+
+.page-header form {
+  margin: 0;
+}
+
+.badge-toggle {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--panel-alt);
+  color: var(--text-dim);
+}
+
+.badge-toggle.on {
+  background: rgba(59, 165, 92, 0.15);
+  border-color: #3ba55c;
+  color: #3ba55c;
+}
+
+.badge-toggle.off {
+  background: rgba(237, 66, 69, 0.12);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.flash {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.flash-success {
+  background: rgba(59, 165, 92, 0.15);
+  border: 1px solid #3ba55c;
+  color: #7ee2a0;
+}
+
+.flash-error {
+  background: rgba(237, 66, 69, 0.12);
+  border: 1px solid var(--danger);
+  color: #ff9a9c;
+}
+
+.panel {
+  margin-top: 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 24px;
+}
+
+.panel h2 {
+  margin-top: 0;
+  font-size: 15px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.table th {
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 480px;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.form input,
+.form textarea,
+.form select {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.btn-primary {
+  align-self: flex-start;
+  padding: 9px 16px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-danger-sm {
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-danger-sm:hover {
+  background: rgba(237, 66, 69, 0.12);
+}

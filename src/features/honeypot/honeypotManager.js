@@ -194,4 +194,6 @@ module.exports = {
   handleReactionAdd,
   handleButtonClick,
   BUTTON_CUSTOM_ID,
+  DEFAULT_MESSAGE,
+  DEFAULT_BUTTON_LABEL,
 };

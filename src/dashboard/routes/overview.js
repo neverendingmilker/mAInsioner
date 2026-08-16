@@ -1,6 +1,7 @@
 const express = require('express');
 const { resolveDashboardGuild } = require('../guild');
 const { FEATURES } = require('../../commands/disablefeature');
+const { getSidebarFeatures } = require('../sidebarData');
 const honeypotManager = require('../../features/honeypot/honeypotManager');
 const { formatSeconds } = require('../../utils/duration');
 
@@ -28,8 +29,9 @@ router.get('/', async (req, res, next) => {
 
     res.render('overview', {
       title: 'Overview',
+      activePage: 'overview',
       guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }), memberCount: guild.memberCount },
-      features: featureEntries.map(([key, f]) => ({ key, label: f.label })),
+      features: getSidebarFeatures(null),
       enabledCount,
       totalFeatures: featureEntries.length,
       honeypotTotal,
