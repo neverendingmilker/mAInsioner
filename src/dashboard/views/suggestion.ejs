@@ -1,0 +1,65 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Suggestions</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/suggestion/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Canale suggerimenti</h2>
+      <form method="POST" action="/suggestion/channel" class="form">
+        <label>
+          Canale (vuoto = rimuovi configurazione)
+          <select name="channelId">
+            <option value="">— nessuno —</option>
+            <% textChannels.forEach((ch) => { %>
+              <option value="<%= ch.id %>" <%= ch.id === channelId ? 'selected' : '' %>><%= ch.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <button type="submit" class="btn-primary-sm">Salva</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>In attesa (<%= suggestions.length %>)</h2>
+      <% if (suggestions.length === 0) { %>
+        <p class="hint">Nessun suggerimento in attesa.</p>
+      <% } else { %>
+        <% suggestions.forEach((s) => { %>
+          <div class="config-card">
+            <div class="config-card-header">
+              <span class="config-name">#<%= s.number %> — <%= s.authorLabel %></span>
+              <span class="config-meta"><%= s.createdAtLabel %></span>
+              <form method="POST" action="/suggestion/<%= s.number %>/approve">
+                <button type="submit" class="btn-primary-sm">Approva</button>
+              </form>
+              <form method="POST" action="/suggestion/<%= s.number %>/reject">
+                <button type="submit" class="btn-secondary-sm">Rifiuta</button>
+              </form>
+              <form method="POST" action="/suggestion/<%= s.number %>/remove" onsubmit="return confirm('Rimuovere questo suggerimento? Verrà cancellato anche il messaggio su Discord.');">
+                <button type="submit" class="btn-danger-sm">Rimuovi</button>
+              </form>
+            </div>
+            <p class="hint"><%= s.content %></p>
+            <details class="config-edit">
+              <summary>Modifica</summary>
+              <form method="POST" action="/suggestion/<%= s.number %>/edit" class="form">
+                <label>
+                  Testo
+                  <textarea name="content" rows="3" maxlength="<%= maxContentLength %>" required><%= s.content %></textarea>
+                </label>
+                <button type="submit" class="btn-primary-sm">Salva</button>
+              </form>
+            </details>
+          </div>
+        <% }) %>
+      <% } %>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>

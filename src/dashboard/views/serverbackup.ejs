@@ -1,0 +1,57 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Server Backup</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/serverbackup/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Backup di questo server (<%= snapshots.length %>)</h2>
+      <p class="hint">Un backup può essere ripristinato più volte senza rischi: non cancella né sovrascrive nulla di già esistente, crea solo quello che manca (abbinato per nome).</p>
+      <% if (snapshots.length === 0) { %>
+        <p class="hint">Nessun backup ancora creato.</p>
+      <% } else { %>
+        <% snapshots.forEach((s) => { %>
+          <div class="config-card">
+            <div class="config-card-header">
+              <span class="config-name">#<%= s.id %> — <%= s.label %></span>
+              <span class="config-meta">
+                creato da <%= s.createdByLabel %> il <%= s.createdAtLabel %> —
+                <%= s.assetCounts.emoji %> emoji, <%= s.assetCounts.sticker %> sticker, <%= s.assetCounts.soundboard %> suoni
+              </span>
+              <form method="POST" action="/serverbackup/<%= s.id %>/sync" onsubmit="return confirm('Riassegnare (solo in aggiunta) i ruoli salvati a chi è già nel server?');">
+                <button type="submit" class="btn-secondary-sm">Sincronizza ruoli</button>
+              </form>
+              <a href="/serverbackup/<%= s.id %>/restore" class="btn-primary-sm" style="text-decoration:none; display:inline-block;">Ripristina…</a>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Crea nuovo backup</h2>
+      <form method="POST" action="/serverbackup/create" class="form">
+        <label>
+          Etichetta (opzionale)
+          <input type="text" name="label" maxlength="100" placeholder="es. prima della ristrutturazione" />
+        </label>
+        <label>
+          Cosa includere
+          <select name="scope" required>
+            <% scopes.forEach((s) => { %>
+              <option value="<%= s %>" <%= s === 'all' ? 'selected' : '' %>><%= s %></option>
+            <% }) %>
+          </select>
+        </label>
+        <button type="submit" class="btn-primary">Crea backup</button>
+      </form>
+      <p class="hint">"all" = tutto (ruoli, canali, ruoli membri, emoji/sticker/soundboard). Con "assets" può richiedere un po' di tempo se il server ne ha molti — scarica ogni file uno alla volta.</p>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>

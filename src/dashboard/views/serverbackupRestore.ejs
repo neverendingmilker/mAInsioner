@@ -1,0 +1,39 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Ripristina backup #<%= snapshotId %></h1>
+    </div>
+
+    <section class="panel">
+      <h2><%= preview.label || '(senza etichetta)' %></h2>
+      <p class="hint">Originario di: <strong><%= preview.sourceGuildName %></strong></p>
+
+      <% if (preview.missingBots.length > 0) { %>
+        <p class="hint">⚠️ Questi ruoli gestiti da bot/integrazioni non sono ancora presenti in questo server — gli eventuali permessi canale che li riguardano verranno ignorati finché non li inviti di nuovo:</p>
+        <ul>
+          <% preview.missingBots.forEach((name) => { %>
+            <li><%= name %></li>
+          <% }) %>
+        </ul>
+      <% } %>
+
+      <p class="hint">Il ripristino non cancella né sovrascrive nulla — crea solo ciò che manca, abbinato per nome. Sicuro da rilanciare più volte.</p>
+
+      <form method="POST" action="/serverbackup/<%= snapshotId %>/restore" class="form" onsubmit="return confirm('Confermi il ripristino? Verranno creati ruoli/canali/asset reali su questo server.');">
+        <label>
+          Cosa ripristinare
+          <select name="scope" required>
+            <% scopes.forEach((s) => { %>
+              <option value="<%= s %>" <%= s === selectedScope ? 'selected' : '' %>><%= s %></option>
+            <% }) %>
+          </select>
+        </label>
+        <button type="submit" class="btn-primary">Conferma ripristino</button>
+      </form>
+      <p class="hint"><a href="/serverbackup">← Annulla, torna alla lista</a></p>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>

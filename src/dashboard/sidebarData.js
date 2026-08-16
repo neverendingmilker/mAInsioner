@@ -12,10 +12,14 @@ const FEATURE_PAGES = {
   goosepizza: '/goosepizza',
   honeypot: '/honeypot',
   incident: '/incident',
+  invitetracker: '/invitetracker',
   reactionlimit: '/reactionlimit',
   rolelink: '/rolelink',
+  serverbackup: '/serverbackup',
   slowmode: '/slowmode',
   sticky: '/sticky',
+  suggestion: '/suggestion',
+  warning: '/warning',
 };
 
 // FEATURES is already alphabetical by key at the source — reused as-is so the sidebar can

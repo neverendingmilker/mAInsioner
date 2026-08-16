@@ -47,6 +47,17 @@ async function setEnabled(guildId, enabled) {
   await repo.setEnabled(guildId, enabled);
 }
 
+// Thin passthroughs — added for the dashboard, which needs the raw config/full list
+// that no existing manager function exposed (the slash commands only ever read these
+// indirectly, through warnUser/giveVerbal/refreshEmbed).
+async function getConfig(guildId) {
+  return repo.getConfig(guildId);
+}
+
+async function getAllWarnings(guildId) {
+  return repo.getAllWarnings(guildId);
+}
+
 function assertCanAssignRole(guild, role) {
   const botMember = guild.members.me;
   if (!botMember || botMember.roles.highest.position <= role.position) {
@@ -322,6 +333,8 @@ module.exports = {
   ValidationError,
   isEnabled,
   setEnabled,
+  getConfig,
+  getAllWarnings,
   setRoles,
   setChannel,
   warnUser,

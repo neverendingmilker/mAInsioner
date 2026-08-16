@@ -1,0 +1,100 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Invite Tracker</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/invitetracker/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Canale predefinito</h2>
+      <p class="hint">Dove si aprono i nuovi inviti creati da qui (assegnare un codice già esistente non lo usa).</p>
+      <form method="POST" action="/invitetracker/channel" class="form">
+        <label>
+          Canale
+          <select name="channelId" required>
+            <option value="" disabled <%= !defaultChannelId ? 'selected' : '' %>>Scegli un canale…</option>
+            <% textChannels.forEach((ch) => { %>
+              <option value="<%= ch.id %>" <%= ch.id === defaultChannelId ? 'selected' : '' %>><%= ch.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <button type="submit" class="btn-primary-sm">Salva</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Classifica (top 10)</h2>
+      <% if (leaderboard.length === 0) { %>
+        <p class="hint">Nessun invito tracciato ancora.</p>
+      <% } else { %>
+        <table class="table">
+          <thead><tr><th>Utente</th><th>Attualmente nel server</th><th>Totale</th></tr></thead>
+          <tbody>
+            <% leaderboard.forEach((r) => { %>
+              <tr><td><%= r.label %></td><td><%= r.current %></td><td><%= r.total %></td></tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Inviti assegnati (<%= assignedInvites.length %>)</h2>
+      <% if (assignedInvites.length === 0) { %>
+        <p class="hint">Nessun invito assegnato — oppure manca il permesso "Gestisci server" al bot.</p>
+      <% } else { %>
+        <% assignedInvites.forEach((a) => { %>
+          <div class="config-card">
+            <div class="config-card-header">
+              <span class="config-name"><%= a.code %><%= a.active ? '' : ' (non più attivo)' %></span>
+              <span class="config-meta">
+                <%= a.assignedLabel %> — <%= a.uses ?? 0 %>/<%= a.maxUses ?? '∞' %> utilizzi<%= a.expiresLabel ? `, scade ${a.expiresLabel}` : '' %>
+              </span>
+              <form method="POST" action="/invitetracker/revoke" onsubmit="return confirm('Revocare questo invito?');">
+                <input type="hidden" name="code" value="<%= a.code %>" />
+                <button type="submit" class="btn-danger-sm">Revoca</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Crea o assegna un invito</h2>
+      <% if (members.length === 0) { %>
+        <p class="hint">Nessun membro disponibile.</p>
+      <% } else { %>
+        <form method="POST" action="/invitetracker/create" class="form">
+          <label>
+            Utente da accreditare
+            <select name="userId" required>
+              <option value="" disabled selected>Scegli un membro…</option>
+              <% members.forEach((m) => { %>
+                <option value="<%= m.id %>"><%= m.label %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>
+            Codice invito già esistente (opzionale — lascia vuoto per crearne uno nuovo)
+            <input type="text" name="code" placeholder="es. abc123 oppure https://discord.gg/abc123" />
+          </label>
+          <label>
+            Utilizzi massimi (solo per un nuovo invito, vuoto = illimitati)
+            <input type="number" name="maxUses" min="1" />
+          </label>
+          <label>
+            Scade tra ore (solo per un nuovo invito, vuoto = mai, max 168)
+            <input type="number" name="expiresInHours" min="1" max="168" />
+          </label>
+          <button type="submit" class="btn-primary">Crea/assegna invito</button>
+        </form>
+      <% } %>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>
