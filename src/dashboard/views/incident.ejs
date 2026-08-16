@@ -1,0 +1,62 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Incident Counter</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/incident/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Stato attuale</h2>
+      <div class="cards">
+        <div class="card">
+          <div class="card-label">Giorni dall'ultimo incidente</div>
+          <div class="card-value"><%= count %></div>
+        </div>
+        <div class="card">
+          <div class="card-label">Canale cartello</div>
+          <div class="card-value" style="font-size: 16px;"><%= channelName || 'Non configurato' %></div>
+        </div>
+      </div>
+      <p class="hint">Il numero sale automaticamente di 1 ogni giorno (schedulazione già attiva) — usa "Azzera" appena succede un incidente.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Canale cartello</h2>
+      <% if (textChannels.length === 0) { %>
+        <p class="hint">Nessun canale testuale disponibile.</p>
+      <% } else { %>
+        <form method="POST" action="/incident/channel" class="form">
+          <label>
+            Canale dove pubblicare/aggiornare il cartello
+            <select name="channelId" required>
+              <option value="" disabled <%= !channelId ? 'selected' : '' %>>Scegli un canale…</option>
+              <% textChannels.forEach((ch) => { %>
+                <option value="<%= ch.id %>" <%= ch.id === channelId ? 'selected' : '' %>><%= ch.name %></option>
+              <% }) %>
+            </select>
+          </label>
+          <button type="submit" class="btn-primary-sm">Salva canale</button>
+        </form>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Modifica contatore</h2>
+      <form method="POST" action="/incident/set" class="form">
+        <label>
+          Nuovo valore
+          <input type="number" name="count" min="0" value="<%= count %>" required />
+        </label>
+        <button type="submit" class="btn-primary-sm">Imposta valore</button>
+      </form>
+      <form method="POST" action="/incident/reset" onsubmit="return confirm('Azzerare il contatore a 0?');" style="margin-top: 10px;">
+        <button type="submit" class="btn-danger-sm">Azzera a 0 (è appena successo un incidente)</button>
+      </form>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>

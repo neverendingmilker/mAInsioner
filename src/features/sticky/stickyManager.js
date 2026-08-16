@@ -118,7 +118,12 @@ async function repostSticky(channel, sticky) {
 // `delaySeconds` defaults to 30s; pass an explicit value to set/change it.
 async function setSticky(channel, content, createdBy, delaySeconds = DEFAULT_REPOST_DELAY_SECONDS) {
   const guildId = channel.guild.id;
-  const sticky = { guildId, channelId: channel.id, content, lastMessageId: null, repostDelaySeconds: delaySeconds };
+  // Carry over whatever message this channel's sticky is currently posted as (if any) —
+  // repostSticky only deletes the old message when lastMessageId is set. Always starting
+  // fresh here (lastMessageId: null) meant every add/edit left the previous sticky
+  // message behind and posted a duplicate underneath it instead of replacing it.
+  const previousMessageId = cache.get(channel.id)?.lastMessageId ?? null;
+  const sticky = { guildId, channelId: channel.id, content, lastMessageId: previousMessageId, repostDelaySeconds: delaySeconds };
 
   await db.execute({
     sql: `INSERT INTO sticky_messages (guild_id, channel_id, content, last_message_id, repost_delay_seconds, created_by, updated_at)

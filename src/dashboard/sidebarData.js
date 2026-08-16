@@ -5,10 +5,13 @@ const { FEATURES } = require('../commands/disablefeature');
 // FEATURES just shows up in the sidebar as "coming soon" automatically.
 const FEATURE_PAGES = {
   birthday: '/birthday',
+  comboroles: '/comboroles',
   honeypot: '/honeypot',
+  incident: '/incident',
   reactionlimit: '/reactionlimit',
   rolelink: '/rolelink',
   slowmode: '/slowmode',
+  sticky: '/sticky',
 };
 
 // FEATURES is already alphabetical by key at the source — reused as-is so the sidebar can

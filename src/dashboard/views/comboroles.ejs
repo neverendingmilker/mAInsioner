@@ -1,0 +1,67 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Combined Role Search</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/comboroles/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Cerca membri</h2>
+      <p class="hint">Trova chi ha TUTTI i ruoli richiesti, escludendo chi ha anche uno dei ruoli "BUT". Lascia vuoti i campi che non ti servono.</p>
+      <form method="GET" action="/comboroles" class="form">
+        <% for (let i = 0; i < selectedRequired.length; i++) { %>
+          <label>
+            Ruolo richiesto <%= i + 1 %><%= i === 0 ? '' : ' (opzionale)' %>
+            <select name="role<%= i + 1 %>" <%= i === 0 ? 'required' : '' %>>
+              <option value="">— Nessuno —</option>
+              <% roles.forEach((r) => { %>
+                <option value="<%= r.id %>" <%= r.id === selectedRequired[i] ? 'selected' : '' %>><%= r.name %></option>
+              <% }) %>
+            </select>
+          </label>
+        <% } %>
+        <% for (let i = 0; i < selectedExcluded.length; i++) { %>
+          <label>
+            BUT: escludi chi ha anche… (opzionale)
+            <select name="but<%= i + 1 %>">
+              <option value="">— Nessuno —</option>
+              <% roles.forEach((r) => { %>
+                <option value="<%= r.id %>" <%= r.id === selectedExcluded[i] ? 'selected' : '' %>><%= r.name %></option>
+              <% }) %>
+            </select>
+          </label>
+        <% } %>
+        <button type="submit" class="btn-primary">Cerca</button>
+      </form>
+      <p class="hint">Per più di <%= selectedRequired.length %> ruoli richiesti o <%= selectedExcluded.length %> esclusioni, usa <code>/comboroles search</code> su Discord.</p>
+    </section>
+
+    <% if (results) { %>
+      <section class="panel">
+        <h2>Risultati (<%= results.total %>)</h2>
+        <% if (results.total === 0) { %>
+          <p class="hint">Nessun membro corrisponde ai criteri scelti.</p>
+        <% } else { %>
+          <table class="table">
+            <thead>
+              <tr><th>Utente</th></tr>
+            </thead>
+            <tbody>
+              <% results.shown.forEach((m) => { %>
+                <tr><td><%= m.tag %></td></tr>
+              <% }) %>
+            </tbody>
+          </table>
+          <% if (results.truncated) { %>
+            <p class="hint">Mostrati i primi <%= maxResultsShown %> su <%= results.total %> risultati.</p>
+          <% } %>
+        <% } %>
+      </section>
+    <% } %>
+  </main>
+</div>
+<%- include('partials/footer') %>
