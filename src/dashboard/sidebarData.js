@@ -19,6 +19,7 @@ const FEATURE_PAGES = {
   slowmode: '/slowmode',
   sticky: '/sticky',
   suggestion: '/suggestion',
+  waifuwarlr: '/waifuwarlr',
   warning: '/warning',
 };
 

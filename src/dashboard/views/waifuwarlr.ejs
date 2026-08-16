@@ -1,0 +1,95 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>WaifuWar LR</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/waifuwarlr/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Canali configurati (<%= channels.length %>)</h2>
+      <p class="hint">In ogni canale: posta un'immagine, poi un messaggio di soli numeri (max 9 cifre) per applicare le reazioni mappate qui sotto — il messaggio con i numeri viene poi cancellato.</p>
+      <% if (channels.length === 0) { %>
+        <p class="hint">Nessun canale configurato.</p>
+      <% } else { %>
+        <% channels.forEach((c) => { %>
+          <div class="config-card">
+            <div class="config-card-header">
+              <span class="config-name"><%= c.channelName %></span>
+              <span class="config-meta">
+                <% if (c.mappings.length === 0) { %>
+                  nessuna mappatura ancora
+                <% } else { %>
+                  <% c.mappings.forEach((m) => { %><%= m.digit %>→<%= m.emoji %> <% }) %>
+                <% } %>
+              </span>
+              <form method="POST" action="/waifuwarlr/remove" onsubmit="return confirm('Rimuovere questo canale (e tutte le sue mappature)?');">
+                <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                <button type="submit" class="btn-danger-sm">Rimuovi canale</button>
+              </form>
+            </div>
+            <% if (c.mappings.length > 0) { %>
+              <table class="table">
+                <thead><tr><th>Cifra</th><th>Emoji</th><th></th></tr></thead>
+                <tbody>
+                  <% c.mappings.forEach((m) => { %>
+                    <tr>
+                      <td><%= m.digit %></td>
+                      <td><%= m.emoji %></td>
+                      <td>
+                        <form method="POST" action="/waifuwarlr/removedigit" onsubmit="return confirm('Rimuovere la mappatura per la cifra <%= m.digit %>?');">
+                          <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                          <input type="hidden" name="digit" value="<%= m.digit %>" />
+                          <button type="submit" class="btn-danger-sm">Rimuovi</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            <% } %>
+            <details class="config-edit">
+              <summary>Aggiungi/modifica mappature</summary>
+              <form method="POST" action="/waifuwarlr/setdigit" class="form">
+                <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                <label>
+                  Cifre (separate da virgola, es. "7,8,9")
+                  <input type="text" name="digit" required placeholder="7,8,9" />
+                </label>
+                <label>
+                  Emoji corrispondenti, stesso ordine (es. "🟢,🟡,🔴")
+                  <input type="text" name="emoji" required placeholder="🟢,🟡,🔴" />
+                </label>
+                <button type="submit" class="btn-primary-sm">Salva</button>
+              </form>
+            </details>
+          </div>
+        <% }) %>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Aggiungi canale</h2>
+      <% if (textChannels.length === 0) { %>
+        <p class="hint">Nessun canale disponibile.</p>
+      <% } else { %>
+        <form method="POST" action="/waifuwarlr/add" class="form">
+          <label>
+            Canale
+            <select name="channelId" required>
+              <option value="" disabled selected>Scegli un canale…</option>
+              <% textChannels.forEach((ch) => { %>
+                <option value="<%= ch.id %>"><%= ch.name %></option>
+              <% }) %>
+            </select>
+          </label>
+          <button type="submit" class="btn-primary">Aggiungi canale</button>
+        </form>
+      <% } %>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>
