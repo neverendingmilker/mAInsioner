@@ -274,27 +274,23 @@ a {
   margin: 0;
 }
 
-.badge-toggle {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 6px 14px;
+.feature-toggle {
+  display: flex;
+  gap: 16px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  background: var(--panel-alt);
   color: var(--text-dim);
+  cursor: pointer;
 }
 
-.badge-toggle.on {
-  background: rgba(59, 165, 92, 0.15);
-  border-color: #3ba55c;
-  color: #3ba55c;
-}
-
-.badge-toggle.off {
-  background: rgba(237, 66, 69, 0.12);
-  border-color: var(--danger);
-  color: var(--danger);
+.radio-option input {
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .flash {
@@ -553,4 +549,73 @@ a {
   width: 20px;
   height: 20px;
   object-fit: contain;
+}
+
+/* --- Birthday's saved-birthday cards (list + inline edit) --- */
+
+.month-heading {
+  margin: 18px 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.month-heading:first-child {
+  margin-top: 0;
+}
+
+.birthday-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.birthday-card:last-child {
+  margin-bottom: 0;
+}
+
+.birthday-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.birthday-user {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.birthday-date,
+.birthday-countdown {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.birthday-countdown {
+  margin-left: auto;
+}
+
+.birthday-edit {
+  margin-top: 10px;
+}
+
+.birthday-edit summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.birthday-edit summary:hover {
+  color: var(--text);
+}
+
+.birthday-edit .form {
+  margin-top: 10px;
+  max-width: 420px;
+}
+
+.birthday-remove-form {
+  margin-top: 10px;
 }

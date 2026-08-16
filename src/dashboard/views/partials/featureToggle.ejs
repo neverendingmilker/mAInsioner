@@ -1,0 +1,13 @@
+<%# Shared on/off control for a feature page's header. Locals: `enabled` (bool),
+    `toggleAction` (the feature's own POST /<feature>/toggle route — already expects
+    `enabled` as the literal string "true"/"false", so the radios' values match as-is). %>
+<form method="POST" action="<%= toggleAction %>" class="feature-toggle">
+  <label class="radio-option">
+    <input type="radio" name="enabled" value="true" <%= enabled ? 'checked' : '' %> onchange="this.form.submit()" />
+    Attivo
+  </label>
+  <label class="radio-option">
+    <input type="radio" name="enabled" value="false" <%= !enabled ? 'checked' : '' %> onchange="this.form.submit()" />
+    Disattivo
+  </label>
+</form>

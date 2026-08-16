@@ -51,6 +51,11 @@ async function renderBirthdayPage(req, res, guild) {
     entries: g.entries.map((e) => ({
       userId: e.userId,
       userLabel: memberLabel(guild, e.userId),
+      // The edit form re-posts to /birthday/add, which (like /birthday add itself)
+      // only accepts a userId still in the member cache — hide it for someone who's
+      // left the server instead of offering a form that'll just error out; removing
+      // the entry still works regardless (see /birthday/remove).
+      memberPresent: guild.members.cache.has(e.userId),
       day: e.day,
       month: e.month,
       year: e.year,

@@ -55,7 +55,9 @@ Server-rendered (Express + EJS) web dashboard, running in the **same process and
 - **Shell**: sidebar listing every feature (from the same registry `/disablefeature` uses, so it can't drift), and an overview page with basic stats (member count, features enabled/total, Honeypot kick total, bot uptime) for whichever server is currently selected.
 - **Per-feature config pages**: features get their own dashboard page one at a time — see `src/dashboard/sidebarData.js`'s `FEATURE_PAGES` map for which ones have one so far. A feature without an entry there just shows in the sidebar as "coming soon".
   - **Honeypot** — toggle, trap channels list/add/remove, live-edit a trap's message/button/emoji (with a visual emoji picker: default set plus the server's own custom emoji), move a trap to a different channel, kick log.
-  - **Birthday** — toggle, configure the birthday role/removal timer/greeting channel (any combination, same merge behavior as `/birthday config`), list of all saved birthdays grouped by month with a days-until label, add/update a birthday for any member (a role-assignment/greeting catch-up runs immediately if today happens to be the date, same as the slash commands), remove one.
+  - **Birthday** — toggle, configure the birthday role/removal timer/greeting channel (any combination, same merge behavior as `/birthday config`), list of all saved birthdays grouped by month with a days-until label, add a birthday for any member (a role-assignment/greeting catch-up runs immediately if today happens to be the date, same as the slash commands). Each saved birthday has an "Edit" section instead of a bare remove button — change its date in place (re-runs that same catch-up if it's now today), or remove it from there; someone who's since left the server can only be removed, not edited.
+
+Every feature page's on/off control is a pair of radio buttons ("Attivo"/"Disattivo") in the top-right corner, submitting the instant you pick one — `src/dashboard/views/partials/featureToggle.ejs`, shared by every page so far.
 
 ## Available commands
 

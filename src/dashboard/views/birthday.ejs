@@ -4,12 +4,7 @@
   <main class="content">
     <div class="page-header">
       <h1>Birthday</h1>
-      <form method="POST" action="/birthday/toggle">
-        <input type="hidden" name="enabled" value="<%= enabled ? 'false' : 'true' %>" />
-        <button type="submit" class="badge-toggle <%= enabled ? 'on' : 'off' %>">
-          <%= enabled ? '● Attivo' : '○ Disattivo' %>
-        </button>
-      </form>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/birthday/toggle' }) %>
     </div>
 
     <%- include('partials/flash') %>
@@ -49,30 +44,45 @@
       <% if (monthGroups.length === 0) { %>
         <p class="hint">Nessun compleanno salvato.</p>
       <% } else { %>
-        <table class="table">
-          <thead>
-            <tr><th>Mese</th><th>Giorno</th><th>Anno</th><th>Utente</th><th>Prossimo</th><th></th></tr>
-          </thead>
-          <tbody>
-            <% monthGroups.forEach((g) => { %>
-              <% g.entries.forEach((e) => { %>
-                <tr>
-                  <td><%= g.monthLabel %></td>
-                  <td><%= e.day %></td>
-                  <td><%= e.year || '—' %></td>
-                  <td><%= e.userLabel %></td>
-                  <td><%= e.daysUntilLabel %></td>
-                  <td>
-                    <form method="POST" action="/birthday/remove" onsubmit="return confirm('Rimuovere questo compleanno?');">
-                      <input type="hidden" name="userId" value="<%= e.userId %>" />
-                      <button type="submit" class="btn-danger-sm">Rimuovi</button>
-                    </form>
-                  </td>
-                </tr>
-              <% }) %>
-            <% }) %>
-          </tbody>
-        </table>
+        <% monthGroups.forEach((g) => { %>
+          <h3 class="month-heading"><%= g.monthLabel %></h3>
+          <% g.entries.forEach((e) => { %>
+            <div class="birthday-card">
+              <div class="birthday-card-header">
+                <span class="birthday-user"><%= e.userLabel %></span>
+                <span class="birthday-date"><%= e.day %>/<%= e.month %><% if (e.year) { %>/<%= e.year %><% } %></span>
+                <span class="birthday-countdown"><%= e.daysUntilLabel %></span>
+              </div>
+              <details class="birthday-edit">
+                <summary>Modifica</summary>
+                <% if (e.memberPresent) { %>
+                  <form method="POST" action="/birthday/add" class="form">
+                    <input type="hidden" name="userId" value="<%= e.userId %>" />
+                    <label>
+                      Giorno
+                      <input type="number" name="day" min="1" max="31" value="<%= e.day %>" required />
+                    </label>
+                    <label>
+                      Mese
+                      <input type="number" name="month" min="1" max="12" value="<%= e.month %>" required />
+                    </label>
+                    <label>
+                      Anno (opzionale)
+                      <input type="number" name="year" min="1900" max="<%= new Date().getFullYear() %>" value="<%= e.year || '' %>" />
+                    </label>
+                    <button type="submit" class="btn-primary-sm">Salva</button>
+                  </form>
+                <% } else { %>
+                  <p class="hint">Questo utente non è più nel server — la data non è modificabile, ma puoi comunque rimuovere la voce.</p>
+                <% } %>
+                <form method="POST" action="/birthday/remove" class="birthday-remove-form" onsubmit="return confirm('Rimuovere questo compleanno?');">
+                  <input type="hidden" name="userId" value="<%= e.userId %>" />
+                  <button type="submit" class="btn-danger-sm">Rimuovi</button>
+                </form>
+              </details>
+            </div>
+          <% }) %>
+        <% }) %>
       <% } %>
     </section>
 
