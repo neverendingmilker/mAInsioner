@@ -422,6 +422,14 @@ async function createTables() {
       )`,
       `CREATE INDEX IF NOT EXISTS serverbackup_assets_snapshot_idx ON serverbackup_assets (snapshot_id)`,
 
+      // Bot-wide (not tied to one feature) per-server settings — currently just the
+      // configured Mod role (see src/utils/modRole.js and /modrole), but a home for any
+      // future setting that isn't specific to a single feature.
+      `CREATE TABLE IF NOT EXISTS bot_guild_config (
+        guild_id TEXT PRIMARY KEY,
+        mod_role_id TEXT
+      )`,
+
       // Dashboard login sessions — persisted here (instead of express-session's default
       // in-memory store) so admins stay logged in across a redeploy or a Render free-plan
       // sleep/wake cycle, not just across requests within one running process.

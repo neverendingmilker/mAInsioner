@@ -4,7 +4,7 @@ const { isMod } = require('../../../utils/modRole');
 async function handleRevoke(interaction) {
   const code = interaction.options.getString('code');
 
-  if (!isMod(interaction.member)) {
+  if (!(await isMod(interaction.member))) {
     const assignedUserId = await inviteTrackerManager.getAssignedUser(interaction.guildId, code);
     if (assignedUserId !== interaction.user.id) {
       await interaction.reply({ content: "❌ You can only revoke your own invite — ask a Mod/Admin for anyone else's.", ephemeral: true });

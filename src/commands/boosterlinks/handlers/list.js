@@ -7,7 +7,7 @@ const ITEMS_PER_PAGE = 15;
 const EMBED_COLOR = 0x5865f2;
 
 async function handleList(interaction) {
-  if (!isMod(interaction.member)) {
+  if (!(await isMod(interaction.member))) {
     await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
     return;
   }

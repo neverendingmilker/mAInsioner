@@ -9,12 +9,11 @@ const router = express.Router();
 
 router.get('/', async (req, res, next) => {
   try {
-    const guild = resolveDashboardGuild(req.client);
+    const guild = resolveDashboardGuild(req.client, req.session.guildId);
     if (!guild) {
       res.status(500).render('error', {
-        title: 'Server non configurato',
-        message:
-          'Il bot è in più server e non so quale gestire — imposta la variabile d\'ambiente GUILD_ID con l\'ID del server principale.',
+        title: 'Server non trovato',
+        message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
       });
       return;
     }

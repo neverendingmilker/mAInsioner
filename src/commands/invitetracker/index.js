@@ -118,7 +118,7 @@ async function autocomplete(interaction) {
   }
 
   const allAssigned = await inviteTrackerManager.getAllAssignedInvites(interaction.guildId);
-  const assigned = isMod(interaction.member) ? allAssigned : allAssigned.filter((a) => a.assignedUserId === interaction.user.id);
+  const assigned = (await isMod(interaction.member)) ? allAssigned : allAssigned.filter((a) => a.assignedUserId === interaction.user.id);
   const query = focused.value.toLowerCase();
 
   const choices = assigned

@@ -3,7 +3,7 @@ const { formatSeconds } = require('../../../utils/duration');
 const { isMod } = require('../../../utils/modRole');
 
 async function handleAdd(interaction) {
-  if (!isMod(interaction.member)) {
+  if (!(await isMod(interaction.member))) {
     await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
     return;
   }

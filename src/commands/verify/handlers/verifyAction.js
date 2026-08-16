@@ -16,7 +16,7 @@ async function handleVerifyType(interaction, type) {
 
   const config = await verifyManager.getGuildConfig(interaction.guildId);
 
-  if (!verifyManager.canUseVerifyCommands(interaction.member, config)) {
+  if (!(await verifyManager.canUseVerifyCommands(interaction.member, config))) {
     await interaction.reply({
       content:
         '❌ You need the "Manage Roles" permission, or the role configured via `/verify config allowedrole`, to use this command.',

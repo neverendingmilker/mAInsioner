@@ -103,8 +103,8 @@ function getRoleIdsForType(config, type) {
 // Who can run /verify sub, domme and maledom: anyone with Manage Roles (always
 // allowed), plus — if configured via /verify config allowedrole — anyone holding
 // that specific role.
-function canUseVerifyCommands(member, config) {
-  if (isMod(member)) return true;
+async function canUseVerifyCommands(member, config) {
+  if (await isMod(member)) return true;
   if (config.allowed_role_id && member.roles.cache.has(config.allowed_role_id)) return true;
   return false;
 }

@@ -54,7 +54,7 @@ async function handleAssignExisting(interaction, user, rawCode) {
 }
 
 async function handleCreate(interaction) {
-  if (!isMod(interaction.member)) {
+  if (!(await isMod(interaction.member))) {
     await interaction.reply({
       content: '❌ You need to be a Mod or Admin to create an invite for someone else — use `/invites create_self` for your own.',
       ephemeral: true,

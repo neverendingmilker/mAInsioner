@@ -165,7 +165,7 @@ async function editChannel(guild, currentChannelId, { targetChannel, messageText
 // `channelId`/`trigger` (one of 'message'/'reaction'/'button') are recorded to the kick
 // log on success — see getKickLog.
 async function kickIfNotMod(guild, member, channelId, trigger) {
-  if (isMod(member)) return false;
+  if (await isMod(member)) return false;
 
   try {
     await member.kick(KICK_REASON);

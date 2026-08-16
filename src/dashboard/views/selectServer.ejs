@@ -1,0 +1,20 @@
+<%- include('partials/head') %>
+<div class="login-page">
+  <div class="login-card login-card-wide">
+    <div class="brand">mAInsioner</div>
+    <p>Sei amministratore in più server dove il bot è presente — scegli quale gestire.</p>
+    <div class="server-list">
+      <% guilds.forEach((g) => { %>
+        <form method="POST" action="/select-server" class="server-list-item">
+          <input type="hidden" name="guildId" value="<%= g.id %>" />
+          <button type="submit" class="server-list-btn">
+            <% if (g.iconURL) { %><img src="<%= g.iconURL %>" alt="" class="guild-icon" /><% } %>
+            <span><%= g.name %></span>
+          </button>
+        </form>
+      <% }) %>
+    </div>
+    <a class="logout" href="/logout">Esci</a>
+  </div>
+</div>
+<%- include('partials/footer') %>

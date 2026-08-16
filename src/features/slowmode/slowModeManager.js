@@ -49,7 +49,7 @@ async function listLimits(guildId) {
 // A member is exempt from the limit if they can manage messages or are a full admin —
 // always exempt, no separate configurable list.
 // Moderators (the configured Mod role, or Administrator) are always exempt.
-function isExempt(member) {
+async function isExempt(member) {
   return isMod(member);
 }
 
@@ -63,7 +63,7 @@ async function checkAndEnforce(message) {
   const limit = await repo.getLimitForChannel(message.guild.id, message.channelId);
   if (!limit) return false;
 
-  if (isExempt(message.member)) return false;
+  if (await isExempt(message.member)) return false;
 
   const cooldownSeconds = Number(limit.cooldown_seconds);
   const now = message.createdTimestamp;

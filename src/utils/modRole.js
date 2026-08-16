@@ -1,20 +1,39 @@
 const { PermissionFlagsBits } = require('discord.js');
+const repo = require('./modRoleRepository');
 
-// This bot only ever runs for a single server, so the "Mod" tier is this one specific,
-// fixed role rather than a per-guild configurable setting — see the project
-// instructions. Every place in the bot that gates something behind "Mod" access checks
-// this role directly (not the Manage Messages/Moderate Members/Manage Roles permission
-// that role happens to carry), so it stays correct even if that role's own permissions
-// change later.
-const MOD_ROLE_ID = '1090658915810820156';
+// Which role counts as "Mod" is configurable per server (see /modrole) rather than a
+// single fixed ID, now that the bot can run on more than one server. Cached in memory
+// per guild so the hot paths that call isMod() (honeypot/reactionlimit/slowmode/verify
+// check it on every message/reaction) don't hit the DB every time — the cache is kept
+// in sync directly by setModRoleId whenever /modrole changes the value, so it never
+// goes stale across a redeploy-free session.
+const cache = new Map(); // guildId -> roleId | null
 
-// True if this member counts as a moderator for the bot's purposes: they hold the Mod
-// role directly, or they have Administrator (the owner, who outranks every tier).
-// Accepts a GuildMember (or anything with the same .permissions/.roles.cache shape).
-function isMod(member) {
-  if (!member) return false;
-  if (member.permissions?.has?.(PermissionFlagsBits.Administrator)) return true;
-  return member.roles?.cache?.has?.(MOD_ROLE_ID) ?? false;
+async function getModRoleId(guildId) {
+  if (cache.has(guildId)) return cache.get(guildId);
+  const roleId = await repo.getModRoleId(guildId);
+  cache.set(guildId, roleId);
+  return roleId;
 }
 
-module.exports = { MOD_ROLE_ID, isMod };
+async function setModRoleId(guildId, roleId) {
+  await repo.setModRoleId(guildId, roleId);
+  cache.set(guildId, roleId);
+}
+
+// True if this member counts as a moderator for the bot's purposes: they hold this
+// server's configured Mod role, or they have Administrator (the owner, who outranks
+// every tier). Accepts a GuildMember (or anything with the same .guild/.permissions/
+// .roles.cache shape). If no Mod role has been configured for this server yet, only
+// Administrators count — set one with /modrole.
+async function isMod(member) {
+  if (!member) return false;
+  if (member.permissions?.has?.(PermissionFlagsBits.Administrator)) return true;
+  const guildId = member.guild?.id;
+  if (!guildId) return false;
+  const modRoleId = await getModRoleId(guildId);
+  if (!modRoleId) return false;
+  return member.roles?.cache?.has?.(modRoleId) ?? false;
+}
+
+module.exports = { isMod, getModRoleId, setModRoleId };

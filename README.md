@@ -24,7 +24,7 @@ src/
   deploy-commands.js  (registers slash commands with Discord, runs before index.js on every start)
 ```
 
-Feature folders (alphabetical): animenight, autoresponder, birthday, boosterlinks, comboroles, goosepizza, highlight, honeypot, incident, invitetracker, reactionlimit, rolelinks, serverbackup, slowmode, starboard, sticky, suggestion, verify, waifuwarlr, warning. Plus standalone single-file commands with no subcommands: commandlist, disablefeature, 2faroles, modroles, verbal, warn (shares its data with warning).
+Feature folders (alphabetical): animenight, autoresponder, birthday, boosterlinks, comboroles, goosepizza, highlight, honeypot, incident, invitetracker, reactionlimit, rolelinks, serverbackup, slowmode, starboard, sticky, suggestion, verify, waifuwarlr, warning. Plus standalone single-file commands with no subcommands: 2faroles, commandlist, disablefeature, modrole, modroles, verbal, warn (shares its data with warning).
 
 Right-click (Apps menu) commands: **Sticky: Add/Edit/Remove**, **Suggestion: Approve/Reject** — thin wrappers that resolve context from the clicked message, calling the same handlers as their slash-command equivalents.
 
@@ -35,20 +35,24 @@ Right-click (Apps menu) commands: **Sticky: Add/Edit/Remove**, **Suggestion: App
 3. Generate an invite link (OAuth2 → URL Generator), scopes `bot` + `applications.commands`, permissions at least `Manage Roles`, `Kick Members`, `Send Messages`, `Use Application Commands`. Invite the bot.
    - ⚠️ The bot's role must be **higher** than any role it needs to assign/remove (birthday role, verify roles, booster-linked roles, etc.).
 4. **Create a database on Turso** (https://turso.tech): create an account + database, copy the **Database URL** (`libsql://...`) and an **Auth Token**.
-5. Copy `.env.example` to `.env`, fill in `DISCORD_TOKEN`, `CLIENT_ID`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `DISCORD_CLIENT_SECRET`, `SESSION_SECRET` (see [Web Dashboard](#web-dashboard) — required, the process won't start without them), and `GUILD_ID` (which server the dashboard manages — optional if the bot is only in one server, required otherwise; also switches command registration from global to instant per-guild — `deploy-commands.js` automatically wipes any stale global commands whenever `GUILD_ID` is set, so toggling it on/off never leaves duplicate commands behind).
+5. Copy `.env.example` to `.env`, fill in `DISCORD_TOKEN`, `CLIENT_ID`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `DISCORD_CLIENT_SECRET`, `SESSION_SECRET` (see [Web Dashboard](#web-dashboard) — required, the process won't start without them).
 6. `npm install`
-7. `npm start` — registers slash commands, then connects to Discord and starts the dashboard.
+7. `npm start` — registers slash commands globally (so every server the bot is later invited to gets them, no per-server step needed — can take up to ~1h to first propagate), then connects to Discord and starts the dashboard.
+8. In each server the bot joins, an Admin should run `/modrole role:<role>` to set that server's Mod role — until it's set, only Administrators count as Mod there.
 
 Every feature can be turned on/off with `/disablefeature feature:<pick one> enabled:true|false` (Admin only), or that feature's own `disable` subcommand — same flag either way. `/verbal` shares its toggle with `/warning`.
 
+The bot can be invited to and used from more than one server at once — see [Web Dashboard](#web-dashboard) for how the dashboard picks which one you're managing. All data (config, per-feature settings, logs) is kept in the one shared Turso database, isolated per server internally; there's no separate database per server.
+
 ## Web Dashboard
 
-Server-rendered (Express + EJS) web dashboard, running in the **same process and port** as the bot — it's what now satisfies Render's "Web Service needs an open HTTP port" requirement (previously a bare status page). Login is Discord OAuth2, gated to whoever has the **Administrator** permission in the configured server; no separate account system.
+Server-rendered (Express + EJS) web dashboard, running in the **same process and port** as the bot — it's what now satisfies Render's "Web Service needs an open HTTP port" requirement (previously a bare status page). Login is Discord OAuth2, gated to whoever has the **Administrator** permission in at least one server the bot is in; no separate account system.
 
-- **Setup**: Discord Developer Portal → your app → OAuth2 → add a redirect `https://<your-render-url>/auth/discord/callback`, copy the **Client Secret** into `DISCORD_CLIENT_SECRET`. Set `SESSION_SECRET` to any long random string (signs the session cookie). If the bot is in more than one server (e.g. a test server for Server Backup), set `GUILD_ID` to the one the dashboard should manage.
+- **Setup**: Discord Developer Portal → your app → OAuth2 → add a redirect `https://<your-render-url>/auth/discord/callback`, copy the **Client Secret** into `DISCORD_CLIENT_SECRET`. Set `SESSION_SECRET` to any long random string (signs the session cookie).
+- **Multi-server**: at login, admin status is checked against every server the bot is currently in (no `guilds` OAuth scope needed — done server-side with the bot's own token). An admin of exactly one server goes straight to its overview; an admin of more than one sees a server picker first (`/select-server`, also reachable anytime via the sidebar's "Cambia server" link) and manages one at a time, switchable without logging out.
 - **Health check / keep-alive ping**: point Render's health check path (and any external uptime ping, e.g. cron-job.org) at `/healthz`, not `/` — the root path now requires login.
-- **Login persistence**: sessions are stored in the same Turso DB (`dashboard_sessions` table, `src/dashboard/sessionStore.js`), not in memory — a redeploy or a free-plan sleep/wake cycle no longer forces a fresh Discord login. Cookie lasts 30 days and slides forward on every active request (`rolling: true`); expired rows are swept every 6h.
-- **Shell**: sidebar listing every feature (from the same registry `/disablefeature` uses, so it can't drift), and an overview page with basic stats (member count, features enabled/total, Honeypot kick total, bot uptime).
+- **Login persistence**: sessions are stored in the same Turso DB (`dashboard_sessions` table, `src/dashboard/sessionStore.js`), not in memory — a redeploy or a free-plan sleep/wake cycle no longer forces a fresh Discord login. Cookie lasts 30 days and slides forward on every active request (`rolling: true`); expired rows are swept every 6h. Admin status and the server list are only re-checked at login, not on every request, so a permission change elsewhere takes effect on the next login rather than immediately.
+- **Shell**: sidebar listing every feature (from the same registry `/disablefeature` uses, so it can't drift), and an overview page with basic stats (member count, features enabled/total, Honeypot kick total, bot uptime) for whichever server is currently selected.
 - **Per-feature config pages**: features get their own dashboard page one at a time — see `src/dashboard/sidebarData.js`'s `FEATURE_PAGES` map for which ones have one so far (currently: Honeypot — toggle, trap channels list/add/remove, live-edit a trap's message/button/emoji (with a visual emoji picker: default set plus the server's own custom emoji), move a trap to a different channel, kick log). A feature without an entry there just shows in the sidebar as "coming soon".
 
 ## Available commands
@@ -145,6 +149,9 @@ Auto-increments daily via a scheduled job; the sign image is rendered with `@nap
 - `disable` `Admin` — turns the feature on/off.
 
 Needs **Manage Server** (to see the server's invites) and **Create Invite** in the channel set via `channel`. `create`/`create_self` fail with a clear error until an Admin has run `channel` at least once. Works out which invite was used by diffing use counts on join — a `create`d invite is attributed to whoever it was assigned to; a normal invite someone made themselves is attributed to them, same as before. Also covers the server's vanity URL, if it has one; joins via Discovery/widget, or where two invites changed in the same instant, can't be attributed and are recorded with no inviter.
+
+### Mod Role (`/modrole`)
+`Admin` — `[role]`. Sets which role counts as `Mod` for this server (the single setting every `Mod`-gated command/check in the bot reads, per-server since the bot can run on more than one); with no `role` given, shows the one currently configured instead — or says none is set yet, in which case only Administrators count as Mod.
 
 ### Permission Audits (`/2faroles`, `/modroles`)
 

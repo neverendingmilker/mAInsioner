@@ -20,9 +20,6 @@ const ADMIN = 'Admin';
 const MOD = 'Mod';
 const EVERYONE = 'Everyone';
 
-// The user's own moderator role — referenced whenever "the mod role" comes up.
-const MOD_ROLE_ID = '1090658915810820156';
-
 const COMMAND_MANIFEST = [
   {
     feature: 'Anime Night',
@@ -127,6 +124,11 @@ const COMMAND_MANIFEST = [
   {
     feature: '2FA Roles',
     command: '/2faroles',
+    subcommands: [{ name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator }],
+  },
+  {
+    feature: 'Mod Role',
+    command: '/modrole',
     subcommands: [{ name: '(the command itself)', tier: ADMIN, permission: PermissionFlagsBits.Administrator }],
   },
   {
@@ -333,4 +335,4 @@ const COMMAND_MANIFEST = [
   },
 ];
 
-module.exports = { ADMIN, MOD, EVERYONE, MOD_ROLE_ID, COMMAND_MANIFEST };
+module.exports = { ADMIN, MOD, EVERYONE, COMMAND_MANIFEST };

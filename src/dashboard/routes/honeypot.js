@@ -12,11 +12,11 @@ const HONEYPOT_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnounce
 // Every route below needs the guild; bail out the same way if it isn't resolvable
 // (mirrors overview.js's check — see resolveDashboardGuild for when this can happen).
 function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client);
+  const guild = resolveDashboardGuild(req.client, req.session.guildId);
   if (!guild) {
     res.status(500).render('error', {
-      title: 'Server non configurato',
-      message: 'Il bot è in più server e non so quale gestire — imposta la variabile d\'ambiente GUILD_ID.',
+      title: 'Server non trovato',
+      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
     });
     return null;
   }

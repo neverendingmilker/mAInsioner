@@ -5,7 +5,7 @@ const { isMod } = require('../../../utils/modRole');
 // needing a separate unlink + link. Under the hood this is just "stop tracking the old
 // role, start tracking the new one" — done in one step for convenience.
 async function handleEdit(interaction) {
-  if (!isMod(interaction.member)) {
+  if (!(await isMod(interaction.member))) {
     await interaction.reply({ content: '❌ You need to be a Mod or Admin to use this command.', ephemeral: true });
     return;
   }

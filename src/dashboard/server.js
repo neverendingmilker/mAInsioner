@@ -9,9 +9,11 @@ const overviewRoutes = require('./routes/overview');
 const honeypotRoutes = require('./routes/honeypot');
 
 // Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator in
-// the configured guild (see guild.js + middleware/requireAdmin.js). Runs in the same
-// process/port as the bot itself — this *is* what satisfies Render's "Web Service needs an
-// open HTTP port" requirement now (previously a bare status page, see git history).
+// at least one server the bot is in — which one they're managing is then picked via
+// /select-server and stored per-session (see guild.js + middleware/requireAdmin.js).
+// Runs in the same process/port as the bot itself — this *is* what satisfies Render's
+// "Web Service needs an open HTTP port" requirement now (previously a bare status page,
+// see git history).
 function start(client) {
   if (!config.dashboard.clientSecret || !config.dashboard.sessionSecret) {
     console.error('❌ DISCORD_CLIENT_SECRET and SESSION_SECRET must be set to run the dashboard.');
@@ -56,6 +58,9 @@ function start(client) {
   app.use((req, res, next) => {
     req.client = client;
     res.locals.user = req.session.user || null;
+    // Every server this user is an admin in (computed once at login) — the sidebar uses
+    // this to decide whether to show a "cambia server" link at all.
+    res.locals.adminGuilds = req.session.adminGuilds || [];
     // One-shot success/error banner for the page a POST redirects back to (e.g. "Trappola
     // creata."). Cheap alternative to a flash-message library: stash it on the session
     // right before redirecting, read-and-clear it here on the very next request.

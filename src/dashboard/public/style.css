@@ -196,6 +196,54 @@ a {
   color: var(--danger);
 }
 
+.login-card-wide {
+  width: 380px;
+}
+
+.server-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.server-list-item {
+  margin: 0;
+}
+
+.server-list-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.server-list-btn:hover {
+  border-color: var(--accent);
+}
+
+.change-server {
+  display: block;
+  margin: -12px 0 20px;
+  padding: 0 10px;
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.change-server:hover {
+  color: var(--text);
+}
+
 .btn-discord {
   display: inline-block;
   margin-top: 12px;

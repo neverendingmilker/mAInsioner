@@ -8,32 +8,26 @@ async function deploy() {
 
   const rest = new REST().setToken(config.token);
 
-  const route = config.guildId
-    ? Routes.applicationGuildCommands(config.clientId, config.guildId)
-    : Routes.applicationCommands(config.clientId);
-
-  console.log(
-    config.guildId
-      ? `Registering ${body.length} command(s) on guild ${config.guildId} (instant)...`
-      : `Registering ${body.length} command(s) globally (can take up to 1h to propagate)...`
-  );
-
-  await rest.put(route, { body });
-
+  // Always global now that the bot can run on more than one server — a guild-scoped
+  // registration only ever covers the one guild it's pointed at, so any other server
+  // that adds the bot wouldn't see the commands at all. Global takes up to ~1h to
+  // propagate to Discord clients after a change (guild-scoped is instant); that
+  // trade-off is accepted since it only matters right after a command is added/edited.
+  console.log(`Registering ${body.length} command(s) globally (can take up to 1h to propagate)...`);
+  await rest.put(Routes.applicationCommands(config.clientId), { body });
   console.log('✅ Commands registered successfully.');
 
-  // Guild-scoped and global commands are entirely separate sets — Discord doesn't clean
-  // up one when the other gets used, so every command would show up twice (this actually
-  // happened: GUILD_ID got set for the dashboard's guild-resolution env var, which flipped
-  // this script from global to guild-scoped registration on the next boot, leaving the old
-  // global copies stranded). Whenever GUILD_ID is set, proactively wipe the global set on
-  // every deploy so stale duplicates can never accumulate again.
-  if (config.guildId) {
+  // One-time cleanup: earlier versions of this bot registered guild-scoped commands
+  // instead, gated on a GUILD_ID env var (from the dashboard's old single-guild setup).
+  // If that variable is still set on this deploy, proactively wipe that guild's
+  // guild-scoped set so it doesn't linger as duplicates alongside the global ones —
+  // best-effort, never blocks startup if it fails.
+  if (process.env.GUILD_ID) {
     try {
-      await rest.put(Routes.applicationCommands(config.clientId), { body: [] });
-      console.log('✅ Cleared any stale globally-registered commands.');
+      await rest.put(Routes.applicationGuildCommands(config.clientId, process.env.GUILD_ID), { body: [] });
+      console.log('✅ Cleared stale guild-scoped commands (leftover GUILD_ID env var — safe to remove it from Render now).');
     } catch (err) {
-      console.error('⚠️ Could not clear stale global commands:', err.message);
+      console.error('⚠️ Could not clear stale guild-scoped commands:', err.message);
     }
   }
 }

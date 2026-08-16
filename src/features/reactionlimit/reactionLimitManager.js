@@ -64,7 +64,7 @@ async function listChannels(guildId) {
 // Moderators (the configured Mod role, or Administrator) are always exempt — no
 // configurable exempt-role list, matching the "does exactly one thing" scope of this
 // feature.
-function isExempt(member) {
+async function isExempt(member) {
   return isMod(member);
 }
 
@@ -87,7 +87,7 @@ async function handleReactionAdd(reaction, user, guild) {
   if (config.ignoreFirstPost && message.id === channel.id) return;
 
   const member = await guild.members.fetch(user.id).catch(() => null);
-  if (isExempt(member)) return;
+  if (await isExempt(member)) return;
 
   const currentCount = await repo.getCount(guild.id, channel.id, user.id);
   if (currentCount >= config.reactionLimit) {

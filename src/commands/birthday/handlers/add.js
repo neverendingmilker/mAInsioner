@@ -10,7 +10,7 @@ async function handleAdd(interaction) {
 
   const isForSomeoneElse = targetUser && targetUser.id !== interaction.user.id;
 
-  if (isForSomeoneElse && !isMod(interaction.member)) {
+  if (isForSomeoneElse && !(await isMod(interaction.member))) {
     await interaction.reply({
       content: '❌ You need to be a Mod or Admin to set someone else\'s birthday.',
       ephemeral: true,

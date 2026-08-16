@@ -117,6 +117,13 @@ Tracks who invited who: when someone joins, the bot works out which invite they 
 
 Needs the **Manage Server** permission so the bot can see the server's invites, plus **Create Invite** in the channel set via `/invites channel`. `create`/`create_self` fail with a clear error until an Admin has run `/invites channel` at least once (or if the configured channel was later deleted). A `create`d invite is always credited to whoever it was assigned to — Discord itself would otherwise record the bot as the "creator", since the bot is the one making the API call, not the person it's meant for. A normal invite someone makes themselves through Discord is still credited to them, same as before this existed. Also catches joins through the server's vanity URL, if it has one — those aren't tied to a specific inviter, just recorded as "vanity". Joins that can't be attributed at all (Discord Discovery, the widget, or two invites changing at the exact same instant) are still counted overall but recorded with no inviter.
 
+## 🎖️ Mod Role (`/modrole`)
+
+`Admin`. Sets which role counts as "Mod" everywhere the bot checks for one — every command and feature that says `Mod` in this guide reads this same per-server setting.
+
+- **`/modrole role:<role>`** — sets it.
+- **`/modrole`** (no options) — shows the role currently configured, or tells you none is set yet — until you set one, only Administrators count as Mod on that server.
+
 ## 🔐 Permission Audits (`/2faroles`, `/modroles`)
 
 Both `Admin`. Two related security-audit commands, always used together:
@@ -239,8 +246,10 @@ Formal warnings escalate a user through two configured roles; verbals are logged
 
 ## 🖥️ Web Dashboard
 
-A web dashboard runs alongside the bot (same process, same URL Render gives it). Log in with Discord — access is granted to whoever has the **Administrator** permission on the server, no separate password or account. The login sticks around for 30 days and renews itself while you're active, surviving redeploys and the free-plan sleep/wake cycle — you shouldn't need to log in again every time.
+A web dashboard runs alongside the bot (same process, same URL Render gives it). Log in with Discord — access is granted to whoever has the **Administrator** permission on at least one server the bot is in, no separate password or account. The login sticks around for 30 days and renews itself while you're active, surviving redeploys and the free-plan sleep/wake cycle — you shouldn't need to log in again every time.
 
-There's a sidebar listing every feature, and an overview page with a few basic numbers (member count, how many features are enabled, total Honeypot kicks, bot uptime). Per-feature settings pages are being added one at a time — the ones that exist so far show as normal sidebar links, the rest are greyed out ("coming soon").
+If you're an admin on more than one server the bot is in, you'll see a server picker right after logging in — pick which one to manage. Switch to a different one anytime via the "Cambia server" link in the sidebar, no need to log out first. If you're only an admin on one server, you're taken straight there, same as before.
+
+There's a sidebar listing every feature, and an overview page with a few basic numbers (member count, how many features are enabled, total Honeypot kicks, bot uptime) for whichever server is currently selected. Per-feature settings pages are being added one at a time — the ones that exist so far show as normal sidebar links, the rest are greyed out ("coming soon").
 
 - **Honeypot** — turn it on/off, see and manage every trap channel (add a new one with an optional custom message/button label/bait emoji, or remove an existing one), and the full kick log with totals. Each trap also has an "Edit" section, pre-filled with whatever the message/button/emoji currently are — saving it edits that same message live in the channel (and swaps its bait reaction) instead of posting a new one. Picking a different channel there instead *moves* the trap: the old message is deleted and a fresh one is posted in the new channel. The emoji field has a picker button next to it (😀) showing a grid of common emoji plus the server's own custom emoji — click one instead of typing it in by hand.
