@@ -4,6 +4,7 @@ const session = require('express-session');
 const config = require('../config/config');
 const { SqlSessionStore } = require('./sessionStore');
 const { requireAdmin } = require('./middleware/requireAdmin');
+const { getSidebarToolsForPath } = require('./sidebarData');
 const authRoutes = require('./routes/auth');
 const overviewRoutes = require('./routes/overview');
 const honeypotRoutes = require('./routes/honeypot');
@@ -23,6 +24,7 @@ const suggestionRoutes = require('./routes/suggestion');
 const invitetrackerRoutes = require('./routes/invitetracker');
 const warningRoutes = require('./routes/warning');
 const waifuwarlrRoutes = require('./routes/waifuwarlr');
+const roleauditRoutes = require('./routes/roleaudit');
 
 // Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator in
 // at least one server the bot is in — which one they're managing is then picked via
@@ -82,6 +84,9 @@ function start(client) {
     // right before redirecting, read-and-clear it here on the very next request.
     res.locals.flash = req.session.flash || null;
     delete req.session.flash;
+    // Set globally (not per-route like getSidebarFeatures) so the "Strumenti" nav section
+    // and its active-link highlighting show up on every page, not just on /roleaudit.
+    res.locals.tools = getSidebarToolsForPath(req.path);
     next();
   });
 
@@ -105,7 +110,8 @@ function start(client) {
     suggestionRoutes,
     invitetrackerRoutes,
     warningRoutes,
-    waifuwarlrRoutes
+    waifuwarlrRoutes,
+    roleauditRoutes
   );
 
   app.use((req, res) => {

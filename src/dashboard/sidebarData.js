@@ -34,4 +34,23 @@ function getSidebarFeatures(activeKey) {
   }));
 }
 
-module.exports = { FEATURE_PAGES, getSidebarFeatures };
+// Live diagnostic pages, distinct from FEATURES: no enable/disable state, no manager —
+// each is a one-shot query computed straight from the guild's live Discord cache (same
+// logic as their slash-command equivalents, e.g. /2faroles, /modroles). Shown in the
+// sidebar as their own "Strumenti" section, separate from the toggleable feature list.
+const TOOL_PAGES = [{ key: 'roleaudit', label: 'Ruoli & Permessi', href: '/roleaudit' }];
+
+function getSidebarTools(activeKey) {
+  return TOOL_PAGES.map((t) => ({ ...t, active: t.key === activeKey }));
+}
+
+// Unlike getSidebarFeatures (which every route already calls explicitly with its own key),
+// this is meant to be set once in server.js's global locals middleware from req.path, so
+// every page — not just /roleaudit itself — shows the "Strumenti" nav section and
+// highlights the right entry, without having to touch every existing route file.
+function getSidebarToolsForPath(path) {
+  const match = TOOL_PAGES.find((t) => t.href === path);
+  return getSidebarTools(match ? match.key : null);
+}
+
+module.exports = { FEATURE_PAGES, getSidebarFeatures, getSidebarTools, getSidebarToolsForPath };

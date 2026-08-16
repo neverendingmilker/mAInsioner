@@ -21,6 +21,12 @@
         <div class="nav-link disabled" title="Presto disponibile"><%= f.label %></div>
       <% } %>
     <% }) %>
+    <% if (typeof tools !== 'undefined' && tools.length > 0) { %>
+      <div class="nav-section">Strumenti</div>
+      <% tools.forEach((t) => { %>
+        <a class="nav-link <%= t.active ? 'active' : '' %>" href="<%= t.href %>"><%= t.label %></a>
+      <% }) %>
+    <% } %>
   </nav>
 
   <div class="sidebar-footer">

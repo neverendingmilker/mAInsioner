@@ -179,6 +179,8 @@ Two related security-audit commands, always documented together. Both `Admin`, b
 - `/2faroles [ignore_bots]` — lists roles with at least one permission Discord requires 2FA for (server-wide + per-channel overrides). Doesn't check member-specific overrides (see `/modroles`).
 - `/modroles [ignore_bots]` — broader than `/2faroles`: also flags commonly-assumed "mod" permissions that aren't actually 2FA-gated (Audit Log, Nicknames, Expressions, Timeout), and catches per-channel overrides granted to individual people, not just roles.
 
+Both are also on the dashboard (`/roleaudit`, sidebar → "Strumenti") — same live queries against the server's current roles/channels, an `ignore_bots` checkbox instead of a slash option, and results as a page instead of an ephemeral embed. Unlike every other dashboard page, it's not a toggleable feature (no `FEATURES` entry, no on/off state) — it's a read-only tool, so it's not in `sidebarData.js`'s `FEATURE_PAGES` map but in its own separate `TOOL_PAGES`/"Strumenti" section instead.
+
 ### Reaction Limit (`/reactionlimit`)
 Caps reactions per person per thread — configurable per channel (1–100, default 5). Mods/Admins exempt.
 - `add channel:<#channel> [limit] [ignore_first_post]` `Admin` — sets the limit for a channel's threads.
