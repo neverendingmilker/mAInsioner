@@ -101,17 +101,29 @@ async function getChannelDetails(guild, channelId) {
   };
 }
 
-// Edits the honeypot's existing bait message and button label in place — unlike
-// addChannel (which always posts a brand-new message), this updates the one that's
-// already live, so anyone looking at the channel right now sees the change immediately
-// instead of the channel ending up with two trap messages.
-async function editChannel(guild, channelId, messageText, buttonLabel) {
-  const honeypot = await repo.getChannel(guild.id, channelId);
+// Edits an existing honeypot: bait text, button label, reaction emoji, and/or which
+// channel it lives in. `targetChannel` is where it should end up — same channel as now,
+// or a different one.
+//
+// A channel change can't be done as an edit (Discord has no way to move a message between
+// channels), so it's really "remove the old trap, add a fresh one" — this just calls
+// removeChannel + addChannel directly rather than duplicating their already-tested
+// post/cleanup logic. Same channel is the cheap path: edits the live message in place
+// (and swaps its reaction if the emoji changed) instead of posting a new one, so anyone
+// looking at the channel sees the change immediately with no leftover duplicate message.
+async function editChannel(guild, currentChannelId, { targetChannel, messageText, buttonLabel, emoji, editedBy }) {
+  const honeypot = await repo.getChannel(guild.id, currentChannelId);
   if (!honeypot) {
     throw new ValidationError("That channel isn't set up as a honeypot.");
   }
 
-  const channel = guild.channels.cache.get(channelId);
+  if (targetChannel.id !== currentChannelId) {
+    await removeChannel(guild, currentChannelId);
+    await addChannel(guild, targetChannel, messageText, buttonLabel, editedBy, emoji);
+    return;
+  }
+
+  const channel = guild.channels.cache.get(currentChannelId);
   if (!channel) {
     throw new ValidationError("That channel doesn't exist anymore.");
   }
@@ -129,6 +141,20 @@ async function editChannel(guild, channelId, messageText, buttonLabel) {
     await message.edit({ content: messageText || DEFAULT_MESSAGE, components: [row] });
   } catch (err) {
     throw new ValidationError(`Couldn't update the trap message: ${err.message}`);
+  }
+
+  if (emoji !== (honeypot.emoji || null)) {
+    // Add the new reaction (if any) before removing the old one, so a bad/invalid emoji
+    // fails without leaving the message with no bait reaction at all.
+    if (emoji) {
+      try {
+        await message.react(emoji);
+      } catch (err) {
+        throw new ValidationError(`That doesn't look like a valid emoji I can react with: ${err.message}`);
+      }
+    }
+    await cleanUpOwnReaction(guild, message, honeypot);
+    await repo.updateEmoji(guild.id, currentChannelId, emoji);
   }
 }
 

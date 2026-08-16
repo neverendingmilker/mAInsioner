@@ -34,6 +34,17 @@ async function addChannel(guildId, channelId, messageId, createdBy, emoji) {
   });
 }
 
+// Updates just the reaction emoji for an in-place trap edit (see honeypotManager.editChannel)
+// — unlike addChannel, doesn't touch message_id/created_by/created_at, since the message
+// itself hasn't changed, only its bait reaction.
+async function updateEmoji(guildId, channelId, emoji) {
+  await db.ready;
+  await db.client.execute({
+    sql: 'UPDATE honeypot_channels SET emoji = ? WHERE guild_id = ? AND channel_id = ?',
+    args: [emoji || null, guildId, channelId],
+  });
+}
+
 async function removeChannel(guildId, channelId) {
   await db.ready;
   const result = await db.client.execute({
@@ -99,6 +110,7 @@ module.exports = {
   isEnabled,
   setEnabled,
   addChannel,
+  updateEmoji,
   removeChannel,
   getChannel,
   getAllChannels,

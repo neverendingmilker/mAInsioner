@@ -33,9 +33,18 @@
               <p class="hint">⚠️ Il messaggio esca non esiste più su Discord — rimuovi e ricrea la trappola per poterla modificare.</p>
             <% } else { %>
               <details class="trap-edit">
-                <summary>Modifica messaggio/bottone</summary>
+                <summary>Modifica</summary>
                 <form method="POST" action="/honeypot/edit" class="form">
-                  <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                  <input type="hidden" name="currentChannelId" value="<%= c.channelId %>" />
+                  <label>
+                    Canale
+                    <select name="channelId" required>
+                      <% textChannels.forEach((ch) => { %>
+                        <option value="<%= ch.id %>" <%= ch.id === c.channelId ? 'selected' : '' %>><%= ch.name %></option>
+                      <% }) %>
+                    </select>
+                  </label>
+                  <p class="hint">Cambiare canale sposta la trappola: il messaggio attuale viene eliminato e ne viene postato uno nuovo in quello scelto.</p>
                   <label>
                     Messaggio esca
                     <textarea name="message" rows="2"><%= c.messageText %></textarea>
@@ -44,7 +53,11 @@
                     Etichetta bottone
                     <input type="text" name="buttonLabel" value="<%= c.buttonLabel %>" />
                   </label>
-                  <button type="submit" class="btn-primary-sm">Aggiorna nel canale</button>
+                  <label>
+                    Emoji reazione (vuoto per rimuoverla)
+                    <input type="text" name="emoji" value="<%= c.emoji || '' %>" placeholder="es. 🎯" />
+                  </label>
+                  <button type="submit" class="btn-primary-sm">Salva</button>
                 </form>
               </details>
             <% } %>

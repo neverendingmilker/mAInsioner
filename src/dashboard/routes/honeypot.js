@@ -139,9 +139,26 @@ router.post('/honeypot/edit', async (req, res, next) => {
     const guild = requireGuild(req, res);
     if (!guild) return;
 
+    const currentChannelId = req.body.currentChannelId;
+    const targetChannel = guild.channels.cache.get(req.body.channelId);
+    if (!targetChannel) {
+      req.session.flash = { type: 'error', message: 'Canale non valido — riprova.' };
+      res.redirect('/honeypot');
+      return;
+    }
+
     try {
-      await honeypotManager.editChannel(guild, req.body.channelId, req.body.message?.trim() || null, req.body.buttonLabel?.trim() || null);
-      req.session.flash = { type: 'success', message: 'Trappola aggiornata — il messaggio nel canale è già cambiato.' };
+      await honeypotManager.editChannel(guild, currentChannelId, {
+        targetChannel,
+        messageText: req.body.message?.trim() || null,
+        buttonLabel: req.body.buttonLabel?.trim() || null,
+        emoji: req.body.emoji?.trim() || null,
+        editedBy: req.session.user.id,
+      });
+      req.session.flash =
+        targetChannel.id === currentChannelId
+          ? { type: 'success', message: 'Trappola aggiornata — il messaggio nel canale è già cambiato.' }
+          : { type: 'success', message: `Trappola spostata in #${targetChannel.name}.` };
     } catch (err) {
       if (err instanceof honeypotManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
