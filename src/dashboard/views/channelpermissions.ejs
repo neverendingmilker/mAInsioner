@@ -1,0 +1,119 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Permessi per canale</h1>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel perm-panel">
+      <div class="perm-col perm-col-channels">
+        <% if (channelGroups.length === 0) { %>
+          <p class="hint">Nessun canale.</p>
+        <% } %>
+        <% channelGroups.forEach((group) => { %>
+          <% if (group.category) { %>
+            <a
+              class="perm-channel-link <%= selectedChannelId === group.category.id ? 'active' : '' %>"
+              href="/channelpermissions?channelId=<%= group.category.id %>"
+            ><%= group.category.icon %> <%= group.category.name %></a>
+          <% } %>
+          <% group.channels.forEach((c) => { %>
+            <a
+              class="perm-channel-link <%= selectedChannelId === c.id ? 'active' : '' %>"
+              href="/channelpermissions?channelId=<%= c.id %>"
+            ><%= c.icon %> <%= c.name %></a>
+          <% }) %>
+        <% }) %>
+      </div>
+
+      <div class="perm-col perm-col-targets">
+        <% if (!selectedChannelId) { %>
+          <p class="hint">Scegli un canale a sinistra.</p>
+        <% } else { %>
+          <% if (targets.length === 0) { %>
+            <p class="hint">Nessun override su questo canale.</p>
+          <% } else { %>
+            <% targets.forEach((t) => { %>
+              <a
+                class="perm-target-link <%= selectedOverwriteId === t.id ? 'active' : '' %>"
+                href="/channelpermissions?channelId=<%= selectedChannelId %>&overwriteId=<%= t.id %>"
+              ><%= t.icon %> <%= t.name %></a>
+            <% }) %>
+          <% } %>
+          <% if (addableRoles.length > 0 || addableMembers.length > 0) { %>
+            <form method="GET" action="/channelpermissions" class="form" style="margin-top: 14px; max-width: none;">
+              <input type="hidden" name="channelId" value="<%= selectedChannelId %>" />
+              <label>
+                Aggiungi ruolo/membro
+                <select name="overwriteId" onchange="this.form.submit()">
+                  <option value="" disabled selected>Scegli…</option>
+                  <% if (addableRoles.length > 0) { %>
+                    <optgroup label="Ruoli">
+                      <% addableRoles.forEach((r) => { %><option value="<%= r.id %>">🎭 <%= r.name %></option><% }) %>
+                    </optgroup>
+                  <% } %>
+                  <% if (addableMembers.length > 0) { %>
+                    <optgroup label="Membri">
+                      <% addableMembers.forEach((m) => { %><option value="<%= m.id %>">👤 <%= m.name %></option><% }) %>
+                    </optgroup>
+                  <% } %>
+                </select>
+              </label>
+            </form>
+          <% } %>
+        <% } %>
+      </div>
+
+      <div class="perm-col perm-col-editor">
+        <% if (!selectedTarget) { %>
+          <p class="hint">
+            <%= selectedChannelId ? 'Seleziona un ruolo o membro per vedere/modificare i suoi permessi su questo canale.' : 'Seleziona prima un canale.' %>
+          </p>
+        <% } else { %>
+          <div class="config-card-header" style="margin-bottom: 12px;">
+            <span class="config-name"><%= selectedTarget.icon %> <%= selectedTarget.name %></span>
+            <% if (overwriteExists) { %>
+              <form
+                method="POST"
+                action="/channelpermissions/<%= selectedChannelId %>/<%= selectedOverwriteId %>/remove"
+                onsubmit="return confirm('Rimuovere questo override? Tutti i permessi torneranno neutri.');"
+              >
+                <button type="submit" class="btn-danger-sm">Rimuovi override</button>
+              </form>
+            <% } %>
+          </div>
+
+          <form method="POST" action="/channelpermissions/<%= selectedChannelId %>/<%= selectedOverwriteId %>/save" class="form" style="max-width: none;">
+            <% permissionGroups.forEach((g) => { %>
+              <div class="perm-group-title"><%= g.title %></div>
+              <% g.rows.forEach((row) => { %>
+                <div class="perm-row">
+                  <span><%= row.label %></span>
+                  <div class="perm-tristate">
+                    <label class="opt-deny" title="Nega">
+                      <input type="radio" name="<%= row.key %>" value="deny" <%= row.state === 'deny' ? 'checked' : '' %> />
+                      <span>✕</span>
+                    </label>
+                    <label class="opt-neutral" title="Neutro">
+                      <input type="radio" name="<%= row.key %>" value="neutral" <%= row.state === 'neutral' ? 'checked' : '' %> />
+                      <span>／</span>
+                    </label>
+                    <label class="opt-allow" title="Consenti">
+                      <input type="radio" name="<%= row.key %>" value="allow" <%= row.state === 'allow' ? 'checked' : '' %> />
+                      <span>✓</span>
+                    </label>
+                  </div>
+                </div>
+              <% }) %>
+            <% }) %>
+            <button type="submit" class="btn-primary">Salva permessi</button>
+          </form>
+        <% } %>
+      </div>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>

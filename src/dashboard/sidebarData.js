@@ -38,7 +38,10 @@ function getSidebarFeatures(activeKey) {
 // each is a one-shot query computed straight from the guild's live Discord cache (same
 // logic as their slash-command equivalents, e.g. /2faroles, /modroles). Shown in the
 // sidebar as their own "Strumenti" section, separate from the toggleable feature list.
-const TOOL_PAGES = [{ key: 'roleaudit', label: 'Ruoli & Permessi', href: '/roleaudit' }];
+const TOOL_PAGES = [
+  { key: 'channelpermissions', label: 'Permessi per canale', href: '/channelpermissions' },
+  { key: 'roleaudit', label: 'Ruoli & Permessi', href: '/roleaudit' },
+];
 
 function getSidebarTools(activeKey) {
   return TOOL_PAGES.map((t) => ({ ...t, active: t.key === activeKey }));

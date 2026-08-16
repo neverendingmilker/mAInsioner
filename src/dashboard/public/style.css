@@ -697,3 +697,122 @@ a {
   margin-top: 10px;
   max-width: 420px;
 }
+
+/* --- Channel Permissions: canali | ruoli/membri con override | editor permessi --- */
+
+.perm-panel {
+  display: flex;
+  padding: 0;
+  overflow: hidden;
+}
+
+.perm-col {
+  padding: 16px;
+  overflow-y: auto;
+  max-height: 75vh;
+}
+
+.perm-col + .perm-col {
+  border-left: 1px solid var(--border);
+}
+
+.perm-col-channels,
+.perm-col-targets {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.perm-col-editor {
+  flex: 1;
+  min-width: 0;
+}
+
+.perm-channel-link,
+.perm-target-link {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.perm-channel-link:hover,
+.perm-target-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.perm-channel-link.active,
+.perm-target-link.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.perm-group-title {
+  margin: 18px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.perm-group-title:first-child {
+  margin-top: 0;
+}
+
+.perm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.perm-row:last-child {
+  border-bottom: none;
+}
+
+.perm-tristate {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.perm-tristate label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.perm-tristate input {
+  display: none;
+}
+
+.perm-tristate label.opt-deny:has(input:checked) {
+  background: rgba(237, 66, 69, 0.18);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.perm-tristate label.opt-allow:has(input:checked) {
+  background: rgba(59, 165, 92, 0.18);
+  border-color: #3ba55c;
+  color: #3ba55c;
+}
+
+.perm-tristate label.opt-neutral:has(input:checked) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--text-dim);
+  color: var(--text);
+}

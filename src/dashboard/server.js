@@ -25,6 +25,7 @@ const invitetrackerRoutes = require('./routes/invitetracker');
 const warningRoutes = require('./routes/warning');
 const waifuwarlrRoutes = require('./routes/waifuwarlr');
 const roleauditRoutes = require('./routes/roleaudit');
+const channelpermissionsRoutes = require('./routes/channelpermissions');
 
 // Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator in
 // at least one server the bot is in — which one they're managing is then picked via
@@ -111,7 +112,8 @@ function start(client) {
     invitetrackerRoutes,
     warningRoutes,
     waifuwarlrRoutes,
-    roleauditRoutes
+    roleauditRoutes,
+    channelpermissionsRoutes
   );
 
   app.use((req, res) => {

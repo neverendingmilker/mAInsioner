@@ -181,6 +181,8 @@ Two related security-audit commands, always documented together. Both `Admin`, b
 
 Both are also on the dashboard (`/roleaudit`, sidebar → "Strumenti") — same live queries against the server's current roles/channels, an `ignore_bots` checkbox instead of a slash option, and results as a page instead of an ephemeral embed. Unlike every other dashboard page, it's not a toggleable feature (no `FEATURES` entry, no on/off state) — it's a read-only tool, so it's not in `sidebarData.js`'s `FEATURE_PAGES` map but in its own separate `TOOL_PAGES`/"Strumenti" section instead.
 
+Dashboard-only, no slash command equivalent: **Channel Permissions** (`/channelpermissions`, sidebar → "Strumenti" → "Permessi per canale") is a full read-write editor for per-channel permission overwrites, mirroring Discord's own "Advanced permissions" panel — a channel list, the roles/members that have an override on the selected channel, and a three-state (deny/neutral/allow) editor for every permission relevant to that channel type (general/text/voice + a always-shown moderation set). No manager either — reads/writes `channel.permissionOverwrites` directly. Saving is blocked, with a clear error, if it would grant the bot a permission it doesn't itself hold on that channel (same restriction Discord enforces server-side).
+
 ### Reaction Limit (`/reactionlimit`)
 Caps reactions per person per thread — configurable per channel (1–100, default 5). Mods/Admins exempt.
 - `add channel:<#channel> [limit] [ignore_first_post]` `Admin` — sets the limit for a channel's threads.
