@@ -21,6 +21,21 @@ async function deploy() {
   await rest.put(route, { body });
 
   console.log('✅ Commands registered successfully.');
+
+  // Guild-scoped and global commands are entirely separate sets — Discord doesn't clean
+  // up one when the other gets used, so every command would show up twice (this actually
+  // happened: GUILD_ID got set for the dashboard's guild-resolution env var, which flipped
+  // this script from global to guild-scoped registration on the next boot, leaving the old
+  // global copies stranded). Whenever GUILD_ID is set, proactively wipe the global set on
+  // every deploy so stale duplicates can never accumulate again.
+  if (config.guildId) {
+    try {
+      await rest.put(Routes.applicationCommands(config.clientId), { body: [] });
+      console.log('✅ Cleared any stale globally-registered commands.');
+    } catch (err) {
+      console.error('⚠️ Could not clear stale global commands:', err.message);
+    }
+  }
 }
 
 deploy().catch((err) => {

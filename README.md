@@ -35,7 +35,7 @@ Right-click (Apps menu) commands: **Sticky: Add/Edit/Remove**, **Suggestion: App
 3. Generate an invite link (OAuth2 → URL Generator), scopes `bot` + `applications.commands`, permissions at least `Manage Roles`, `Kick Members`, `Send Messages`, `Use Application Commands`. Invite the bot.
    - ⚠️ The bot's role must be **higher** than any role it needs to assign/remove (birthday role, verify roles, booster-linked roles, etc.).
 4. **Create a database on Turso** (https://turso.tech): create an account + database, copy the **Database URL** (`libsql://...`) and an **Auth Token**.
-5. Copy `.env.example` to `.env`, fill in `DISCORD_TOKEN`, `CLIENT_ID`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `DISCORD_CLIENT_SECRET`, `SESSION_SECRET` (see [Web Dashboard](#web-dashboard) — required, the process won't start without them), and `GUILD_ID` (which server the dashboard manages — optional if the bot is only in one server, required otherwise; also gives instant per-guild command registration while testing).
+5. Copy `.env.example` to `.env`, fill in `DISCORD_TOKEN`, `CLIENT_ID`, `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `DISCORD_CLIENT_SECRET`, `SESSION_SECRET` (see [Web Dashboard](#web-dashboard) — required, the process won't start without them), and `GUILD_ID` (which server the dashboard manages — optional if the bot is only in one server, required otherwise; also switches command registration from global to instant per-guild — `deploy-commands.js` automatically wipes any stale global commands whenever `GUILD_ID` is set, so toggling it on/off never leaves duplicate commands behind).
 6. `npm install`
 7. `npm start` — registers slash commands, then connects to Discord and starts the dashboard.
 
