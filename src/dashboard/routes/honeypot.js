@@ -57,6 +57,17 @@ async function renderHoneypotPage(req, res, guild) {
     .sort((a, b) => a.rawPosition - b.rawPosition)
     .map((c) => ({ id: c.id, name: `#${c.name}` }));
 
+  // Fed to the dashboard's emoji picker so it can offer the server's own custom emoji
+  // alongside the default unicode set — `mention` is the exact Discord mention-string
+  // format (`<:name:id>` / `<a:name:id>`) that message.react() already accepts as-is.
+  const guildEmojis = [...guild.emojis.cache.values()]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((e) => ({
+      name: e.name,
+      url: e.imageURL({ size: 32, extension: e.animated ? 'gif' : 'png' }),
+      mention: `<${e.animated ? 'a' : ''}:${e.name}:${e.id}>`,
+    }));
+
   res.render('honeypot', {
     title: 'Honeypot',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
@@ -64,6 +75,7 @@ async function renderHoneypotPage(req, res, guild) {
     enabled,
     channels,
     textChannels,
+    guildEmojis,
     defaultMessage: honeypotManager.DEFAULT_MESSAGE,
     defaultButtonLabel: honeypotManager.DEFAULT_BUTTON_LABEL,
     kickTotal,

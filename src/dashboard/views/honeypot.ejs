@@ -55,7 +55,11 @@
                   </label>
                   <label>
                     Emoji reazione (vuoto per rimuoverla)
-                    <input type="text" name="emoji" value="<%= c.emoji || '' %>" placeholder="es. 🎯" />
+                    <div class="emoji-field">
+                      <input type="text" name="emoji" value="<%= c.emoji || '' %>" placeholder="es. 🎯" class="emoji-text-input" />
+                      <button type="button" class="emoji-picker-toggle" aria-label="Scegli emoji">😀</button>
+                      <div class="emoji-picker-panel" hidden></div>
+                    </div>
                   </label>
                   <button type="submit" class="btn-primary-sm">Salva</button>
                 </form>
@@ -91,7 +95,11 @@
           </label>
           <label>
             Emoji reazione (opzionale)
-            <input type="text" name="emoji" placeholder="es. 🎯" />
+            <div class="emoji-field">
+              <input type="text" name="emoji" placeholder="es. 🎯" class="emoji-text-input" />
+              <button type="button" class="emoji-picker-toggle" aria-label="Scegli emoji">😀</button>
+              <div class="emoji-picker-panel" hidden></div>
+            </div>
           </label>
           <button type="submit" class="btn-primary">Crea trappola</button>
         </form>
@@ -122,4 +130,6 @@
     </section>
   </main>
 </div>
+<script type="application/json" id="honeypot-guild-emojis"><%- JSON.stringify(guildEmojis) %></script>
+<script src="/emojiPicker.js"></script>
 <%- include('partials/footer') %>

@@ -49,7 +49,7 @@ Server-rendered (Express + EJS) web dashboard, running in the **same process and
 - **Health check / keep-alive ping**: point Render's health check path (and any external uptime ping, e.g. cron-job.org) at `/healthz`, not `/` — the root path now requires login.
 - **Login persistence**: sessions are stored in the same Turso DB (`dashboard_sessions` table, `src/dashboard/sessionStore.js`), not in memory — a redeploy or a free-plan sleep/wake cycle no longer forces a fresh Discord login. Cookie lasts 30 days and slides forward on every active request (`rolling: true`); expired rows are swept every 6h.
 - **Shell**: sidebar listing every feature (from the same registry `/disablefeature` uses, so it can't drift), and an overview page with basic stats (member count, features enabled/total, Honeypot kick total, bot uptime).
-- **Per-feature config pages**: features get their own dashboard page one at a time — see `src/dashboard/sidebarData.js`'s `FEATURE_PAGES` map for which ones have one so far (currently: Honeypot — toggle, trap channels list/add/remove, live-edit a trap's message/button/emoji, move a trap to a different channel, kick log). A feature without an entry there just shows in the sidebar as "coming soon".
+- **Per-feature config pages**: features get their own dashboard page one at a time — see `src/dashboard/sidebarData.js`'s `FEATURE_PAGES` map for which ones have one so far (currently: Honeypot — toggle, trap channels list/add/remove, live-edit a trap's message/button/emoji (with a visual emoji picker: default set plus the server's own custom emoji), move a trap to a different channel, kick log). A feature without an entry there just shows in the sidebar as "coming soon".
 
 ## Available commands
 
@@ -116,6 +116,7 @@ Notifications: a DM embed with a couple messages of context, the trigger message
 ### Honeypot (`/honeypot`)
 `Admin`. Traps a channel: posts a message with a button, then kicks anyone who isn't Mod/Admin the instant they post there, react to anything there, or click the button. Their post gets deleted too if that's what triggered the kick.
 - `add channel:<#channel> [message] [button_label] [emoji]` — sets up the trap and posts the bait message; `emoji`, if given, makes the bot react to its own message with it as extra bait (not required — any reaction already triggers a kick). That reaction gets removed again after it's used to catch someone.
+- `edit channel:<...> [new_channel] [message] [button_label] [emoji] [remove_emoji]` — updates an existing trap; anything omitted keeps its current value (autocomplete over active traps). `new_channel` moves the trap there (deletes the old bait message, posts a new one); `remove_emoji` clears the reaction emoji instead of setting a new one.
 - `remove channel:<...>` — removes the trap, deletes the bait message if present (autocomplete over active traps).
 - `list` — lists active honeypot channels.
 - `log` — total kick count plus the 10 most recent (who, how, when).

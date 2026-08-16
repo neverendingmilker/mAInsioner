@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const { handleAdd } = require('./handlers/add');
+const { handleEdit } = require('./handlers/edit');
 const { handleRemove } = require('./handlers/remove');
 const { handleList } = require('./handlers/list');
 const { handleLog } = require('./handlers/log');
@@ -31,6 +32,31 @@ const data = new SlashCommandBuilder()
       )
   )
   .addSubcommand(buildDisableSubcommand())
+  .addSubcommand((sub) =>
+    sub
+      .setName('edit')
+      .setDescription("Edits an existing trap's message, button label, emoji, and/or which channel it's in")
+      .addStringOption((opt) =>
+        opt.setName('channel').setDescription('Which honeypot to edit (start typing to see active ones)').setRequired(true).setAutocomplete(true)
+      )
+      .addChannelOption((opt) =>
+        opt
+          .setName('new_channel')
+          .setDescription('Move the trap here (optional — leave empty to keep it in the same channel)')
+          .addChannelTypes(...HONEYPOT_CHANNEL_TYPES)
+          .setRequired(false)
+      )
+      .addStringOption((opt) => opt.setName('message').setDescription("New bait message text (optional, keeps the current one otherwise)").setRequired(false))
+      .addStringOption((opt) =>
+        opt.setName('button_label').setDescription('New label on the trap button (optional, keeps the current one otherwise)').setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt.setName('emoji').setDescription('New reaction emoji (optional, keeps the current one otherwise)').setRequired(false)
+      )
+      .addBooleanOption((opt) =>
+        opt.setName('remove_emoji').setDescription('Remove the current reaction emoji instead of setting a new one').setRequired(false)
+      )
+  )
   .addSubcommand((sub) => sub.setName('list').setDescription('Lists every channel currently set up as a honeypot'))
   .addSubcommand((sub) => sub.setName('log').setDescription('Shows how many people honeypot has kicked, and the most recent ones'))
   .addSubcommand((sub) =>
@@ -52,6 +78,8 @@ async function execute(interaction) {
   switch (sub) {
     case 'add':
       return handleAdd(interaction);
+    case 'edit':
+      return handleEdit(interaction);
     case 'remove':
       return handleRemove(interaction);
     case 'list':
