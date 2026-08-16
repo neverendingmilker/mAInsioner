@@ -47,6 +47,7 @@ Server-rendered (Express + EJS) web dashboard, running in the **same process and
 
 - **Setup**: Discord Developer Portal → your app → OAuth2 → add a redirect `https://<your-render-url>/auth/discord/callback`, copy the **Client Secret** into `DISCORD_CLIENT_SECRET`. Set `SESSION_SECRET` to any long random string (signs the session cookie). If the bot is in more than one server (e.g. a test server for Server Backup), set `GUILD_ID` to the one the dashboard should manage.
 - **Health check / keep-alive ping**: point Render's health check path (and any external uptime ping, e.g. cron-job.org) at `/healthz`, not `/` — the root path now requires login.
+- **Login persistence**: sessions are stored in the same Turso DB (`dashboard_sessions` table, `src/dashboard/sessionStore.js`), not in memory — a redeploy or a free-plan sleep/wake cycle no longer forces a fresh Discord login. Cookie lasts 30 days and slides forward on every active request (`rolling: true`); expired rows are swept every 6h.
 - **Shell**: sidebar listing every feature (from the same registry `/disablefeature` uses, so it can't drift), and an overview page with basic stats (member count, features enabled/total, Honeypot kick total, bot uptime).
 - **Per-feature config pages**: features get their own dashboard page one at a time — see `src/dashboard/sidebarData.js`'s `FEATURE_PAGES` map for which ones have one so far (currently: Honeypot — toggle, trap channels list/add/remove, kick log). A feature without an entry there just shows in the sidebar as "coming soon".
 

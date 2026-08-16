@@ -421,6 +421,16 @@ async function createTables() {
         created_at INTEGER NOT NULL
       )`,
       `CREATE INDEX IF NOT EXISTS serverbackup_assets_snapshot_idx ON serverbackup_assets (snapshot_id)`,
+
+      // Dashboard login sessions — persisted here (instead of express-session's default
+      // in-memory store) so admins stay logged in across a redeploy or a Render free-plan
+      // sleep/wake cycle, not just across requests within one running process.
+      `CREATE TABLE IF NOT EXISTS dashboard_sessions (
+        sid TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        expires_at INTEGER NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS dashboard_sessions_expires_idx ON dashboard_sessions (expires_at)`,
     ],
     'write'
   );

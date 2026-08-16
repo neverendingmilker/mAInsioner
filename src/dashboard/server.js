@@ -2,6 +2,7 @@ const path = require('path');
 const express = require('express');
 const session = require('express-session');
 const config = require('../config/config');
+const { SqlSessionStore } = require('./sessionStore');
 const { requireAdmin } = require('./middleware/requireAdmin');
 const authRoutes = require('./routes/auth');
 const overviewRoutes = require('./routes/overview');
@@ -36,11 +37,14 @@ function start(client) {
   app.use(
     session({
       secret: config.dashboard.sessionSecret,
+      store: new SqlSessionStore(),
       resave: false,
       saveUninitialized: false,
-      // MemoryStore (the default) is fine here: single process, one small admin team,
-      // no need for a shared/persistent session store for a v1 dashboard.
-      cookie: { httpOnly: true, sameSite: 'lax', secure: 'auto', maxAge: 7 * 24 * 60 * 60 * 1000 },
+      // Every request that touches a session pushes its expiry back out (via the store's
+      // touch()), so staying active in the dashboard keeps you logged in indefinitely —
+      // the 30 days only start counting down once you actually stop using it.
+      rolling: true,
+      cookie: { httpOnly: true, sameSite: 'lax', secure: 'auto', maxAge: 30 * 24 * 60 * 60 * 1000 },
     })
   );
 

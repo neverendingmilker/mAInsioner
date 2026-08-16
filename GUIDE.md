@@ -238,7 +238,7 @@ Formal warnings escalate a user through two configured roles; verbals are logged
 
 ## 🖥️ Web Dashboard
 
-A web dashboard runs alongside the bot (same process, same URL Render gives it). Log in with Discord — access is granted to whoever has the **Administrator** permission on the server, no separate password or account.
+A web dashboard runs alongside the bot (same process, same URL Render gives it). Log in with Discord — access is granted to whoever has the **Administrator** permission on the server, no separate password or account. The login sticks around for 30 days and renews itself while you're active, surviving redeploys and the free-plan sleep/wake cycle — you shouldn't need to log in again every time.
 
 There's a sidebar listing every feature, and an overview page with a few basic numbers (member count, how many features are enabled, total Honeypot kicks, bot uptime). Per-feature settings pages are being added one at a time — the ones that exist so far show as normal sidebar links, the rest are greyed out ("coming soon").
 
