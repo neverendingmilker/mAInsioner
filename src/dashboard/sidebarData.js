@@ -7,6 +7,7 @@ const FEATURE_PAGES = {
   birthday: '/birthday',
   honeypot: '/honeypot',
   reactionlimit: '/reactionlimit',
+  rolelink: '/rolelink',
   slowmode: '/slowmode',
 };
 

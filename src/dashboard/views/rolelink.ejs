@@ -1,0 +1,95 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Role Links</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/rolelink/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Collegamenti (<%= links.length %>)</h2>
+      <% if (links.length === 0) { %>
+        <p class="hint">Nessun collegamento configurato.</p>
+      <% } else { %>
+        <% links.forEach((l) => { %>
+          <div class="config-card">
+            <div class="config-card-header">
+              <span class="config-name"><%= l.roleAName %> <%= l.bidirectional ? '↔' : '→' %> <%= l.roleBName %></span>
+              <form method="POST" action="/rolelink/remove" onsubmit="return confirm('Rimuovere questo collegamento?');">
+                <input type="hidden" name="roleAId" value="<%= l.roleAId %>" />
+                <input type="hidden" name="roleBId" value="<%= l.roleBId %>" />
+                <button type="submit" class="btn-danger-sm">Rimuovi</button>
+              </form>
+            </div>
+            <details class="config-edit">
+              <summary>Modifica</summary>
+              <form method="POST" action="/rolelink/edit" class="form">
+                <input type="hidden" name="currentRoleAId" value="<%= l.roleAId %>" />
+                <input type="hidden" name="currentRoleBId" value="<%= l.roleBId %>" />
+                <label>
+                  Ruolo 1 (quando viene tolto…)
+                  <select name="roleAId" required>
+                    <% roles.forEach((r) => { %>
+                      <option value="<%= r.id %>" <%= r.id === l.roleAId ? 'selected' : '' %>><%= r.name %></option>
+                    <% }) %>
+                  </select>
+                </label>
+                <label>
+                  …viene tolto anche Ruolo 2
+                  <select name="roleBId" required>
+                    <% roles.forEach((r) => { %>
+                      <option value="<%= r.id %>" <%= r.id === l.roleBId ? 'selected' : '' %>><%= r.name %></option>
+                    <% }) %>
+                  </select>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" name="bidirectional" <%= l.bidirectional ? 'checked' : '' %> />
+                  Vale anche al contrario (perdere Ruolo 2 toglie anche Ruolo 1)
+                </label>
+                <button type="submit" class="btn-primary-sm">Salva</button>
+              </form>
+            </details>
+          </div>
+        <% }) %>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Aggiungi collegamento</h2>
+      <% if (roles.length < 2) { %>
+        <p class="hint">Servono almeno due ruoli assegnabili nel server per creare un collegamento.</p>
+      <% } else { %>
+        <form method="POST" action="/rolelink/add" class="form">
+          <label>
+            Ruolo 1 (quando viene tolto…)
+            <select name="roleAId" required>
+              <option value="" disabled selected>Scegli un ruolo…</option>
+              <% roles.forEach((r) => { %>
+                <option value="<%= r.id %>"><%= r.name %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>
+            …viene tolto anche Ruolo 2
+            <select name="roleBId" required>
+              <option value="" disabled selected>Scegli un ruolo…</option>
+              <% roles.forEach((r) => { %>
+                <option value="<%= r.id %>"><%= r.name %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" name="bidirectional" />
+            Vale anche al contrario (perdere Ruolo 2 toglie anche Ruolo 1)
+          </label>
+          <button type="submit" class="btn-primary">Crea collegamento</button>
+        </form>
+        <p class="hint">Per collegare Ruolo 1 a più ruoli in un colpo solo, usa <code>/rolelink add</code> su Discord.</p>
+      <% } %>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>
