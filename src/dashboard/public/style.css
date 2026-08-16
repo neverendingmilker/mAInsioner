@@ -409,6 +409,20 @@ a {
   background: rgba(237, 66, 69, 0.12);
 }
 
+.btn-secondary-sm {
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-secondary-sm:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .btn-primary-sm {
   align-self: flex-start;
   padding: 6px 12px;

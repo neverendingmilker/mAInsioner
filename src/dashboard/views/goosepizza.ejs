@@ -1,0 +1,111 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>GoosePizza</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/goosepizza/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <section class="panel">
+      <h2>Trigger (<%= triggers.length %>)</h2>
+      <% if (triggers.length === 0) { %>
+        <p class="hint">Nessun trigger configurato.</p>
+      <% } else { %>
+        <% triggers.forEach((t) => { %>
+          <div class="config-card">
+            <div class="config-card-header">
+              <span class="config-name"><%= t.name %><%= t.enabled ? '' : ' (disattivato)' %></span>
+              <span class="config-meta">"<%= t.triggerText %>" → <%= t.emoji %> (<%= t.responseModeLabel %>) — <%= t.channelLabels %></span>
+              <form method="POST" action="/goosepizza/trigger-toggle" style="display:inline">
+                <input type="hidden" name="name" value="<%= t.name %>" />
+                <input type="hidden" name="enabled" value="<%= t.enabled ? 'false' : 'true' %>" />
+                <button type="submit" class="btn-secondary-sm"><%= t.enabled ? 'Disattiva' : 'Attiva' %></button>
+              </form>
+              <form method="POST" action="/goosepizza/remove" onsubmit="return confirm('Rimuovere questo trigger?');">
+                <input type="hidden" name="name" value="<%= t.name %>" />
+                <button type="submit" class="btn-danger-sm">Rimuovi</button>
+              </form>
+            </div>
+            <details class="config-edit">
+              <summary>Modifica</summary>
+              <form method="POST" action="/goosepizza/edit" class="form">
+                <input type="hidden" name="name" value="<%= t.name %>" />
+                <label>
+                  Testo che fa scattare il trigger
+                  <input type="text" name="triggerText" value="<%= t.triggerText %>" maxlength="100" required />
+                </label>
+                <label>
+                  Emoji (unicode o del server, es. 🍕 o &lt;:nome:id&gt;)
+                  <input type="text" name="emoji" value="<%= t.emoji %>" required />
+                </label>
+                <label>
+                  Modalità
+                  <select name="mode" required>
+                    <% Object.entries(responseModes).forEach(([value, label]) => { %>
+                      <option value="<%= value %>" <%= t.responseMode === value ? 'selected' : '' %>><%= label %></option>
+                    <% }) %>
+                  </select>
+                </label>
+                <fieldset>
+                  <legend>Canali osservati (max <%= maxChannels %>)</legend>
+                  <% textChannels.forEach((ch) => { %>
+                    <label class="checkbox-label">
+                      <input type="checkbox" name="channelIds" value="<%= ch.id %>" <%= t.channelIds.includes(ch.id) ? 'checked' : '' %> />
+                      <%= ch.name %>
+                    </label>
+                  <% }) %>
+                </fieldset>
+                <button type="submit" class="btn-primary-sm">Salva</button>
+              </form>
+            </details>
+          </div>
+        <% }) %>
+      <% } %>
+    </section>
+
+    <section class="panel">
+      <h2>Aggiungi trigger</h2>
+      <% if (textChannels.length === 0) { %>
+        <p class="hint">Nessun canale disponibile.</p>
+      <% } else { %>
+        <form method="POST" action="/goosepizza/add" class="form">
+          <label>
+            Nome (identifica il trigger, es. "pizza")
+            <input type="text" name="name" required />
+          </label>
+          <label>
+            Testo che fa scattare il trigger
+            <input type="text" name="triggerText" maxlength="100" required />
+          </label>
+          <label>
+            Emoji (unicode o del server, es. 🍕 o &lt;:nome:id&gt;)
+            <input type="text" name="emoji" required />
+          </label>
+          <label>
+            Modalità
+            <select name="mode" required>
+              <option value="" disabled selected>Scegli…</option>
+              <% Object.entries(responseModes).forEach(([value, label]) => { %>
+                <option value="<%= value %>"><%= label %></option>
+              <% }) %>
+            </select>
+          </label>
+          <fieldset>
+            <legend>Canali da osservare (almeno 1, max <%= maxChannels %>)</legend>
+            <% textChannels.forEach((ch) => { %>
+              <label class="checkbox-label">
+                <input type="checkbox" name="channelIds" value="<%= ch.id %>" />
+                <%= ch.name %>
+              </label>
+            <% }) %>
+          </fieldset>
+          <button type="submit" class="btn-primary">Aggiungi trigger</button>
+        </form>
+      <% } %>
+    </section>
+  </main>
+</div>
+<%- include('partials/footer') %>

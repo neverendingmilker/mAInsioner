@@ -16,6 +16,8 @@ const incidentRoutes = require('./routes/incident');
 const comborolesRoutes = require('./routes/comboroles');
 const autoresponderRoutes = require('./routes/autoresponder');
 const animenightRoutes = require('./routes/animenight');
+const goosepizzaRoutes = require('./routes/goosepizza');
+const boosterlinksRoutes = require('./routes/boosterlinks');
 
 // Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator in
 // at least one server the bot is in — which one they're managing is then picked via
@@ -91,7 +93,9 @@ function start(client) {
     incidentRoutes,
     comborolesRoutes,
     autoresponderRoutes,
-    animenightRoutes
+    animenightRoutes,
+    goosepizzaRoutes,
+    boosterlinksRoutes
   );
 
   app.use((req, res) => {
