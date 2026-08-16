@@ -242,4 +242,4 @@ A web dashboard runs alongside the bot (same process, same URL Render gives it).
 
 There's a sidebar listing every feature, and an overview page with a few basic numbers (member count, how many features are enabled, total Honeypot kicks, bot uptime). Per-feature settings pages are being added one at a time — the ones that exist so far show as normal sidebar links, the rest are greyed out ("coming soon").
 
-- **Honeypot** — turn it on/off, see and manage every trap channel (add a new one with an optional custom message/button label/bait emoji, or remove an existing one), and the full kick log with totals.
+- **Honeypot** — turn it on/off, see and manage every trap channel (add a new one with an optional custom message/button label/bait emoji, or remove an existing one), and the full kick log with totals. Each trap also has an "Edit" section, pre-filled with whatever the message/button currently say — saving it edits that same message live in the channel, instead of posting a new one.

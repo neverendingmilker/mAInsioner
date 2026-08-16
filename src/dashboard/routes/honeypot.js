@@ -29,11 +29,28 @@ function channelLabel(guild, channelId) {
 }
 
 async function renderHoneypotPage(req, res, guild) {
-  const [enabled, channels, { total: kickTotal, recent }] = await Promise.all([
+  const [enabled, channelRows, { total: kickTotal, recent }] = await Promise.all([
     honeypotManager.isEnabled(guild.id),
     honeypotManager.listChannels(guild.id),
     honeypotManager.getKickLog(guild.id, RECENT_KICKS_LIMIT),
   ]);
+
+  // Bait text and button label live only on the Discord message itself (see
+  // getChannelDetails) — fetched fresh per channel so the edit form always starts from
+  // what's actually posted right now, not a possibly-stale copy.
+  const channels = await Promise.all(
+    channelRows.map(async (c) => {
+      const details = await honeypotManager.getChannelDetails(guild, c.channelId);
+      return {
+        channelId: c.channelId,
+        channelName: channelLabel(guild, c.channelId),
+        emoji: c.emoji,
+        messageMissing: details?.messageMissing ?? true,
+        messageText: details?.messageText ?? '',
+        buttonLabel: details?.buttonLabel || honeypotManager.DEFAULT_BUTTON_LABEL,
+      };
+    })
+  );
 
   const textChannels = [...guild.channels.cache.values()]
     .filter((c) => HONEYPOT_CHANNEL_TYPES.includes(c.type))
@@ -45,7 +62,7 @@ async function renderHoneypotPage(req, res, guild) {
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
     features: getSidebarFeatures('honeypot'),
     enabled,
-    channels: channels.map((c) => ({ channelId: c.channelId, channelName: channelLabel(guild, c.channelId), emoji: c.emoji })),
+    channels,
     textChannels,
     defaultMessage: honeypotManager.DEFAULT_MESSAGE,
     defaultButtonLabel: honeypotManager.DEFAULT_BUTTON_LABEL,
@@ -104,6 +121,27 @@ router.post('/honeypot/add', async (req, res, next) => {
         req.body.emoji?.trim() || null
       );
       req.session.flash = { type: 'success', message: `Trappola creata in #${channel.name}.` };
+    } catch (err) {
+      if (err instanceof honeypotManager.ValidationError) {
+        req.session.flash = { type: 'error', message: err.message };
+      } else {
+        throw err;
+      }
+    }
+    res.redirect('/honeypot');
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/honeypot/edit', async (req, res, next) => {
+  try {
+    const guild = requireGuild(req, res);
+    if (!guild) return;
+
+    try {
+      await honeypotManager.editChannel(guild, req.body.channelId, req.body.message?.trim() || null, req.body.buttonLabel?.trim() || null);
+      req.session.flash = { type: 'success', message: 'Trappola aggiornata — il messaggio nel canale è già cambiato.' };
     } catch (err) {
       if (err instanceof honeypotManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };

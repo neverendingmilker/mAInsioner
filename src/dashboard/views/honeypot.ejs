@@ -19,25 +19,37 @@
       <% if (channels.length === 0) { %>
         <p class="hint">Nessun canale configurato.</p>
       <% } else { %>
-        <table class="table">
-          <thead>
-            <tr><th>Canale</th><th>Emoji bait</th><th></th></tr>
-          </thead>
-          <tbody>
-            <% channels.forEach((c) => { %>
-              <tr>
-                <td><%= c.channelName %></td>
-                <td><%= c.emoji || '—' %></td>
-                <td>
-                  <form method="POST" action="/honeypot/remove" onsubmit="return confirm('Rimuovere la trappola da questo canale?');">
-                    <input type="hidden" name="channelId" value="<%= c.channelId %>" />
-                    <button type="submit" class="btn-danger-sm">Rimuovi</button>
-                  </form>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
+        <% channels.forEach((c) => { %>
+          <div class="trap-card">
+            <div class="trap-card-header">
+              <span class="trap-channel-name"><%= c.channelName %></span>
+              <span class="trap-emoji" title="Emoji reazione"><%= c.emoji || '—' %></span>
+              <form method="POST" action="/honeypot/remove" onsubmit="return confirm('Rimuovere la trappola da questo canale?');">
+                <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                <button type="submit" class="btn-danger-sm">Rimuovi</button>
+              </form>
+            </div>
+            <% if (c.messageMissing) { %>
+              <p class="hint">⚠️ Il messaggio esca non esiste più su Discord — rimuovi e ricrea la trappola per poterla modificare.</p>
+            <% } else { %>
+              <details class="trap-edit">
+                <summary>Modifica messaggio/bottone</summary>
+                <form method="POST" action="/honeypot/edit" class="form">
+                  <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                  <label>
+                    Messaggio esca
+                    <textarea name="message" rows="2"><%= c.messageText %></textarea>
+                  </label>
+                  <label>
+                    Etichetta bottone
+                    <input type="text" name="buttonLabel" value="<%= c.buttonLabel %>" />
+                  </label>
+                  <button type="submit" class="btn-primary-sm">Aggiorna nel canale</button>
+                </form>
+              </details>
+            <% } %>
+          </div>
+        <% }) %>
       <% } %>
     </section>
 

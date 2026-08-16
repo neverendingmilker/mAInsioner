@@ -77,6 +77,61 @@ async function listChannels(guildId) {
   return repo.getAllChannels(guildId);
 }
 
+// The bait text and button label aren't duplicated into the DB — the live Discord message
+// is the only copy — so this is how a caller (the dashboard's edit form) finds out what
+// they currently say. Also doubles as an existence check: `messageMissing: true` means the
+// trap message itself is gone (deleted outside the bot's control), so there's nothing left
+// to edit — the channel would need to be removed and re-added instead.
+async function getChannelDetails(guild, channelId) {
+  const honeypot = await repo.getChannel(guild.id, channelId);
+  if (!honeypot) return null;
+
+  const channel = guild.channels.cache.get(channelId);
+  const message = channel && (await channel.messages.fetch(honeypot.messageId).catch(() => null));
+
+  if (!message) {
+    return { ...honeypot, messageMissing: true, messageText: '', buttonLabel: '' };
+  }
+
+  return {
+    ...honeypot,
+    messageMissing: false,
+    messageText: message.content || '',
+    buttonLabel: message.resolveComponent(BUTTON_CUSTOM_ID)?.label ?? DEFAULT_BUTTON_LABEL,
+  };
+}
+
+// Edits the honeypot's existing bait message and button label in place — unlike
+// addChannel (which always posts a brand-new message), this updates the one that's
+// already live, so anyone looking at the channel right now sees the change immediately
+// instead of the channel ending up with two trap messages.
+async function editChannel(guild, channelId, messageText, buttonLabel) {
+  const honeypot = await repo.getChannel(guild.id, channelId);
+  if (!honeypot) {
+    throw new ValidationError("That channel isn't set up as a honeypot.");
+  }
+
+  const channel = guild.channels.cache.get(channelId);
+  if (!channel) {
+    throw new ValidationError("That channel doesn't exist anymore.");
+  }
+
+  const message = await channel.messages.fetch(honeypot.messageId).catch(() => null);
+  if (!message) {
+    throw new ValidationError('The trap message no longer exists on Discord — remove this trap and add it again instead.');
+  }
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(BUTTON_CUSTOM_ID).setLabel(buttonLabel || DEFAULT_BUTTON_LABEL).setStyle(ButtonStyle.Success)
+  );
+
+  try {
+    await message.edit({ content: messageText || DEFAULT_MESSAGE, components: [row] });
+  } catch (err) {
+    throw new ValidationError(`Couldn't update the trap message: ${err.message}`);
+  }
+}
+
 // Kicks the member unless they're a Mod/Administrator (who are always safe from every
 // trigger below). Returns true if a kick happened, false if the member was exempt or
 // the kick failed (e.g. the bot's role isn't high enough — logged, not thrown, since
@@ -189,6 +244,8 @@ module.exports = {
   addChannel,
   removeChannel,
   listChannels,
+  getChannelDetails,
+  editChannel,
   getKickLog,
   handleMessage,
   handleReactionAdd,

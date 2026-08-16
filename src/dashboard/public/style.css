@@ -354,3 +354,67 @@ a {
 .btn-danger-sm:hover {
   background: rgba(237, 66, 69, 0.12);
 }
+
+.btn-primary-sm {
+  align-self: flex-start;
+  padding: 6px 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* --- Honeypot's per-channel trap cards (list + inline edit) --- */
+
+.trap-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.trap-card:last-child {
+  margin-bottom: 0;
+}
+
+.trap-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trap-card-header form {
+  margin: 0 0 0 auto;
+}
+
+.trap-channel-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.trap-emoji {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.trap-edit {
+  margin-top: 10px;
+}
+
+.trap-edit summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.trap-edit summary:hover {
+  color: var(--text);
+}
+
+.trap-edit .form {
+  margin-top: 10px;
+  max-width: 420px;
+}
