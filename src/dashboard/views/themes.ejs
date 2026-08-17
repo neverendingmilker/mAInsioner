@@ -76,12 +76,12 @@
       <% } else { %>
         <div id="themes-item-list">
           <% themeRows.forEach((t) => { %>
-            <div class="themes-item" data-id="<%= t.id %>">
-              <span class="themes-drag-handle" title="Trascina per riordinare">⠿</span>
-              <div class="themes-item-body">
+            <div class="reorder-item" data-id="<%= t.id %>">
+              <span class="reorder-drag-handle" title="Trascina per riordinare">⠿</span>
+              <div class="reorder-item-body">
                 <% if (t.isNext) { %><span class="pill next-badge pill-purple">Prossimo</span><br /><% } %>
-                <span class="themes-item-text"><%= t.theme %></span>
-                <% if (t.source === 'sheet') { %> <span class="themes-source-badge">(da Google Sheet)</span><% } %>
+                <span class="reorder-item-text"><%= t.theme %></span>
+                <% if (t.source === 'sheet') { %> <span class="reorder-source-badge">(da Google Sheet)</span><% } %>
               </div>
               <div class="card-actions">
                 <details>

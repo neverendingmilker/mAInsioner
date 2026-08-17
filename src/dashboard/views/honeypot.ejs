@@ -16,10 +16,10 @@
         <p class="hint">Nessun canale configurato.</p>
       <% } else { %>
         <% channels.forEach((c) => { %>
-          <div class="trap-card">
-            <div class="trap-card-header">
-              <span class="trap-channel-name"><%= c.channelName %></span>
-              <span class="trap-emoji" title="Emoji reazione"><%= c.emoji || '—' %></span>
+          <div class="config-card">
+            <div class="config-card-header">
+              <span class="config-name"><%= c.channelName %></span>
+              <span class="config-meta" title="Emoji reazione"><%= c.emoji || '—' %></span>
               <div class="card-actions">
                 <% if (!c.messageMissing) { %>
                   <details>

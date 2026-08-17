@@ -83,12 +83,12 @@
       <% } else { %>
         <div id="qotd-question-list">
           <% questionRows.forEach((q) => { %>
-            <div class="qotd-question" data-id="<%= q.id %>">
-              <span class="qotd-drag-handle" title="Trascina per riordinare">⠿</span>
-              <div class="qotd-question-body">
+            <div class="reorder-item" data-id="<%= q.id %>">
+              <span class="reorder-drag-handle" title="Trascina per riordinare">⠿</span>
+              <div class="reorder-item-body">
                 <% if (q.isNext) { %><span class="pill next-badge pill-accent">Prossima</span><br /><% } %>
-                <span class="qotd-question-text"><%= q.question %></span>
-                <% if (q.source === 'sheet') { %> <span class="qotd-source-badge">(da Google Sheet)</span><% } %>
+                <span class="reorder-item-text"><%= q.question %></span>
+                <% if (q.source === 'sheet') { %> <span class="reorder-source-badge">(da Google Sheet)</span><% } %>
               </div>
               <div class="card-actions">
                 <details>

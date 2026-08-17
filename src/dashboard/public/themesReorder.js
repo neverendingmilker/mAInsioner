@@ -10,7 +10,7 @@
   var dragged = null;
 
   function currentOrder() {
-    var rows = list.querySelectorAll('.themes-item');
+    var rows = list.querySelectorAll('.reorder-item');
     var ids = [];
     for (var i = 0; i < rows.length; i++) ids.push(rows[i].getAttribute('data-id'));
     return ids.join(',');
@@ -21,7 +21,7 @@
     form.submit();
   }
 
-  var rows = list.querySelectorAll('.themes-item');
+  var rows = list.querySelectorAll('.reorder-item');
   for (var i = 0; i < rows.length; i++) {
     attachHandlers(rows[i]);
   }
@@ -31,11 +31,11 @@
 
     row.addEventListener('dragstart', function () {
       dragged = row;
-      row.classList.add('themes-dragging');
+      row.classList.add('reorder-dragging');
     });
 
     row.addEventListener('dragend', function () {
-      row.classList.remove('themes-dragging');
+      row.classList.remove('reorder-dragging');
       dragged = null;
       submitNewOrder();
     });

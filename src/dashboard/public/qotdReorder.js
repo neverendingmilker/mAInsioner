@@ -1,5 +1,5 @@
 // Vanilla-JS drag-and-drop reordering for the Question of the Day queue, no
-// dependencies. Each ".qotd-question" row is draggable; dropping it above/below
+// dependencies. Each ".reorder-item" row is draggable; dropping it above/below
 // another row moves it there in the DOM, then a hidden form (#qotd-reorder-form) is
 // submitted with the new order (comma-separated question IDs) — same "plain HTML form
 // POST" convention every other dashboard page uses, just built from JS instead of typed
@@ -13,7 +13,7 @@
   var dragged = null;
 
   function currentOrder() {
-    var rows = list.querySelectorAll('.qotd-question');
+    var rows = list.querySelectorAll('.reorder-item');
     var ids = [];
     for (var i = 0; i < rows.length; i++) ids.push(rows[i].getAttribute('data-id'));
     return ids.join(',');
@@ -24,7 +24,7 @@
     form.submit();
   }
 
-  var rows = list.querySelectorAll('.qotd-question');
+  var rows = list.querySelectorAll('.reorder-item');
   for (var i = 0; i < rows.length; i++) {
     attachHandlers(rows[i]);
   }
@@ -34,11 +34,11 @@
 
     row.addEventListener('dragstart', function () {
       dragged = row;
-      row.classList.add('qotd-dragging');
+      row.classList.add('reorder-dragging');
     });
 
     row.addEventListener('dragend', function () {
-      row.classList.remove('qotd-dragging');
+      row.classList.remove('reorder-dragging');
       dragged = null;
       submitNewOrder();
     });

@@ -48,11 +48,11 @@
         <% monthGroups.forEach((g) => { %>
           <h3 class="month-heading"><%= g.monthLabel %></h3>
           <% g.entries.forEach((e) => { %>
-            <div class="birthday-card">
-              <div class="birthday-card-header">
-                <span class="birthday-user"><%= e.userLabel %></span>
-                <span class="birthday-date"><%= e.day %>/<%= e.month %><% if (e.year) { %>/<%= e.year %><% } %></span>
-                <span class="birthday-countdown"><%= e.daysUntilLabel %></span>
+            <div class="config-card">
+              <div class="config-card-header">
+                <span class="config-name"><%= e.userLabel %></span>
+                <span class="config-meta"><%= e.day %>/<%= e.month %><% if (e.year) { %>/<%= e.year %><% } %></span>
+                <span class="config-meta"><%= e.daysUntilLabel %></span>
                 <div class="card-actions">
                   <% if (e.memberPresent) { %>
                     <details>
