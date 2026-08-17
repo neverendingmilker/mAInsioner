@@ -4,9 +4,12 @@ const { FEATURE_PAGES } = require('../sidebarData');
 
 const router = express.Router();
 
-// The Admin-only switch behind the "Consenti anche ai Mod" checkbox on each feature page
-// (partials/featureToggle.ejs). Not reachable through the sidebar — it's a plain form POST
-// from whichever feature page the checkbox lives on, and redirects back there.
+// The Admin-only switch labeled "Solo Admin" on each feature page (partials/
+// featureToggle.ejs). Not reachable through the sidebar — it's a plain form POST from
+// whichever feature page the switch lives on, and redirects back there. The switch's
+// checked state is the INVERSE of `allowed` (checked = solo admin = mods NOT allowed), so
+// an unchecked box (which a browser omits from the POST body entirely) correctly means
+// "not solo admin" i.e. allowed = true, with no hidden fallback field needed.
 router.post('/mod-access/:featureKey/toggle', async (req, res, next) => {
   try {
     if (req.dashboardRole !== 'admin') {
@@ -18,7 +21,7 @@ router.post('/mod-access/:featureKey/toggle', async (req, res, next) => {
       return res.status(404).render('error', { title: 'Feature sconosciuta', message: 'Feature non valida.' });
     }
 
-    const allowed = req.body.allowed === 'true';
+    const allowed = req.body.soloAdmin !== 'true';
     await modAccess.setFeatureModAccess(req.session.guildId, featureKey, allowed);
     req.session.flash = {
       type: 'success',

@@ -22,13 +22,16 @@
       already. Mods themselves never see this (their `role` is 'mod'), so they can't grant
       themselves more access. Toggling it doesn't affect what a Mod can do INSIDE an
       already-allowed feature — that's always full parity with Admin — only whether they
-      can open this page at all. %>
+      can open this page at all. Label is always "Solo Admin" (doesn't flip to something
+      like "Consentito ai Mod") — ON means mods are locked out, OFF means they're allowed;
+      the checkbox name `soloAdmin` is intentionally the inverse of `modAccessEnabled`, so
+      the route computes `allowed = req.body.soloAdmin !== 'true'` (unchecked → allowed). %>
   <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
     <form method="POST" action="/mod-access/<%= currentFeatureKey %>/toggle" class="mod-access-toggle">
       <label class="switch">
-        <input type="checkbox" name="allowed" value="true" <%= modAccessEnabled ? 'checked' : '' %> onchange="this.form.submit()" />
+        <input type="checkbox" name="soloAdmin" value="true" <%= modAccessEnabled ? '' : 'checked' %> onchange="this.form.submit()" />
         <span class="switch-slider"></span>
-        <span class="switch-label"><%= modAccessEnabled ? 'Consentito ai Mod' : 'Solo Admin' %></span>
+        <span class="switch-label">Solo Admin</span>
       </label>
     </form>
   <% } %>
@@ -39,13 +42,16 @@
       posting on schedule) while locked, only the dashboard's own CRUD forms are blocked
       (enforced centrally in requireDashboardAccess, for Admin and Mod alike). Posts to a
       route generic across every feature page — `featureLocked` local set by the same
-      middleware. %>
+      middleware. Label is always "Modificabile" (doesn't flip to "Bloccato") — ON means
+      editable, OFF means locked; the checkbox name `editable` is intentionally the inverse
+      of `featureLocked`, so the route computes `locked = req.body.editable !== 'true'`
+      (unchecked → locked). %>
   <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
     <form method="POST" action="/feature-lock/<%= currentFeatureKey %>/toggle" class="feature-lock-toggle">
       <label class="switch">
-        <input type="checkbox" name="locked" value="true" <%= typeof featureLocked !== 'undefined' && featureLocked ? 'checked' : '' %> onchange="this.form.submit()" />
+        <input type="checkbox" name="editable" value="true" <%= typeof featureLocked !== 'undefined' && featureLocked ? '' : 'checked' %> onchange="this.form.submit()" />
         <span class="switch-slider"></span>
-        <span class="switch-label"><%= typeof featureLocked !== 'undefined' && featureLocked ? 'Bloccato' : 'Modificabile' %></span>
+        <span class="switch-label">Modificabile</span>
       </label>
     </form>
   <% } %>
