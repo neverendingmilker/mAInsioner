@@ -109,10 +109,46 @@
     function applySpan(card, colSpan, rowSpan) {
       colSpan = clamp(Math.round(colSpan), 1, COLS);
       rowSpan = clamp(Math.round(rowSpan), 1, MAX_ROW_SPAN);
-      card.style.gridColumn = 'span ' + colSpan;
-      card.style.gridRow = 'span ' + rowSpan;
       card.setAttribute('data-col-span', String(colSpan));
       card.setAttribute('data-row-span', String(rowSpan));
+    }
+
+    // Explicitly places every card (column-start AND row-start, not just a span) instead
+    // of leaving it to the grid's own auto-placement. Auto-placement (even "dense") packs
+    // strictly in DOM order and can't tell that a card is *meant* to stand next to a
+    // group — e.g. one tall card meant to sit beside three stacked short ones would often
+    // get "used" to patch an earlier gap instead, depending on exactly where it fell in
+    // the list, and different numbers of cards per column (this one's whole point) just
+    // wasn't reliably achievable. This walks the cards in their current DOM order and
+    // always drops the next one into whichever column(s) it fits into earliest — the same
+    // "shortest column first" rule a masonry layout uses — so a column naturally ends up
+    // with as many or as few cards as their actual sizes call for, and it holds regardless
+    // of *where* in the list a resized card happens to be, not just one exact position.
+    function repositionAll() {
+      var colRow = [];
+      for (var c = 0; c < COLS; c++) colRow.push(1);
+
+      var cards = list.querySelectorAll('.panel[data-card-id]');
+      for (var i = 0; i < cards.length; i++) {
+        var span = readSpan(cards[i]);
+        var colSpan = clamp(span.colSpan, 1, COLS);
+        var rowSpan = clamp(span.rowSpan, 1, MAX_ROW_SPAN);
+
+        var bestCol = 0;
+        var bestStart = Infinity;
+        for (var start = 0; start <= COLS - colSpan; start++) {
+          var neededRow = 1;
+          for (var k = start; k < start + colSpan; k++) neededRow = Math.max(neededRow, colRow[k]);
+          if (neededRow < bestStart) {
+            bestStart = neededRow;
+            bestCol = start;
+          }
+        }
+
+        cards[i].style.gridColumn = (bestCol + 1) + ' / span ' + colSpan;
+        cards[i].style.gridRow = bestStart + ' / span ' + rowSpan;
+        for (var k2 = bestCol; k2 < bestCol + colSpan; k2++) colRow[k2] = bestStart + rowSpan;
+      }
     }
 
     function currentSizes() {
@@ -138,6 +174,10 @@
         applySpan(cardsForSize[s], sz.colSpan, sz.rowSpan);
       }
     }
+    // Every card needs an explicit position, not just the ones with a saved size — this is
+    // also what places a never-resized page's cards (all still full-width/one-row) one per
+    // row, same look as before any of this existed.
+    repositionAll();
 
     // --- Column count control (radio pair in featureToggle.ejs, no role restriction) ---
     var colsRadios = document.querySelectorAll('input[name="card-cols"]');
@@ -168,6 +208,10 @@
           }
           if (changed) writeJSON(sizeKey, sizes);
         }
+
+        // Column count changes where every card lands, not just the ones that got
+        // clamped above.
+        repositionAll();
       });
     }
 
@@ -252,6 +296,10 @@
         var deltaCols = Math.round(dx / (colWidth + GAP));
         var deltaRows = Math.round(dy / (ROW_UNIT + GAP));
         applySpan(card, start.colSpan + deltaCols, start.rowSpan + deltaRows);
+        // Resizing this one card can change where every other card lands too (a column
+        // it now takes more/less of), so the whole layout is recomputed live as you drag,
+        // not just this card's own box.
+        repositionAll();
       }
 
       function onUp() {
@@ -293,6 +341,8 @@
         var rect = card.getBoundingClientRect();
         var after = e.clientY - rect.top > rect.height / 2;
         list.insertBefore(dragged, after ? card.nextSibling : card);
+        // New DOM order can land cards in different columns entirely, live as you drag.
+        repositionAll();
       });
     }
 
