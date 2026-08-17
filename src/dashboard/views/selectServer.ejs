@@ -10,7 +10,7 @@
           <button type="submit" class="server-list-btn">
             <% if (g.iconURL) { %><img src="<%= g.iconURL %>" alt="" class="guild-icon" /><% } %>
             <span><%= g.name %></span>
-            <span class="role-badge role-badge-<%= g.role %>"><%= g.role === 'admin' ? 'Admin' : 'Mod' %></span>
+            <span class="pill role-badge <%= g.role === 'admin' ? 'pill-accent' : 'pill-success' %>"><%= g.role === 'admin' ? 'Admin' : 'Mod' %></span>
           </button>
         </form>
       <% }) %>

@@ -86,7 +86,7 @@
             <div class="qotd-question" data-id="<%= q.id %>">
               <span class="qotd-drag-handle" title="Trascina per riordinare">⠿</span>
               <div class="qotd-question-body">
-                <% if (q.isNext) { %><span class="qotd-next-badge">Prossima</span><br /><% } %>
+                <% if (q.isNext) { %><span class="pill next-badge pill-accent">Prossima</span><br /><% } %>
                 <span class="qotd-question-text"><%= q.question %></span>
                 <% if (q.source === 'sheet') { %> <span class="qotd-source-badge">(da Google Sheet)</span><% } %>
               </div>

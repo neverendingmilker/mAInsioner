@@ -247,8 +247,8 @@ a {
 }
 
 .card-grid-target--valid {
-  /* Same 15% intensity as every other subtle-green background (badge-mod, flash-success,
-     badge-og-fren) — was 0.18 (unlike --invalid below, matched to --danger at 0.15). */
+  /* Same 15% intensity as every other subtle-green background (.pill-success, flash-success)
+     — was 0.18 (unlike --invalid below, matched to --danger at 0.15). */
   background: color-mix(in srgb, var(--success) 15%, transparent);
   border: 2px solid var(--success);
 }
@@ -440,8 +440,14 @@ a {
   gap: 12px 20px;
 }
 
-.role-badge {
-  margin-left: auto;
+/* Shared pill/badge shape — small, uppercase, rounded — used for every role/state
+   indicator in the dashboard (server-picker role badge, Booster Links' Mod/OG-Fren/In
+   pausa, QOTD/Themes "next" indicators). Pair with one .pill-* color modifier below for
+   the fill/border/text color, and (optionally) a page-specific positional class for
+   margin/vertical-align — .role-badge, .badge and .next-badge further down are exactly
+   that, now positional-only since their old duplicated shape/color moved here. */
+.pill {
+  display: inline-block;
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 11px;
@@ -450,16 +456,32 @@ a {
   letter-spacing: 0.03em;
 }
 
-.role-badge-admin {
-  background: rgba(88, 101, 242, 0.18);
+.pill-accent {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
   border: 1px solid var(--accent);
   color: #b3baf7;
 }
 
-.role-badge-mod {
+.pill-success {
   background: color-mix(in srgb, var(--success) 15%, transparent);
   border: 1px solid var(--success);
   color: #7ee2a0;
+}
+
+.pill-purple {
+  background: rgba(155, 89, 182, 0.18);
+  border: 1px solid #9b59b6;
+  color: #cd9ee0;
+}
+
+.pill-muted {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.role-badge {
+  margin-left: auto;
 }
 
 /* Segmented button-group skin for the feature-page header controls (on/off, Solo Admin,
@@ -895,37 +917,12 @@ a {
   font-size: 14px;
 }
 
-/* Small role-based pill badges next to a .config-name (currently just Booster Links' Mod/
-   OG-Fren indicators) — same pill shape as .qotd-next-badge, different colors per role. */
+/* Small role/state pill badges next to a .config-name (Booster Links' Mod/OG-Fren/In
+   pausa) — shape+color now come from .pill + a .pill-* modifier, this is just the
+   inline positioning next to the name. */
 .badge {
-  display: inline-block;
   margin-left: 6px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
   vertical-align: middle;
-}
-
-.badge-mod {
-  background: rgba(88, 101, 242, 0.18);
-  border: 1px solid var(--accent);
-  color: #b3baf7;
-}
-
-.badge-og-fren {
-  background: color-mix(in srgb, var(--success) 15%, transparent);
-  border: 1px solid var(--success);
-  color: #7ee2a0;
-}
-
-/* Booster Links: a link whose role is currently off the member (they stopped boosting) but
-   is still tracked, waiting to be restored automatically if they boost again — neutral/dim
-   rather than mod/og-fren's accent colors, since it's a state, not an earned role. */
-.badge-paused {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
-  color: var(--text-dim);
 }
 
 .config-meta {
@@ -1176,18 +1173,10 @@ a {
   overflow-wrap: anywhere;
 }
 
-.qotd-next-badge {
-  display: inline-block;
+/* Shape+color now come from .pill + .pill-accent (same indigo as the Booster Links Mod
+   badge and the server-picker's Admin role badge) — .next-badge is just the spacing. */
+.next-badge {
   margin-bottom: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(88, 101, 242, 0.18);
-  border: 1px solid var(--accent);
-  color: #b3baf7;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 .qotd-source-badge {
@@ -1243,19 +1232,8 @@ a {
   overflow-wrap: anywhere;
 }
 
-.themes-next-badge {
-  display: inline-block;
-  margin-bottom: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(155, 89, 182, 0.18);
-  border: 1px solid #9b59b6;
-  color: #cd9ee0;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
+/* Shape+color now come from .pill + .pill-purple; reuses .next-badge (see qotd.ejs's
+   own .qotd-next-badge → .next-badge) for the spacing. */
 
 .themes-source-badge {
   color: var(--text-dim);

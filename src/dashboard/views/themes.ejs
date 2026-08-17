@@ -79,7 +79,7 @@
             <div class="themes-item" data-id="<%= t.id %>">
               <span class="themes-drag-handle" title="Trascina per riordinare">⠿</span>
               <div class="themes-item-body">
-                <% if (t.isNext) { %><span class="themes-next-badge">Prossimo</span><br /><% } %>
+                <% if (t.isNext) { %><span class="pill next-badge pill-purple">Prossimo</span><br /><% } %>
                 <span class="themes-item-text"><%= t.theme %></span>
                 <% if (t.source === 'sheet') { %> <span class="themes-source-badge">(da Google Sheet)</span><% } %>
               </div>
