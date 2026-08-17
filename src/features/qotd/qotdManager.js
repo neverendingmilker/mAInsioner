@@ -183,6 +183,20 @@ function pickQuestionCell(row) {
   return pool.reduce((longest, v) => (v.length > longest.length ? v : longest), '');
 }
 
+// A published-CSV link should respond with actual comma-separated question text. If the
+// URL isn't really a "Pubblica sul web → CSV" link (e.g. a normal share link, or one that
+// redirects through a Google sign-in/consent interstitial), the response can instead be an
+// HTML page or even a JS bundle — which would otherwise get parsed as if every line/cell
+// were a real question. Checked BEFORE parsing, using both the response's declared
+// content-type and, as a backup for hosts that mislabel or omit it, whether the body
+// itself starts like markup or code instead of data.
+function looksLikeNonCsvResponse(contentType, text) {
+  const type = (contentType || '').toLowerCase();
+  if (type.includes('html') || type.includes('javascript')) return true;
+  const head = text.slice(0, 200).trimStart();
+  return /^(<!doctype|<html|\/\*|\(function\s*\(|function\s*\()/i.test(head);
+}
+
 // Fetches the CSV, skips rows already present (exact text match, case-insensitive) so
 // syncing repeatedly doesn't create duplicates, and appends the rest at the end of the
 // queue (in sheet order).
@@ -198,6 +212,11 @@ async function syncFromSheet(guildId, url, columnName) {
   }
 
   const text = await response.text();
+  if (looksLikeNonCsvResponse(response.headers.get('content-type'), text)) {
+    throw new ValidationError(
+      'Il link non sembra restituire un CSV valido (sembra una pagina HTML o del codice, non un foglio) — verifica di aver usato "Pubblica sul web → CSV" (File → Condividi → Pubblica sul web) e non un normale link di condivisione.'
+    );
+  }
   const rows = parseCsv(text);
   const namedCol = findNamedColumn(rows, columnName);
   const candidates =
