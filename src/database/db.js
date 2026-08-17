@@ -146,9 +146,15 @@ async function createTables() {
         guild_id TEXT PRIMARY KEY,
         enabled INTEGER NOT NULL DEFAULT 1
       )`,
+      // `og_fren_role_id` is Admin-picked from the server's own roles on the Booster Links
+      // dashboard page (not hardcoded) — whichever role it's set to, a member holding it
+      // gets an "OG/Fren" badge next to their name in the linked-boosters list, same idea
+      // as the "Mod" badge there (which reuses bot_guild_config's mod_role_id, already
+      // configurable via /modrole). NULL until an Admin sets it — no badge shows until then.
       `CREATE TABLE IF NOT EXISTS booster_link_config (
         guild_id TEXT PRIMARY KEY,
-        enabled INTEGER NOT NULL DEFAULT 1
+        enabled INTEGER NOT NULL DEFAULT 1,
+        og_fren_role_id TEXT
       )`,
       `CREATE TABLE IF NOT EXISTS booster_link_links (
         guild_id TEXT NOT NULL,
@@ -712,6 +718,11 @@ async function migrate() {
         args: [row.guild_id, '1090658915810820156', Date.now()],
       });
     }
+  }
+
+  const boosterLinkConfigColumns = await client.execute('PRAGMA table_info(booster_link_config)');
+  if (!boosterLinkConfigColumns.rows.some((c) => c.name === 'og_fren_role_id')) {
+    await client.execute('ALTER TABLE booster_link_config ADD COLUMN og_fren_role_id TEXT');
   }
 
   // Adds the "enabled" toggle (default: on) to every guild config table that didn't

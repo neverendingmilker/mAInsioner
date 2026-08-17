@@ -22,6 +22,28 @@ async function setEnabled(guildId, enabled) {
   });
 }
 
+// --- OG/Fren badge role (Admin-picked from the server's own roles, see routes/
+// boosterlinks.js's /boosterlinks/og-fren-role/config) ---
+
+async function getOgFrenRoleId(guildId) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT og_fren_role_id FROM booster_link_config WHERE guild_id = ?',
+    args: [guildId],
+  });
+  return result.rows[0]?.og_fren_role_id ?? null;
+}
+
+async function setOgFrenRoleId(guildId, roleId) {
+  await db.ready;
+  await db.client.execute({
+    sql: `INSERT INTO booster_link_config (guild_id, og_fren_role_id)
+          VALUES (?, ?)
+          ON CONFLICT(guild_id) DO UPDATE SET og_fren_role_id = excluded.og_fren_role_id`,
+    args: [guildId, roleId || null],
+  });
+}
+
 // --- User <-> custom role links ---
 
 async function addLink(guildId, userId, roleId, createdBy) {
@@ -106,6 +128,8 @@ async function getExemptRoles(guildId) {
 module.exports = {
   isEnabled,
   setEnabled,
+  getOgFrenRoleId,
+  setOgFrenRoleId,
   addLink,
   removeLink,
   removeAllLinksForUser,

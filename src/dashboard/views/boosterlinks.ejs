@@ -18,7 +18,11 @@
         <% links.forEach((l) => { %>
           <div class="config-card">
             <div class="config-card-header">
-              <span class="config-name"><%= l.userLabel %></span>
+              <span class="config-name">
+                <%= l.userLabel %>
+                <% if (l.isMod) { %><span class="badge badge-mod">Mod</span><% } %>
+                <% if (l.isOgFren) { %><span class="badge badge-og-fren">OG/Fren</span><% } %>
+              </span>
               <span class="config-meta"><%= l.roleLabel %><%= l.isBooster ? '' : ' — non sta più boostando' %></span>
               <div class="card-actions">
                 <% if (roles.length > 0) { %>
@@ -116,6 +120,33 @@
         </form>
       <% } %>
     </section>
+
+    <%# Admin-only: which of the server's own roles gets an "OG/Fren" badge next to a
+        linked booster's name above. Not hardcoded (unlike the "Mod" badge, which reuses the
+        server's existing /modrole setting) — picked here from a plain role list, same
+        pattern as the exempt-roles picker just above. %>
+    <% if (typeof role !== 'undefined' && role === 'admin') { %>
+      <section class="panel" data-card-id="badge-og-fren">
+        <h2>Badge OG/Fren</h2>
+        <p class="hint">Il ruolo scelto qui sotto fa comparire un badge "OG/Fren" accanto al nome di chi lo possiede, nella lista "Ruoli collegati" qui sopra.</p>
+        <% if (allRoles.length === 0) { %>
+          <p class="hint">Nessun ruolo disponibile.</p>
+        <% } else { %>
+          <form method="POST" action="/boosterlinks/og-fren-role/config" class="form">
+            <label>
+              Ruolo OG/Fren
+              <select name="ogFrenRoleId">
+                <option value="">— nessuno —</option>
+                <% allRoles.forEach((r) => { %>
+                  <option value="<%= r.id %>" <%= r.id === ogFrenRoleId ? 'selected' : '' %>><%= r.name %></option>
+                <% }) %>
+              </select>
+            </label>
+            <button type="submit" class="btn-primary-sm">Salva</button>
+          </form>
+        <% } %>
+      </section>
+    <% } %>
 </div>
   </main>
 </div>

@@ -10,6 +10,14 @@ async function setEnabled(guildId, enabled) {
   await repo.setEnabled(guildId, enabled);
 }
 
+async function getOgFrenRoleId(guildId) {
+  return repo.getOgFrenRoleId(guildId);
+}
+
+async function setOgFrenRoleId(guildId, roleId) {
+  await repo.setOgFrenRoleId(guildId, roleId);
+}
+
 // Links a custom perk role to a booster. Requires the bot's own top role to sit
 // above the linked role, otherwise it wouldn't be able to remove it later.
 async function link(guild, userId, role, createdBy) {
@@ -104,6 +112,8 @@ module.exports = {
   ValidationError,
   isEnabled,
   setEnabled,
+  getOgFrenRoleId,
+  setOgFrenRoleId,
   link,
   unlink,
   listForUser,

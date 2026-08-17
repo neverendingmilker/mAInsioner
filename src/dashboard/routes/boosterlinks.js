@@ -1,6 +1,7 @@
 const express = require('express');
 const { resolveDashboardGuild } = require('../guild');
 const boosterLinkManager = require('../../features/boosterlinks/boosterLinkManager');
+const { getModRoleId } = require('../../utils/modRole');
 
 const router = express.Router();
 
@@ -28,20 +29,30 @@ function roleLabel(guild, roleId) {
 }
 
 async function renderBoosterlinksPage(req, res, guild) {
-  const [enabled, links, exemptRoleIds] = await Promise.all([
+  const [enabled, links, exemptRoleIds, ogFrenRoleId, modRoleId] = await Promise.all([
     boosterLinkManager.isEnabled(guild.id),
     boosterLinkManager.listAll(guild.id),
     boosterLinkManager.listExemptRoles(guild.id),
+    boosterLinkManager.getOgFrenRoleId(guild.id),
+    getModRoleId(guild.id),
   ]);
 
   const linkCards = links
-    .map((l) => ({
-      userId: l.user_id,
-      roleId: l.role_id,
-      userLabel: memberLabel(guild, l.user_id),
-      roleLabel: roleLabel(guild, l.role_id),
-      isBooster: Boolean(guild.members.cache.get(l.user_id)?.roles.premiumSubscriberRole),
-    }))
+    .map((l) => {
+      const member = guild.members.cache.get(l.user_id);
+      return {
+        userId: l.user_id,
+        roleId: l.role_id,
+        userLabel: memberLabel(guild, l.user_id),
+        roleLabel: roleLabel(guild, l.role_id),
+        isBooster: Boolean(member?.roles.premiumSubscriberRole),
+        // Both badges reflect the member's CURRENT roles, not anything tracked by this
+        // feature — a Mod who's demoted, or whose OG/Fren role is later revoked, simply
+        // stops showing the badge on next page load, no cleanup needed anywhere.
+        isMod: Boolean(modRoleId && member?.roles.cache.has(modRoleId)),
+        isOgFren: Boolean(ogFrenRoleId && member?.roles.cache.has(ogFrenRoleId)),
+      };
+    })
     .sort((a, b) => a.userLabel.localeCompare(b.userLabel));
 
   const exemptRoles = exemptRoleIds.map((id) => ({ id, name: roleLabel(guild, id) })).sort((a, b) => a.name.localeCompare(b.name));
@@ -75,6 +86,8 @@ async function renderBoosterlinksPage(req, res, guild) {
     roles,
     allRoles,
     members,
+    ogFrenRoleId,
+    ogFrenRoleName: ogFrenRoleId ? roleLabel(guild, ogFrenRoleId) : null,
   });
 }
 
@@ -95,6 +108,33 @@ router.post('/boosterlinks/toggle', async (req, res, next) => {
     const enabled = req.body.enabled === 'true';
     await boosterLinkManager.setEnabled(guild.id, enabled);
     req.session.flash = { type: 'success', message: enabled ? 'Booster Links attivato.' : 'Booster Links disattivato.' };
+    res.redirect('/boosterlinks');
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Admin-only (the trailing /config matches requireDashboardAccess's Mod-blocklist regex,
+// same as every other feature's base config route) — picks which of the server's own roles
+// counts as "OG/Fren" for the badge shown next to a linked booster's name below. An empty
+// selection clears it, hiding the badge everywhere until it's set again.
+router.post('/boosterlinks/og-fren-role/config', async (req, res, next) => {
+  try {
+    const guild = requireGuild(req, res);
+    if (!guild) return;
+
+    const roleId = req.body.ogFrenRoleId || null;
+    if (roleId && !guild.roles.cache.has(roleId)) {
+      req.session.flash = { type: 'error', message: 'Ruolo non valido — riprova.' };
+      res.redirect('/boosterlinks');
+      return;
+    }
+
+    await boosterLinkManager.setOgFrenRoleId(guild.id, roleId);
+    req.session.flash = {
+      type: 'success',
+      message: roleId ? `Ruolo OG/Fren impostato su ${roleLabel(guild, roleId)}.` : 'Ruolo OG/Fren rimosso — il badge non comparirà più.',
+    };
     res.redirect('/boosterlinks');
   } catch (err) {
     next(err);
