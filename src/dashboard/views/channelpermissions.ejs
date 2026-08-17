@@ -8,7 +8,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel perm-panel">
+    <div class="card-list" id="card-list">
+    <section class="panel perm-panel" data-card-id="permessi-canale">
       <div class="perm-col perm-col-channels">
         <% if (channelGroups.length === 0) { %>
           <p class="hint">Nessun canale.</p>
@@ -114,6 +115,7 @@
         <% } %>
       </div>
     </section>
+    </div>
   </main>
 </div>
 <%- include('partials/footer') %>
