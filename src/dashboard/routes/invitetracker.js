@@ -49,7 +49,8 @@ async function renderInvitetrackerPage(req, res, guild) {
       maxUses: a.maxUses,
       expiresLabel: a.expiresTimestamp ? new Date(a.expiresTimestamp).toLocaleString('it-IT') : null,
     }));
-  } catch {
+  } catch (err) {
+    if (!(err instanceof inviteTrackerManager.ValidationError)) throw err;
     // Missing "Manage Server" permission — assertCanTrack throws inside the manager.
     // The empty-state hint below covers this case too, no need for a separate message.
   }

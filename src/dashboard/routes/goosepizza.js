@@ -168,7 +168,9 @@ router.post('/goosepizza/trigger-toggle', async (req, res, next) => {
     if (!guild) return;
 
     try {
-      await goosepizzaManager.setTriggerEnabled(guild.id, req.body.name, req.body.enabled === 'true');
+      const enabled = req.body.enabled === 'true';
+      await goosepizzaManager.setTriggerEnabled(guild.id, req.body.name, enabled);
+      req.session.flash = { type: 'success', message: `Trigger "${req.body.name}" ${enabled ? 'attivato' : 'disattivato'}.` };
     } catch (err) {
       if (err instanceof goosepizzaManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
