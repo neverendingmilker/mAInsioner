@@ -47,6 +47,10 @@
 
     var dragged = null;
     var unlocked = false;
+    // Set on any drop while unlocked, so the lock button only actually POSTs (and reloads
+    // the page) if something was really moved — re-locking without having dragged anything
+    // is a no-op, not a wasted round-trip.
+    var moved = false;
 
     function currentOrder() {
       var cards = list.querySelectorAll('.panel[data-card-id]');
@@ -96,7 +100,10 @@
         if (!unlocked) return;
         card.classList.remove('card-dragging');
         dragged = null;
-        submitNewOrder();
+        // Just marks the order dirty — does NOT save. Saving (and the page reload that
+        // comes with it) only happens when the user re-locks via the button below, so
+        // moving several cards in a row doesn't re-lock/reload after every single drop.
+        moved = true;
       });
 
       card.addEventListener('dragover', function (e) {
@@ -109,17 +116,32 @@
     }
 
     lockBtn.addEventListener('click', function () {
-      unlocked = !unlocked;
-      setDraggable(unlocked);
-      list.classList.toggle('reorder-mode', unlocked);
-      if (unlocked) {
+      // Entering edit mode: just unlock, nothing to save yet.
+      if (!unlocked) {
+        unlocked = true;
+        moved = false;
+        setDraggable(true);
+        list.classList.add('reorder-mode');
         var cards = list.querySelectorAll('.panel[data-card-id]');
         for (var i = 0; i < cards.length; i++) addHandle(cards[i]);
-      } else {
-        removeHandles();
+        lockBtn.textContent = '🔓 Blocca posizione card';
+        lockBtn.title = 'Salva e blocca la posizione delle card';
+        return;
       }
-      lockBtn.textContent = unlocked ? '🔓 Blocca posizione card' : '🔒 Riordina card';
-      lockBtn.title = unlocked ? 'Blocca la posizione delle card' : 'Sblocca per riordinare le card';
+
+      // Re-locking: this is the only moment a new order gets saved, and only if something
+      // was actually dragged — the user decides when to persist by clicking this button
+      // again, dragging never saves on its own.
+      unlocked = false;
+      setDraggable(false);
+      list.classList.remove('reorder-mode');
+      removeHandles();
+      if (moved) {
+        submitNewOrder(); // POSTs and reloads the page — no need to reset button text here.
+        return;
+      }
+      lockBtn.textContent = '🔒 Riordina card';
+      lockBtn.title = 'Sblocca per riordinare le card';
     });
   }
 })();
