@@ -40,10 +40,38 @@
       }
     }
 
+    // Apply saved per-card sizes (two-column pages only, see public/style.css's .two-col) —
+    // for Admin and Mod alike, same as the order above. Takes each card out of flex's
+    // auto-sizing the same way freezeSizesForResize does below, so a saved size actually
+    // sticks instead of being immediately overridden by the default ~50% flex-basis.
+    var sizeDataEl = document.getElementById('card-size-data');
+    var savedSizes = {};
+    if (sizeDataEl) {
+      try {
+        var parsedSizes = JSON.parse(sizeDataEl.textContent || '{}');
+        if (parsedSizes && typeof parsedSizes === 'object') savedSizes = parsedSizes;
+      } catch (e) {
+        savedSizes = {};
+      }
+    }
+    if (list.classList.contains('two-col')) {
+      var cardsForSize = list.querySelectorAll('.panel[data-card-id]');
+      for (var s = 0; s < cardsForSize.length; s++) {
+        var cid = cardsForSize[s].getAttribute('data-card-id');
+        var sz = savedSizes[cid];
+        if (sz && typeof sz.width === 'number' && typeof sz.height === 'number') {
+          cardsForSize[s].style.flex = 'none';
+          cardsForSize[s].style.width = sz.width + 'px';
+          cardsForSize[s].style.height = sz.height + 'px';
+        }
+      }
+    }
+
     var lockSwitch = document.getElementById('card-lock-btn');
     var form = document.getElementById('card-reorder-form');
     var orderInput = document.getElementById('card-order-input');
-    if (!lockSwitch || !form || !orderInput) return; // Mod session: order applied above, nothing draggable to wire up.
+    var sizeInput = document.getElementById('card-size-input');
+    if (!lockSwitch || !form || !orderInput) return; // Mod session: order/sizes applied above, nothing draggable to wire up.
 
     var dragged = null;
     var unlocked = false;
@@ -51,6 +79,11 @@
     // reloads the page) if something was really moved — flipping it back off without
     // having dragged anything is a no-op, not a wasted round-trip.
     var moved = false;
+    // Snapshot of every card's pixel size taken the moment reorder mode turns on (see
+    // freezeSizesForResize), compared against the current sizes when it turns back off —
+    // same "only save if something actually changed" behavior as `moved` above, but for
+    // resize instead of drag.
+    var sizesAtLockStart = {};
 
     function currentOrder() {
       var cards = list.querySelectorAll('.panel[data-card-id]');
@@ -59,8 +92,20 @@
       return ids.join(',');
     }
 
+    function currentSizes() {
+      var result = {};
+      if (!list.classList.contains('two-col')) return result;
+      var cards = list.querySelectorAll('.panel[data-card-id]');
+      for (var i = 0; i < cards.length; i++) {
+        var rect = cards[i].getBoundingClientRect();
+        result[cards[i].getAttribute('data-card-id')] = { width: Math.round(rect.width), height: Math.round(rect.height) };
+      }
+      return result;
+    }
+
     function submitNewOrder() {
       orderInput.value = currentOrder();
+      if (sizeInput) sizeInput.value = JSON.stringify(currentSizes());
       form.submit();
     }
 
@@ -91,7 +136,7 @@
     // into an inline width/height and switching to `flex: none` the moment reorder mode
     // turns on removes it from the flex sizing algorithm entirely, so the resize handle's
     // own inline width sticks. Left in place after re-locking (deliberately — there's no
-    // persisted "reset the size" trigger since sizes aren't saved to the server at all).
+    // "reset to default size" control; whatever size the card ends at gets saved).
     function freezeSizesForResize() {
       if (!list.classList.contains('two-col')) return;
       var cardsToFreeze = list.querySelectorAll('.panel[data-card-id]');
@@ -148,19 +193,21 @@
         setDraggable(true);
         list.classList.add('reorder-mode');
         freezeSizesForResize();
+        sizesAtLockStart = currentSizes();
         var cards = list.querySelectorAll('.panel[data-card-id]');
         for (var i = 0; i < cards.length; i++) addHandle(cards[i]);
         return;
       }
 
-      // Switched OFF: this is the only moment a new order gets saved, and only if
-      // something was actually dragged — the user decides when to persist by flipping the
-      // switch back off themselves, dragging never saves on its own.
+      // Switched OFF: this is the only moment a new order/size gets saved, and only if
+      // something was actually dragged or resized — the user decides when to persist by
+      // flipping the switch back off themselves, dragging/resizing never saves on its own.
       unlocked = false;
       setDraggable(false);
       list.classList.remove('reorder-mode');
       removeHandles();
-      if (moved) {
+      var resized = JSON.stringify(currentSizes()) !== JSON.stringify(sizesAtLockStart);
+      if (moved || resized) {
         submitNewOrder(); // POSTs and reloads the page.
       }
     });

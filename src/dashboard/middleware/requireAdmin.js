@@ -1,6 +1,7 @@
 const { getSidebarFeatures, getSidebarToolsForPath, getFeatureKeyForPath, getToolKeyForPath, FEATURE_PAGES } = require('../sidebarData');
 const modAccess = require('../modAccess');
 const cardOrder = require('../cardOrder');
+const cardSize = require('../cardSize');
 const featureLock = require('../featureLock');
 
 // Gates every dashboard page behind: Discord login, being an Administrator OR the
@@ -74,6 +75,7 @@ async function requireDashboardAccess(req, res, next) {
     try {
       res.locals.modAccessEnabled = featureKey ? await modAccess.isFeatureModAccessible(req.session.guildId, featureKey) : false;
       res.locals.cardOrder = featureKey ? await cardOrder.getOrder(req.session.guildId, featureKey) : [];
+      res.locals.cardSizes = featureKey ? await cardSize.getSizes(req.session.guildId, featureKey) : {};
     } catch (err) {
       return next(err);
     }
@@ -87,6 +89,7 @@ async function requireDashboardAccess(req, res, next) {
   res.locals.modAccessEnabled = false;
   res.locals.featureLocked = locked;
   res.locals.cardOrder = [];
+  res.locals.cardSizes = {};
 
   try {
     const allowedKeys = await modAccess.listModAccessibleFeatureKeys(req.session.guildId);
@@ -110,6 +113,7 @@ async function requireDashboardAccess(req, res, next) {
         });
       }
       res.locals.cardOrder = await cardOrder.getOrder(req.session.guildId, featureKey);
+      res.locals.cardSizes = await cardSize.getSizes(req.session.guildId, featureKey);
     }
 
     next();

@@ -532,6 +532,20 @@ async function createTables() {
         feature_key TEXT NOT NULL,
         PRIMARY KEY (guild_id, feature_key)
       )`,
+
+      // Saved per-card width/height for a two-column card layout's native browser resize
+      // (see public/cardReorder.js's freezeSizesForResize and public/style.css's
+      // .card-list.two-col.reorder-mode .panel) — Admin-only to change, shown as-is to
+      // everyone (Admin and Mod alike), same convention as dashboard_card_order. Piloted on
+      // Anime Night only for now. `sizes_json` is a JSON object keyed by that page's
+      // `data-card-id` values, e.g. {"sessioni": {"width": 281, "height": 368}}; a card id
+      // missing from it just keeps its default ~50% flex size.
+      `CREATE TABLE IF NOT EXISTS dashboard_card_size (
+        guild_id TEXT NOT NULL,
+        feature_key TEXT NOT NULL,
+        sizes_json TEXT NOT NULL DEFAULT '{}',
+        PRIMARY KEY (guild_id, feature_key)
+      )`,
     ],
     'write'
   );

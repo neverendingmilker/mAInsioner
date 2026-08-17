@@ -75,6 +75,13 @@
     <% if (typeof cardOrder !== 'undefined') { %>
       <script id="card-order-data" type="application/json"><%- JSON.stringify(cardOrder) %></script>
     <% } %>
+    <%# Saved per-card width/height (two-column pages only, Anime Night for now — an empty
+        object everywhere else, harmless). Applied on load and re-saved alongside order in
+        the same #card-reorder-form/POST — see cardReorder.js's freezeSizesForResize and
+        the "sizes" field handling in routes/cardOrderRoutes.js. %>
+    <% if (typeof cardSizes !== 'undefined') { %>
+      <script id="card-size-data" type="application/json"><%- JSON.stringify(cardSizes) %></script>
+    <% } %>
     <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
       <label class="btn-group-item">
         <input type="checkbox" id="card-lock-btn" />
@@ -82,6 +89,7 @@
       </label>
       <form id="card-reorder-form" method="POST" action="/card-order/<%= currentFeatureKey %>/reorder" style="display:none;">
         <input type="hidden" id="card-order-input" name="order" value="" />
+        <input type="hidden" id="card-size-input" name="sizes" value="" />
       </form>
     <% } %>
   </div>
