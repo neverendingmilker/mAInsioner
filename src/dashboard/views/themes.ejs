@@ -71,8 +71,9 @@
       <h2>Importa da Google Sheet</h2>
       <p class="hint">
         Pubblica il foglio come CSV (nel foglio: File → Condividi → Pubblica sul web → formato CSV) e incolla qui il link.
-        Ogni sincronizzazione legge la prima colonna di ogni riga (saltando la prima riga, trattata come intestazione) e
-        aggiunge in coda solo i temi non già presenti — puoi risincronizzare quante volte vuoi senza creare doppioni.
+        Ogni sincronizzazione salta la prima riga (trattata come intestazione) e per ogni riga successiva prende il testo
+        più lungo tra tutte le colonne (di solito è il tema, più lungo di eventuali colonne di numero/categoria/data) e lo
+        aggiunge in coda se non già presente — puoi risincronizzare quante volte vuoi senza creare doppioni.
       </p>
       <form method="POST" action="/themes/sync" class="form">
         <label>

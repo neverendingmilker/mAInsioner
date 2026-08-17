@@ -160,7 +160,13 @@ async function syncFromSheet(guildId, url) {
   const text = await response.text();
   const rows = parseCsv(text);
   const dataRows = rows.slice(1); // first row is always treated as a header
-  const candidates = dataRows.map((r) => (r[0] || '').trim()).filter((v) => v.length > 0);
+  // The question text isn't reliably in column A — sheets often have it alongside a row
+  // number, category, or timestamp column. Instead of assuming a fixed column, take the
+  // longest cell in each row: the actual question is virtually always much longer than
+  // any surrounding metadata, which is what was being picked up as "junk" before this fix.
+  const candidates = dataRows
+    .map((r) => r.reduce((longest, cell) => (((cell || '').trim().length > longest.length) ? (cell || '').trim() : longest), ''))
+    .filter((v) => v.length > 0);
 
   const existing = new Set((await repo.listQuestions(guildId)).map((q) => q.question.trim().toLowerCase()));
   const seenInBatch = new Set();
