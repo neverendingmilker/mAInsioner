@@ -22,7 +22,7 @@
               <span class="config-meta"><%= s.date %> — <%= s.titles.length %> anime</span>
               <form method="POST" action="/animenight/remove" onsubmit="return confirm('Rimuovere l\'intera sessione (tutti gli anime di questa data)?');">
                 <input type="hidden" name="sessionDate" value="<%= s.date %>" />
-                <button type="submit" class="btn-danger-sm">Rimuovi</button>
+                <button type="submit" class="btn-destructive-sm">Rimuovi</button>
               </form>
             </div>
             <p class="config-card-subtext"><%= s.titles.join(', ') %></p>

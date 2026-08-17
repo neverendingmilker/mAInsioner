@@ -507,6 +507,26 @@ a {
   background: rgba(237, 66, 69, 0.12);
 }
 
+/* "Destructive" button, shadcn/ui style — solid filled instead of .btn-danger-sm's outline,
+   for a delete action that should read as unmistakably dangerous at a glance. Tried for now
+   only on Anime Night's session "Rimuovi" button; every other page's delete buttons still
+   use the outline .btn-danger-sm untouched. */
+.btn-destructive-sm {
+  padding: 5px 10px;
+  background: var(--danger);
+  border: 1px solid var(--danger);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-destructive-sm:hover {
+  filter: brightness(0.88);
+}
+
 .btn-secondary-sm {
   padding: 5px 10px;
   background: transparent;
