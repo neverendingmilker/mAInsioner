@@ -227,6 +227,34 @@ a {
   z-index: 2;
 }
 
+/* Grid overlay (cardReorder.js's createOverlay): shown only while actively dragging or
+   resizing a card, as real siblings inside #card-list so they share the same row-track
+   sizing as the cards themselves (no separate absolutely-positioned layer to keep in sync).
+   Both are purely visual — pointer-events: none so they never intercept the mouse events
+   that drive the drag/resize itself. */
+.card-grid-cell {
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  pointer-events: none;
+  min-height: 140px;
+}
+
+.card-grid-target {
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.card-grid-target--valid {
+  background: rgba(59, 165, 92, 0.18);
+  border: 2px solid #3ba55c;
+}
+
+.card-grid-target--invalid {
+  background: rgba(237, 66, 69, 0.15);
+  border: 2px solid var(--danger);
+}
+
 .sidebar-footer {
   display: flex;
   align-items: center;

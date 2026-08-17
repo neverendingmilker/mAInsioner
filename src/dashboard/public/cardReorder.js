@@ -1,48 +1,55 @@
-// Vanilla-JS drag-and-drop reordering, drag-to-resize (multi-column span + free height),
-// and column-count support for the "cards" (panel sections) on a feature page. No
-// dependencies, no build step — same as every other public/*.js file in this dashboard.
-// This is the standard for every feature page's #card-list, current and future: any view
-// with `<div class="card-list" id="card-list">` wrapping `.panel[data-card-id]` sections
-// gets reordering/resizing/column-count automatically, just by including
-// partials/featureToggle.ejs (which also loads this file).
+// Vanilla-JS card grid for a feature page's #card-list: explicit (row, column) placement,
+// multi-column span (1..COLS), free height, and deliberate empty cells — plus drag-and-drop
+// to move cards around and a resize grip for width/height. No dependencies, no build step.
 //
-// --- What this file owns ---
-// 1. A CSS Grid masonry layout (grid.reposition): cards can span 1..COLS columns and any
-//    pixel height, placed via a "shortest column first" rule so the grid never has to fall
-//    back to the browser's own auto-placement — every column always ends up exactly as
-//    full as its cards make it, with no leftover gaps and no risk of a tall card landing
-//    next to the wrong group depending on DOM order.
-// 2. Drag-and-drop reordering (dragController): moving a card's DOM position and letting
-//    the grid re-flow live, at up to one recompute per animation frame so a fast drag never
-//    piles up redundant layout work.
-// 3. Drag-to-resize (resizeController): width in whole-column steps (CSS Grid's equal-width
-//    columns can't do fractional widths), height completely free with a magnetic snap to a
-//    neighboring card's edge that releases itself the moment you keep dragging past it — a
-//    card can never get stuck at a size you can't change further.
-// 4. Persistence: order, per-card size, and column count all live in *this browser's own*
-//    localStorage, keyed by feature — never sent to the server. Reorder/resize are
-//    Admin-only (gated by whether #card-lock-btn exists at all — see featureToggle.ejs);
-//    column count is a personal viewing preference open to Admin and Mod alike.
+// --- The model ---
+// Think of the grid as an invisible spreadsheet: COLS columns (1-3, same picker as before)
+// and as many rows as needed. Every card has an explicit `{col, colSpan, row, heightPx}` —
+// NOT a position inferred from DOM order or from a "pack everything tightly" algorithm like
+// the previous version of this file used. That's the deliberate difference from before:
+// nothing here ever auto-flows a card into a gap you left on purpose. A cell nobody's card
+// claims is simply empty — there's no placeholder element for it, it's just blank grid
+// space, exactly like an empty cell in a spreadsheet.
+//
+// Consequences of that model:
+// - Dragging a card moves it to wherever you drop it (snapped to the nearest cell), and it
+//   stays there — it never gets nudged elsewhere because some other card changed size.
+// - You can leave a cell empty anywhere — between two cards in the same column, or as a gap
+//   before a card further down — just by not putting anything there.
+// - A drop (or a resize growing into another card's space) is only allowed if the target
+//   cells are actually free; otherwise the card snaps back to its last valid spot. Nothing
+//   here ever silently overlaps or swaps two cards.
+// - Width still moves in whole-column steps (CSS Grid's equal-width columns can't do
+//   fractional widths); height stays completely free in pixels, with the same magnetic
+//   snap-to-a-neighbor's-edge (and automatic release once you drag past it) as before.
+//
+// Reorder/resize are Admin-only (gated by whether #card-lock-btn exists — see
+// featureToggle.ejs); column count is a personal viewing preference open to Admin and Mod.
+// Everything lives in *this browser's own* localStorage, keyed by feature, never sent to
+// the server.
 (function () {
   'use strict';
 
   var CONFIG = {
-    // Must match style.css's `.card-list { grid-auto-rows: minmax(140px, auto) }`. Used to
-    // (a) convert an old saved rowSpan into an equivalent pixel height the first time a
-    // browser loads a version of this file that has free height instead, and (b) estimate
-    // how many grid row-tracks a free-height card needs to reserve for layout bookkeeping.
+    // One grid row-track is this tall (must match style.css's
+    // `.card-list { grid-auto-rows: minmax(140px, auto) }`), used to turn a free pixel
+    // height into an integer row-span for the occupancy grid, and to turn a cursor Y
+    // position into a row index while dragging/resizing.
     rowUnit: 140,
     gap: 24,
     minCols: 1,
     maxCols: 3,
     defaultCols: 3,
+    minHeightPx: 140, // == rowUnit
+    maxHeightPx: 140 * 6 + 24 * 5, // same ceiling earlier versions used (6 row-tracks)
     // How close (in px) a card's dragged-to bottom edge needs to land to another visible
     // card's bottom edge before it magnetically snaps to match it exactly.
     snapThresholdPx: 14,
+    // How many extra empty rows to show past the lowest occupied row while dragging or
+    // resizing, so there's always visible room to drop something further down too.
+    bufferRows: 2,
     storagePrefix: 'mainsioner:cardLayout:',
   };
-  CONFIG.minHeightPx = CONFIG.rowUnit;
-  CONFIG.maxHeightPx = CONFIG.rowUnit * 6 + CONFIG.gap * 5; // same ceiling the old 6-row cap gave
 
   document.addEventListener('DOMContentLoaded', init);
 
@@ -74,20 +81,14 @@
     }
   }
 
-  // Purely a localStorage namespace — does NOT need to match the server's own feature key
-  // (see sidebarData.js's getFeatureKeyForPath, which even uses a different spelling for
-  // some pages, e.g. "boosterlink" vs. this page's "/boosterlinks"). Deriving it straight
-  // from the URL means this works identically for Admin and Mod sessions, with no server
-  // local needed.
   function currentFeatureKey() {
     var seg = (location.pathname.split('/')[1] || '').toLowerCase();
     return seg || 'root';
   }
 
   // Collapses any number of calls within the same animation frame into exactly one, running
-  // with the arguments from the *last* call — used so a stream of dragover/mousemove events
-  // (which can fire far faster than the browser paints) only ever triggers one masonry
-  // recompute per frame instead of piling up redundant layout work behind the scenes.
+  // with the arguments from the *last* call — so a stream of mousemove events (which fire
+  // far faster than the browser paints) only ever triggers one recompute per frame.
   function rafThrottle(fn) {
     var scheduled = false;
     var pendingArgs = null;
@@ -106,235 +107,354 @@
     return list.querySelectorAll('.panel[data-card-id]');
   }
 
+  function footprintRowSpan(heightPx) {
+    return heightPx === null || heightPx === undefined
+      ? 1
+      : Math.max(1, Math.ceil((heightPx + CONFIG.gap) / (CONFIG.rowUnit + CONFIG.gap)));
+  }
+
   // ---------------------------------------------------------------------------------------
-  // Grid engine: reading/writing each card's span, and the masonry placement algorithm.
-  // Everything here is pure DOM + attribute manipulation, no event handling — the drag and
-  // resize controllers further down are the only things that call into it.
+  // Grid model: an explicit {col, colSpan, row, heightPx} per card id, plus the occupancy
+  // math (what's free, what collides) that both the drag and resize controllers use. This
+  // is the ONLY thing that decides where a card renders — see render() below, which just
+  // writes each position straight out as inline grid-column/grid-row, no placement
+  // algorithm involved.
   // ---------------------------------------------------------------------------------------
 
   function createGrid(list) {
     var cols = CONFIG.defaultCols;
+    var positions = {}; // id -> {col, colSpan, row, heightPx}
 
     function setCols(n) {
       cols = clamp(n, CONFIG.minCols, CONFIG.maxCols);
       list.style.setProperty('--card-cols', String(cols));
     }
-
-    function readColSpan(card) {
-      return parseInt(card.getAttribute('data-col-span') || String(cols), 10);
+    function getCols() {
+      return cols;
     }
 
-    function applyColSpan(card, colSpan) {
-      colSpan = clamp(Math.round(colSpan), 1, cols);
-      card.setAttribute('data-col-span', String(colSpan));
+    function getPosition(id) {
+      return positions[id] || null;
     }
 
-    // Height (px) is only ever set on a card that's actually been dragged taller/shorter at
-    // some point — null means "never resized," i.e. keep the natural CSS height (one row,
-    // sized to content). Unlike colSpan there's no default to fall back on: forcing every
-    // untouched card to minHeightPx the moment this runs would shrink normal-content cards
-    // that just happen to render taller than one row.
-    function readHeightPx(card) {
-      var stored = card.getAttribute('data-height-px');
-      return stored ? clamp(parseFloat(stored), CONFIG.minHeightPx, CONFIG.maxHeightPx) : null;
+    function setPosition(id, pos) {
+      positions[id] = {
+        col: clamp(Math.round(pos.col), 0, cols - 1),
+        colSpan: clamp(Math.round(pos.colSpan), 1, cols),
+        row: Math.max(1, Math.round(pos.row)),
+        heightPx: typeof pos.heightPx === 'number' ? clamp(pos.heightPx, CONFIG.minHeightPx, CONFIG.maxHeightPx) : null,
+      };
+      // colSpan can't push the card past the right edge.
+      positions[id].colSpan = clamp(positions[id].colSpan, 1, cols - positions[id].col);
     }
 
-    function applyHeightPx(card, heightPx) {
-      heightPx = clamp(heightPx, CONFIG.minHeightPx, CONFIG.maxHeightPx);
-      card.setAttribute('data-height-px', String(Math.round(heightPx)));
-      card.style.height = heightPx + 'px';
-      return heightPx;
+    function allPositions() {
+      var copy = {};
+      for (var id in positions) copy[id] = positions[id] ? { col: positions[id].col, colSpan: positions[id].colSpan, row: positions[id].row, heightPx: positions[id].heightPx } : null;
+      return copy;
     }
 
-    // Explicitly places every card (column-start AND row-start, not just a span) instead of
-    // leaving it to the grid's own auto-placement. Auto-placement (even "dense") packs
-    // strictly in DOM order and can't tell that a card is *meant* to stand next to a
-    // group — a tall card meant to sit beside three stacked short ones could get "used" to
-    // patch an earlier gap instead, depending on exactly where it fell in the list, and
-    // different numbers of cards per column just wasn't reliably achievable. This walks the
-    // cards in their current DOM order and always drops the next one into whichever
-    // column(s) it fits into earliest — the same "shortest column first" rule a masonry
-    // layout uses — so every column always ends up exactly as tall as its own cards make
-    // it, with no leftover/anomalous empty cells: each card is appended right after the
-    // shortest point in its target column(s), never skipping ahead and leaving a hole.
-    function reposition() {
-      var colBottom = [];
-      for (var c = 0; c < cols; c++) colBottom.push(1);
+    function loadPositions(map) {
+      positions = {};
+      for (var id in map) {
+        var p = map[id];
+        if (!p || typeof p.col !== 'number' || typeof p.row !== 'number') continue;
+        setPosition(id, p);
+      }
+    }
 
-      var cards = cardsOf(list);
-      for (var i = 0; i < cards.length; i++) {
-        var colSpan = clamp(readColSpan(cards[i]), 1, cols);
-        var heightPx = readHeightPx(cards[i]);
-        // Bookkeeping only — how many row-tracks to reserve so nothing overlaps. The card's
-        // actual rendered height comes from its own explicit inline height (or, for a
-        // never-resized card, natural content height); this is just an estimate of how much
-        // vertical room that takes up in the shared column grid.
-        var rowSpan = heightPx === null ? 1 : Math.max(1, Math.ceil((heightPx + CONFIG.gap) / (CONFIG.rowUnit + CONFIG.gap)));
+    // Highest occupied row + 1 (i.e. the first fully-free row) — used both to place a
+    // brand-new card that has no saved position yet, and as the base for how many empty
+    // rows the drag/resize overlay shows below the current content.
+    function lowestFreeRow() {
+      var max = 1;
+      for (var id in positions) {
+        var p = positions[id];
+        max = Math.max(max, p.row + footprintRowSpan(p.heightPx));
+      }
+      return max;
+    }
 
-        var bestCol = 0;
-        var bestStart = Infinity;
-        for (var start = 0; start <= cols - colSpan; start++) {
-          var neededRow = 1;
-          for (var k = start; k < start + colSpan; k++) neededRow = Math.max(neededRow, colBottom[k]);
-          if (neededRow < bestStart) {
-            bestStart = neededRow;
-            bestCol = start;
-          }
+    // Every occupied cell as a "row,col" -> id map, optionally leaving one card's own
+    // cells out (so it doesn't collide with itself while being dragged/resized).
+    function occupiedCells(excludeId) {
+      var occ = {};
+      for (var id in positions) {
+        if (id === excludeId) continue;
+        var p = positions[id];
+        var rowSpan = footprintRowSpan(p.heightPx);
+        for (var r = p.row; r < p.row + rowSpan; r++) {
+          for (var c = p.col; c < p.col + p.colSpan; c++) occ[r + ',' + c] = id;
         }
-
-        cards[i].style.gridColumn = (bestCol + 1) + ' / span ' + colSpan;
-        cards[i].style.gridRow = bestStart + ' / span ' + rowSpan;
-        for (var k2 = bestCol; k2 < bestCol + colSpan; k2++) colBottom[k2] = bestStart + rowSpan;
       }
+      return occ;
     }
 
-    function currentOrder() {
-      var cards = cardsOf(list);
-      var ids = [];
-      for (var i = 0; i < cards.length; i++) ids.push(cards[i].getAttribute('data-card-id'));
-      return ids;
+    function fits(occ, row, col, colSpan, rowSpan) {
+      if (col < 0 || col + colSpan > cols || row < 1) return false;
+      for (var r = row; r < row + rowSpan; r++) {
+        for (var c = col; c < col + colSpan; c++) {
+          if (occ[r + ',' + c]) return false;
+        }
+      }
+      return true;
     }
 
-    function currentSizes() {
-      var result = {};
+    // How far a footprint starting at (row, col) with the given rowSpan can grow to the
+    // right (in whole columns) before hitting the grid edge or another card.
+    function maxColSpanFrom(occ, row, col, rowSpan) {
+      var maxPossible = cols - col;
+      for (var span = 1; span <= maxPossible; span++) {
+        for (var r = row; r < row + rowSpan; r++) {
+          if (occ[r + ',' + (col + span - 1)]) return span - 1;
+        }
+      }
+      return maxPossible;
+    }
+
+    // Same idea downward: how many row-tracks a footprint at (row, col) with the given
+    // colSpan can grow before hitting another card. No hard ceiling other than sanity —
+    // there's no "grid edge" going down, rows just keep going.
+    function maxRowSpanFrom(occ, row, col, colSpan) {
+      var span = 1;
+      while (span < 200) {
+        var r = row + span;
+        for (var c = col; c < col + colSpan; c++) {
+          if (occ[r + ',' + c]) return span;
+        }
+        span++;
+      }
+      return span;
+    }
+
+    // Writes every card's current position straight to inline grid-column/grid-row — the
+    // only thing that ever actually moves a card on screen. No placement algorithm here;
+    // whatever's in `positions` is exactly what renders.
+    function render() {
       var cards = cardsOf(list);
       for (var i = 0; i < cards.length; i++) {
-        var c = cards[i];
-        result[c.getAttribute('data-card-id')] = { colSpan: readColSpan(c), heightPx: readHeightPx(c) };
-      }
-      return result;
-    }
-
-    // Applies a saved {colSpan, heightPx} (or a legacy {colSpan, rowSpan}, migrated on the
-    // fly to its pixel-height equivalent) to one card. Skips whatever isn't present, so a
-    // partially-saved entry only overrides what it actually specifies.
-    function applySize(card, sz) {
-      if (!sz) return;
-      if (typeof sz.colSpan === 'number') applyColSpan(card, sz.colSpan);
-      if (typeof sz.heightPx === 'number') {
-        applyHeightPx(card, sz.heightPx);
-      } else if (typeof sz.rowSpan === 'number') {
-        applyHeightPx(card, sz.rowSpan * CONFIG.rowUnit + (sz.rowSpan - 1) * CONFIG.gap);
+        var id = cards[i].getAttribute('data-card-id');
+        var p = positions[id];
+        if (!p) continue;
+        var rowSpan = footprintRowSpan(p.heightPx);
+        cards[i].style.gridColumn = (p.col + 1) + ' / span ' + p.colSpan;
+        cards[i].style.gridRow = p.row + ' / span ' + rowSpan;
+        if (p.heightPx !== null) {
+          cards[i].style.height = p.heightPx + 'px';
+          cards[i].setAttribute('data-height-px', String(Math.round(p.heightPx)));
+        } else {
+          cards[i].style.height = '';
+          cards[i].removeAttribute('data-height-px');
+        }
       }
     }
 
     return {
       setCols: setCols,
-      getCols: function () { return cols; },
-      readColSpan: readColSpan,
-      applyColSpan: applyColSpan,
-      readHeightPx: readHeightPx,
-      applyHeightPx: applyHeightPx,
-      applySize: applySize,
-      reposition: reposition,
-      currentOrder: currentOrder,
-      currentSizes: currentSizes,
+      getCols: getCols,
+      getPosition: getPosition,
+      setPosition: setPosition,
+      allPositions: allPositions,
+      loadPositions: loadPositions,
+      lowestFreeRow: lowestFreeRow,
+      occupiedCells: occupiedCells,
+      fits: fits,
+      maxColSpanFrom: maxColSpanFrom,
+      maxRowSpanFrom: maxRowSpanFrom,
+      render: render,
     };
   }
 
   // ---------------------------------------------------------------------------------------
-  // Drag-and-drop reordering. Native HTML5 DnD (draggable="true" + dragstart/dragover/
-  // dragend), same technique as qotdReorder.js/themesReorder.js — dropping a card above or
-  // below another moves it there in the DOM, and the grid re-flows live as you go.
+  // Grid overlay: while dragging or resizing, shows a dashed outline over every currently
+  // empty cell (so the "invisible" grid becomes visible exactly when it's useful) and a
+  // filled highlight — green if the spot under the cursor is free, red if it would overlap
+  // another card — over whatever footprint is currently being dragged/resized onto. Purely
+  // visual: every element here is pointer-events:none and never affects hit-testing.
   // ---------------------------------------------------------------------------------------
 
-  function createDragController(grid, list) {
-    var dragged = null;
+  function createOverlay(list, grid) {
+    var emptyCells = [];
+    var targetCells = [];
 
-    var scheduleReposition = rafThrottle(function () {
-      grid.reposition();
-    });
+    function clearEmpty() {
+      for (var i = 0; i < emptyCells.length; i++) emptyCells[i].parentNode.removeChild(emptyCells[i]);
+      emptyCells = [];
+    }
 
-    function attach(card) {
-      card.addEventListener('dragstart', function (e) {
-        dragged = card;
-        card.classList.add('card-dragging');
-        if (e.dataTransfer) {
-          // Firefox refuses to start a drag at all without data set on it; the value
-          // itself is never read anywhere.
-          e.dataTransfer.effectAllowed = 'move';
-          e.dataTransfer.setData('text/plain', card.getAttribute('data-card-id') || '');
+    function clearTarget() {
+      for (var i = 0; i < targetCells.length; i++) targetCells[i].parentNode.removeChild(targetCells[i]);
+      targetCells = [];
+    }
+
+    function showEmpty(excludeId) {
+      clearEmpty();
+      var cols = grid.getCols();
+      var lastRow = grid.lowestFreeRow() + CONFIG.bufferRows;
+      var occ = grid.occupiedCells(excludeId);
+      for (var r = 1; r <= lastRow; r++) {
+        for (var c = 0; c < cols; c++) {
+          if (occ[r + ',' + c]) continue;
+          var cell = document.createElement('div');
+          cell.className = 'card-grid-cell';
+          cell.style.gridColumn = (c + 1) + ' / span 1';
+          cell.style.gridRow = r + ' / span 1';
+          list.appendChild(cell);
+          emptyCells.push(cell);
         }
-      });
-
-      card.addEventListener('dragend', function () {
-        card.classList.remove('card-dragging');
-        dragged = null;
-      });
-
-      card.addEventListener('dragover', function (e) {
-        if (!dragged || dragged === card) return;
-        e.preventDefault();
-        var rect = card.getBoundingClientRect();
-        var after = e.clientY - rect.top > rect.height / 2;
-        list.insertBefore(dragged, after ? card.nextSibling : card);
-        // New DOM order can land cards in different columns entirely — reflow live, but
-        // batched to once per frame so a fast drag doesn't thrash layout.
-        scheduleReposition();
-      });
-    }
-
-    function enable() {
-      var cards = cardsOf(list);
-      for (var i = 0; i < cards.length; i++) {
-        cards[i].setAttribute('draggable', 'true');
       }
     }
 
-    function disable() {
-      var cards = cardsOf(list);
-      for (var i = 0; i < cards.length; i++) {
-        cards[i].setAttribute('draggable', 'false');
+    function showTarget(row, col, colSpan, rowSpan, valid) {
+      clearTarget();
+      var cols = grid.getCols();
+      for (var r = row; r < row + rowSpan; r++) {
+        for (var c = col; c < col + colSpan; c++) {
+          if (c < 0 || c >= cols || r < 1) continue;
+          var cell = document.createElement('div');
+          cell.className = 'card-grid-target ' + (valid ? 'card-grid-target--valid' : 'card-grid-target--invalid');
+          cell.style.gridColumn = (c + 1) + ' / span 1';
+          cell.style.gridRow = r + ' / span 1';
+          list.appendChild(cell);
+          targetCells.push(cell);
+        }
       }
     }
 
-    return { attach: attach, enable: enable, disable: disable };
+    function clearAll() {
+      clearEmpty();
+      clearTarget();
+    }
+
+    return { showEmpty: showEmpty, showTarget: showTarget, clearAll: clearAll };
   }
 
   // ---------------------------------------------------------------------------------------
-  // Drag-to-resize. Width moves in whole-column steps (dx snapped to the grid's own column
-  // width) — CSS Grid's equal-width (1fr) columns don't support arbitrary fractional widths
-  // without a much bigger redesign. Height follows the cursor 1:1, completely free; the
-  // only "snapping" is magnetic, to a neighboring card's bottom edge, and is recomputed
-  // from the raw cursor position on every move (never carried over from the previous move),
-  // so continuing to drag past the snap threshold releases it immediately — there's no
-  // accumulated state that could leave a card stuck unable to shrink or grow further.
+  // Drag-to-move: mouse-driven (not native HTML5 DnD — that's built around reordering a
+  // list by sibling position, not dropping onto an arbitrary cell in a 2D grid). Tracks the
+  // cursor, converts its position into a candidate (row, col), and only ever actually moves
+  // the card when that candidate is fully free — hovering over an occupied spot just shows
+  // the red preview and leaves the card at its last valid position, so a drop can never
+  // land on top of (or swap with) another card.
   // ---------------------------------------------------------------------------------------
 
-  function createResizeController(grid, list) {
-    function startResize(card, startEvent) {
-      var startX = startEvent.clientX;
-      var startY = startEvent.clientY;
-      var startColSpan = grid.readColSpan(card);
-      var startHeightPx = grid.readHeightPx(card);
-      if (startHeightPx === null) {
-        // Never explicitly resized yet — start from whatever height it's actually
-        // rendering at right now, so the first drag follows the cursor from there instead
-        // of jumping straight to the minimum height.
-        startHeightPx = clamp(card.getBoundingClientRect().height, CONFIG.minHeightPx, CONFIG.maxHeightPx);
-      }
+  function createDragController(grid, list, overlay) {
+    function startDrag(card, startEvent) {
+      var id = card.getAttribute('data-card-id');
+      var startPos = grid.getPosition(id);
+      if (!startPos) return;
+
       var listRect = list.getBoundingClientRect();
       var cols = grid.getCols();
       var colWidth = (listRect.width - CONFIG.gap * (cols - 1)) / cols;
-      card.classList.add('card-resizing');
+      var rowSpan = footprintRowSpan(startPos.heightPx);
+      var occ = grid.occupiedCells(id);
 
-      var latestEvent = null;
+      // Where the cursor grabbed the card, so it keeps following the cursor naturally
+      // instead of its top-left corner jumping to the cursor position.
+      var cardRect = card.getBoundingClientRect();
+      var grabOffsetX = startEvent.clientX - cardRect.left;
+      var grabOffsetY = startEvent.clientY - cardRect.top;
+
+      card.classList.add('card-dragging');
+      overlay.showEmpty(id);
+
+      var latestEvent = startEvent;
+
+      function apply() {
+        var e = latestEvent;
+        var cardLeft = e.clientX - grabOffsetX;
+        var cardTop = e.clientY - grabOffsetY;
+        var col = clamp(Math.round((cardLeft - listRect.left) / (colWidth + CONFIG.gap)), 0, cols - startPos.colSpan);
+        var row = Math.max(1, Math.round((cardTop - listRect.top) / (CONFIG.rowUnit + CONFIG.gap)) + 1);
+
+        var valid = grid.fits(occ, row, col, startPos.colSpan, rowSpan);
+        if (valid) {
+          grid.setPosition(id, { col: col, colSpan: startPos.colSpan, row: row, heightPx: startPos.heightPx });
+          grid.render();
+        }
+        overlay.showTarget(row, col, startPos.colSpan, rowSpan, valid);
+      }
+
+      var scheduleApply = rafThrottle(apply);
+      function onMove(e) {
+        latestEvent = e;
+        scheduleApply();
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        card.classList.remove('card-dragging');
+        overlay.clearAll();
+      }
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    }
+
+    function addHandle(card) {
+      if (card.querySelector('.card-drag-handle')) return;
+      var handle = document.createElement('span');
+      handle.className = 'card-drag-handle';
+      handle.title = 'Trascina per spostare in un’altra cella';
+      handle.textContent = '⣿';
+      handle.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        startDrag(card, e);
+      });
+      card.insertBefore(handle, card.firstChild);
+    }
+
+    function removeHandles() {
+      var handles = list.querySelectorAll('.card-drag-handle');
+      for (var i = 0; i < handles.length; i++) handles[i].parentNode.removeChild(handles[i]);
+    }
+
+    return { addHandle: addHandle, removeHandles: removeHandles };
+  }
+
+  // ---------------------------------------------------------------------------------------
+  // Drag-to-resize. Width moves in whole-column steps; height is completely free in pixels
+  // with a magnetic snap to a neighboring card's bottom edge that releases the moment you
+  // keep dragging past it (recomputed fresh from the raw cursor position every move, never
+  // carried over, so there's no accumulated state that could leave a card stuck). Growing
+  // in either direction is clamped the moment it would collide with another card's cells —
+  // nothing here ever pushes another card out of the way.
+  // ---------------------------------------------------------------------------------------
+
+  function createResizeController(grid, list, overlay) {
+    function startResize(card, startEvent) {
+      var id = card.getAttribute('data-card-id');
+      var startPos = grid.getPosition(id);
+      if (!startPos) return;
+
+      var startX = startEvent.clientX;
+      var startY = startEvent.clientY;
+      var startHeightPx = startPos.heightPx !== null ? startPos.heightPx : clamp(card.getBoundingClientRect().height, CONFIG.minHeightPx, CONFIG.maxHeightPx);
+      var listRect = list.getBoundingClientRect();
+      var cols = grid.getCols();
+      var colWidth = (listRect.width - CONFIG.gap * (cols - 1)) / cols;
+      var occ = grid.occupiedCells(id);
+
+      card.classList.add('card-resizing');
+      overlay.showEmpty(id);
+
+      var latestEvent = startEvent;
 
       function apply() {
         var e = latestEvent;
         var dx = e.clientX - startX;
         var dy = e.clientY - startY;
 
-        var deltaCols = Math.round(dx / (colWidth + CONFIG.gap));
-        grid.applyColSpan(card, startColSpan + deltaCols);
+        var desiredColSpan = clamp(startPos.colSpan + Math.round(dx / (colWidth + CONFIG.gap)), 1, cols - startPos.col);
 
-        // Read the card's current top edge fresh (reflects the layout as of the last
-        // completed reposition) before touching its height, so the snap comparison below
-        // is always against up-to-date geometry.
         var cardTop = card.getBoundingClientRect().top;
         var rawHeight = clamp(startHeightPx + dy, CONFIG.minHeightPx, CONFIG.maxHeightPx);
         var proposedBottom = cardTop + rawHeight;
 
+        // Magnetic snap to a neighboring card's bottom edge — same rule as before, just
+        // computed fresh every move so continuing to drag past the threshold releases it.
         var snappedHeight = null;
         var bestDelta = CONFIG.snapThresholdPx;
         var others = cardsOf(list);
@@ -347,26 +467,35 @@
             snappedHeight = clamp(otherBottom - cardTop, CONFIG.minHeightPx, CONFIG.maxHeightPx);
           }
         }
+        var desiredHeight = snappedHeight !== null ? snappedHeight : rawHeight;
+        var desiredRowSpan = footprintRowSpan(desiredHeight);
 
-        grid.applyHeightPx(card, snappedHeight !== null ? snappedHeight : rawHeight);
+        // Clamp growth against whatever's actually occupied — width first (using the
+        // desired row-span), then height (using whatever width just got clamped to), so
+        // the two never disagree about which cells the final footprint covers.
+        var maxColSpan = grid.maxColSpanFrom(occ, startPos.row, startPos.col, desiredRowSpan);
+        var finalColSpan = clamp(desiredColSpan, 1, Math.max(1, maxColSpan));
 
-        // Resizing this one card can change where every other card lands too (a column it
-        // now takes more/less of, or the row-track bookkeeping used for layout), so the
-        // whole layout is recomputed live as you drag, not just this card's own box.
-        grid.reposition();
+        var maxRowSpan = grid.maxRowSpanFrom(occ, startPos.row, startPos.col, finalColSpan);
+        var finalRowSpan = clamp(desiredRowSpan, 1, Math.max(1, maxRowSpan));
+        var finalHeight = finalRowSpan >= desiredRowSpan ? desiredHeight : finalRowSpan * CONFIG.rowUnit + (finalRowSpan - 1) * CONFIG.gap;
+        finalHeight = clamp(finalHeight, CONFIG.minHeightPx, CONFIG.maxHeightPx);
+
+        grid.setPosition(id, { col: startPos.col, colSpan: finalColSpan, row: startPos.row, heightPx: finalHeight });
+        grid.render();
+        overlay.showTarget(startPos.row, startPos.col, finalColSpan, finalRowSpan, true);
       }
 
       var scheduleApply = rafThrottle(apply);
-
       function onMove(e) {
         latestEvent = e;
         scheduleApply();
       }
-
       function onUp() {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
         card.classList.remove('card-resizing');
+        overlay.clearAll();
       }
 
       document.addEventListener('mousemove', onMove);
@@ -377,7 +506,7 @@
       if (card.querySelector('.card-resize-grip')) return;
       var grip = document.createElement('span');
       grip.className = 'card-resize-grip';
-      grip.title = 'Trascina per ridimensionare (larghezza a step, altezza libera — avvicinati al bordo di una card vicina per agganciarti)';
+      grip.title = 'Trascina per ridimensionare (larghezza a step, altezza libera — non puoi crescere sopra un’altra card)';
       grip.addEventListener('mousedown', function (e) {
         e.preventDefault();
         e.stopPropagation();
@@ -395,68 +524,107 @@
   }
 
   // ---------------------------------------------------------------------------------------
-  // Wiring: load saved layout, apply it, and (Admin-only) hook up the Reorder switch that
-  // turns dragging/resizing on and off.
+  // One-time migration: browsers that saved a layout under the *previous* version of this
+  // file (DOM order + {colSpan, heightPx}, auto-packed by a "shortest column" algorithm)
+  // get their existing layout converted into explicit positions once, so upgrading doesn't
+  // silently reset anyone's arrangement. Reuses that same packing rule purely as a one-shot
+  // starting point — nothing in the live grid works this way anymore afterward.
   // ---------------------------------------------------------------------------------------
 
-  function addDragHandle(card) {
-    if (card.querySelector('.card-drag-handle')) return;
-    var handle = document.createElement('span');
-    handle.className = 'card-drag-handle';
-    handle.title = 'Trascina per riordinare';
-    handle.textContent = '⠿';
-    card.insertBefore(handle, card.firstChild);
+  function migrateLegacyLayout(cardIds, legacyOrder, legacySizes, cols) {
+    var idSet = {};
+    for (var i = 0; i < cardIds.length; i++) idSet[cardIds[i]] = true;
+
+    var orderedIds = [];
+    if (Array.isArray(legacyOrder)) {
+      for (var o = 0; o < legacyOrder.length; o++) {
+        if (idSet[legacyOrder[o]]) orderedIds.push(legacyOrder[o]);
+      }
+    }
+    for (var c = 0; c < cardIds.length; c++) {
+      if (orderedIds.indexOf(cardIds[c]) === -1) orderedIds.push(cardIds[c]);
+    }
+
+    var colBottom = [];
+    for (var k = 0; k < cols; k++) colBottom.push(1);
+
+    var positions = {};
+    for (var j = 0; j < orderedIds.length; j++) {
+      var id = orderedIds[j];
+      var sz = (legacySizes && legacySizes[id]) || {};
+      var colSpan = clamp(typeof sz.colSpan === 'number' ? sz.colSpan : cols, 1, cols);
+      var heightPx = null;
+      if (typeof sz.heightPx === 'number') {
+        heightPx = sz.heightPx;
+      } else if (typeof sz.rowSpan === 'number') {
+        heightPx = sz.rowSpan * CONFIG.rowUnit + (sz.rowSpan - 1) * CONFIG.gap;
+      }
+      var rowSpan = footprintRowSpan(heightPx);
+
+      var bestCol = 0;
+      var bestStart = Infinity;
+      for (var start = 0; start <= cols - colSpan; start++) {
+        var neededRow = 1;
+        for (var m = start; m < start + colSpan; m++) neededRow = Math.max(neededRow, colBottom[m]);
+        if (neededRow < bestStart) {
+          bestStart = neededRow;
+          bestCol = start;
+        }
+      }
+
+      positions[id] = { col: bestCol, colSpan: colSpan, row: bestStart, heightPx: heightPx };
+      for (var n = bestCol; n < bestCol + colSpan; n++) colBottom[n] = bestStart + rowSpan;
+    }
+
+    return positions;
   }
 
-  function removeDragHandles(list) {
-    var handles = list.querySelectorAll('.card-drag-handle');
-    for (var i = 0; i < handles.length; i++) handles[i].parentNode.removeChild(handles[i]);
-  }
+  // ---------------------------------------------------------------------------------------
+  // Wiring: load the saved layout (or migrate/default one), apply it, and (Admin-only) hook
+  // up the Reorder switch that turns dragging/resizing on and off.
+  // ---------------------------------------------------------------------------------------
 
   function init() {
     var list = document.getElementById('card-list');
     if (!list) return;
 
     var featureKey = currentFeatureKey();
-    var orderKey = CONFIG.storagePrefix + featureKey + ':order';
-    var sizeKey = CONFIG.storagePrefix + featureKey + ':size';
+    var layoutKey = CONFIG.storagePrefix + featureKey + ':layout';
     var colsKey = CONFIG.storagePrefix + featureKey + ':cols';
+    var legacyOrderKey = CONFIG.storagePrefix + featureKey + ':order';
+    var legacySizeKey = CONFIG.storagePrefix + featureKey + ':size';
 
     var grid = createGrid(list);
-
-    // --- Column count (1, 2, or 3 — everyone's, not just Admin's) ---
     grid.setCols(parseInt(readJSON(colsKey, CONFIG.defaultCols), 10) || CONFIG.defaultCols);
 
-    // --- Apply the saved order: cards named in it move to the front in that order; any
-    // card not mentioned (a brand-new one, or one never explicitly moved) keeps its
-    // original relative position, effectively appended after the ones that were moved. ---
-    var savedOrder = readJSON(orderKey, []);
-    if (!Array.isArray(savedOrder)) savedOrder = [];
-    if (savedOrder.length > 0) {
-      var byId = {};
-      var initialCardsForOrder = cardsOf(list);
-      for (var i = 0; i < initialCardsForOrder.length; i++) {
-        byId[initialCardsForOrder[i].getAttribute('data-card-id')] = initialCardsForOrder[i];
-      }
-      for (var j = 0; j < savedOrder.length; j++) {
-        var card = byId[savedOrder[j]];
-        if (card) list.appendChild(card);
+    var cardIds = [];
+    var initialCards = cardsOf(list);
+    for (var i = 0; i < initialCards.length; i++) cardIds.push(initialCards[i].getAttribute('data-card-id'));
+
+    var savedLayout = readJSON(layoutKey, null);
+    if (savedLayout && typeof savedLayout === 'object') {
+      grid.loadPositions(savedLayout);
+    } else {
+      var legacyOrder = readJSON(legacyOrderKey, null);
+      var legacySizes = readJSON(legacySizeKey, null);
+      if (legacyOrder || legacySizes) {
+        grid.loadPositions(migrateLegacyLayout(cardIds, legacyOrder, legacySizes, grid.getCols()));
       }
     }
 
-    // --- Apply saved per-card sizes. Every card defaults to a full-width single row purely
-    // from CSS, so a page nobody has ever resized needs none of this. ---
-    var savedSizes = readJSON(sizeKey, {});
-    if (!savedSizes || typeof savedSizes !== 'object') savedSizes = {};
-    var cardsForSize = cardsOf(list);
-    for (var s = 0; s < cardsForSize.length; s++) {
-      grid.applySize(cardsForSize[s], savedSizes[cardsForSize[s].getAttribute('data-card-id')]);
+    // Any card with no position at all yet (first-ever load, or a brand-new card added to
+    // the page since the layout was last saved) gets stacked at the bottom, full width —
+    // same "just a plain list" look every page started with before any of this existed.
+    var nextRow = grid.lowestFreeRow();
+    for (var j = 0; j < cardIds.length; j++) {
+      if (!grid.getPosition(cardIds[j])) {
+        grid.setPosition(cardIds[j], { col: 0, colSpan: grid.getCols(), row: nextRow, heightPx: null });
+        nextRow = grid.lowestFreeRow();
+      }
     }
 
-    // Every card needs an explicit position, not just the ones with a saved size — this is
-    // also what places a never-resized page's cards (all still full-width/one-row) one per
-    // row, same look as before any of this existed.
-    grid.reposition();
+    grid.render();
+    if (savedLayout === null) writeJSON(layoutKey, grid.allPositions()); // persist the migrated/default layout so it's stable from here on
 
     // --- Column count control (radio group in featureToggle.ejs, no role restriction) ---
     var colsRadios = document.querySelectorAll('input[name="card-cols"]');
@@ -464,31 +632,34 @@
       colsRadios[cr].checked = parseInt(colsRadios[cr].value, 10) === grid.getCols();
       colsRadios[cr].addEventListener('change', function (e) {
         if (!e.target.checked) return;
-        grid.setCols(parseInt(e.target.value, 10));
-        writeJSON(colsKey, grid.getCols());
+        var newCols = clamp(parseInt(e.target.value, 10), CONFIG.minCols, CONFIG.maxCols);
+        grid.setCols(newCols);
+        writeJSON(colsKey, newCols);
 
-        // Only clamp cards that already have an explicit saved span oversized for the new
-        // column count — a card with no saved span at all stays on the CSS default
-        // (full-width, "1 / -1"), which already adapts to any column count on its own.
-        var sizes = readJSON(sizeKey, {});
-        if (sizes && typeof sizes === 'object') {
-          var changed = false;
-          var cardsNow = cardsOf(list);
-          for (var n = 0; n < cardsNow.length; n++) {
-            var id = cardsNow[n].getAttribute('data-card-id');
-            var savedSz = sizes[id];
-            if (savedSz && typeof savedSz.colSpan === 'number' && savedSz.colSpan > grid.getCols()) {
-              grid.applyColSpan(cardsNow[n], grid.getCols());
-              sizes[id] = { colSpan: grid.getCols(), heightPx: typeof savedSz.heightPx === 'number' ? savedSz.heightPx : null };
-              changed = true;
-            }
-          }
-          if (changed) writeJSON(sizeKey, sizes);
+        // Changing the column count reshapes the whole coordinate space — a card pinned to
+        // column 2 has nowhere to go once there's only 1 column. Re-pack everything with
+        // the same "shortest column first" rule the old version used globally, but only
+        // ever triggered here: this is the one operation explicit placement can't cleanly
+        // preserve gaps through, since the grid it was arranged on no longer exists in the
+        // same shape. Order-of-appearance (current row, then column) is kept as the input
+        // order, so the result stays recognizably close to what was there before.
+        var idsNow = [];
+        var cardsNow = cardsOf(list);
+        for (var n = 0; n < cardsNow.length; n++) idsNow.push(cardsNow[n].getAttribute('data-card-id'));
+        idsNow.sort(function (a, b) {
+          var pa = grid.getPosition(a);
+          var pb = grid.getPosition(b);
+          if (!pa || !pb) return 0;
+          return pa.row - pb.row || pa.col - pb.col;
+        });
+        var sizesById = {};
+        for (var s = 0; s < idsNow.length; s++) {
+          var p = grid.getPosition(idsNow[s]);
+          sizesById[idsNow[s]] = { colSpan: p ? p.colSpan : newCols, heightPx: p ? p.heightPx : null };
         }
-
-        // Column count changes where every card lands, not just the ones that got clamped
-        // above.
-        grid.reposition();
+        grid.loadPositions(migrateLegacyLayout(idsNow, idsNow, sizesById, newCols));
+        grid.render();
+        writeJSON(layoutKey, grid.allPositions());
       });
     }
 
@@ -498,37 +669,21 @@
     var lockSwitch = document.getElementById('card-lock-btn');
     if (!lockSwitch) return;
 
+    var overlay = createOverlay(list, grid);
+    var dnd = createDragController(grid, list, overlay);
+    var resize = createResizeController(grid, list, overlay);
+
     // Only actually write to localStorage when re-locking if something really changed —
-    // flipping the switch back off without having dragged or resized anything (or dragging
-    // a card right back to where it started) is a no-op, checked by comparing against a
-    // snapshot taken the moment reorder mode turned on.
-    var orderAtLockStart = [];
-    var sizesAtLockStart = {};
+    // flipping the switch back off without having dragged or resized anything is a no-op.
+    var layoutAtLockStart = {};
 
-    var dnd = createDragController(grid, list);
-    var resize = createResizeController(grid, list);
-
-    var initialCards = cardsOf(list);
-    for (var k = 0; k < initialCards.length; k++) dnd.attach(initialCards[k]);
-    // Explicit rather than relying on the browser's own default draggable behavior for a
-    // plain <section> — belt and suspenders so a page that's never touched the Reorder
-    // switch still can't have a card dragged by accident.
-    dnd.disable();
-
-    // Plain client-side mode toggle, same fixed-label convention as the Admin only/Edit
-    // switches above — but unlike those, this one is NOT wired to submit its own form on
-    // every change (there's no persisted "is this feature in reorder mode" boolean). It
-    // only ever writes to localStorage when flipped back OFF after something was actually
-    // dragged or resized.
     lockSwitch.addEventListener('change', function () {
       if (lockSwitch.checked) {
-        dnd.enable();
         list.classList.add('reorder-mode');
-        orderAtLockStart = grid.currentOrder();
-        sizesAtLockStart = grid.currentSizes();
+        layoutAtLockStart = grid.allPositions();
         var cards = cardsOf(list);
         for (var ci = 0; ci < cards.length; ci++) {
-          addDragHandle(cards[ci]);
+          dnd.addHandle(cards[ci]);
           resize.addGrip(cards[ci]);
           // A card resized shorter than its own content scrolls internally (see style.css's
           // overflow-y: auto on [data-height-px]) — and the drag handle/resize grip just
@@ -541,20 +696,18 @@
         return;
       }
 
-      // Switched OFF: this is the only moment a new order/size gets saved, and only if
-      // something was actually dragged or resized. No page reload needed anymore — the DOM
-      // already reflects the change, localStorage is just catching up to it.
-      dnd.disable();
+      // Switched OFF: this is the only moment a new layout gets saved, and only if
+      // something was actually dragged or resized. No page reload needed — the DOM already
+      // reflects the change, localStorage is just catching up to it.
       list.classList.remove('reorder-mode');
-      removeDragHandles(list);
+      dnd.removeHandles();
       resize.removeGrips();
+      overlay.clearAll();
 
-      var orderNow = grid.currentOrder();
-      var sizesNow = grid.currentSizes();
-      var orderChanged = JSON.stringify(orderNow) !== JSON.stringify(orderAtLockStart);
-      var sizesChanged = JSON.stringify(sizesNow) !== JSON.stringify(sizesAtLockStart);
-      if (orderChanged) writeJSON(orderKey, orderNow);
-      if (sizesChanged) writeJSON(sizeKey, sizesNow);
+      var layoutNow = grid.allPositions();
+      if (JSON.stringify(layoutNow) !== JSON.stringify(layoutAtLockStart)) {
+        writeJSON(layoutKey, layoutNow);
+      }
     });
   }
 })();
