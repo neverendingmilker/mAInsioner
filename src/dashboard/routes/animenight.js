@@ -1,22 +1,9 @@
 const express = require('express');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const animeNightManager = require('../../features/animenight/animeNightManager');
 const { isoToDMY } = require('../../utils/dateFormat');
 
 const router = express.Router();
-
-// Mirrors honeypot.js's requireGuild — same fallback error page.
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 // Sessions are keyed/stored as ISO "YYYY-MM-DD" (see animeNightRepository), which is
 // also exactly what an <input type="date"> reads and writes — no conversion needed for

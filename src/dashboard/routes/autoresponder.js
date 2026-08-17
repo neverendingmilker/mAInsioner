@@ -1,6 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const autoresponderManager = require('../../features/autoresponder/autoresponderManager');
 
 const router = express.Router();
@@ -8,19 +8,6 @@ const router = express.Router();
 // Threads/forums are also valid targets via the slash command, but same tradeoff as
 // Slowmode/Reaction Limit/Sticky: not practical to list in a static dropdown.
 const AUTORESPONDER_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.GuildForum];
-
-// Mirrors honeypot.js's requireGuild — same fallback error page.
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);

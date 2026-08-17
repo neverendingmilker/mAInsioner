@@ -1,23 +1,11 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const waifuWarLRManager = require('../../features/waifuwarlr/waifuWarLRManager');
 
 const router = express.Router();
 
 const REACTIONCODE_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
-
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);

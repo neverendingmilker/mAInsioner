@@ -1,6 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const slowModeManager = require('../../features/slowmode/slowModeManager');
 const { formatSeconds } = require('../../utils/duration');
 
@@ -10,19 +10,6 @@ const router = express.Router();
 // aren't practical to list in a static dropdown — the dashboard only offers the
 // channel types that show up reliably in the guild's channel cache.
 const SLOWMODE_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
-
-// Mirrors honeypot.js's requireGuild — same fallback error page.
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);

@@ -10,4 +10,20 @@ function resolveDashboardGuild(client, guildId) {
   return client.guilds.cache.get(guildId) ?? null;
 }
 
-module.exports = { resolveDashboardGuild };
+// Shared by every feature route: resolves the current dashboard guild via
+// resolveDashboardGuild above, and — if it's gone — renders the same fallback error
+// page every route used to duplicate locally. Returns null in that case (callers must
+// check and bail out, same contract as before).
+function requireGuild(req, res) {
+  const guild = resolveDashboardGuild(req.client, req.session.guildId);
+  if (!guild) {
+    res.status(500).render('error', {
+      title: 'Server non trovato',
+      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
+    });
+    return null;
+  }
+  return guild;
+}
+
+module.exports = { resolveDashboardGuild, requireGuild };

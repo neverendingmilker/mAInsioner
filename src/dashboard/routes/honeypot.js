@@ -1,26 +1,12 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const honeypotManager = require('../../features/honeypot/honeypotManager');
 
 const router = express.Router();
 
 const RECENT_KICKS_LIMIT = 20;
 const HONEYPOT_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
-
-// Every route below needs the guild; bail out the same way if it isn't resolvable
-// (mirrors overview.js's check — see resolveDashboardGuild for when this can happen).
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);

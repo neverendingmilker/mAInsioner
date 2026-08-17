@@ -1,6 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const birthdayManager = require('../../features/birthday/birthdayManager');
 const { celebrateBirthdayIfDue, celebrateDueTodayForGuild } = require('../../features/birthday/birthdayScheduler');
 const { formatSeconds } = require('../../utils/duration');
@@ -8,20 +8,6 @@ const { formatSeconds } = require('../../utils/duration');
 const router = express.Router();
 
 const BIRTHDAY_CHANNEL_TYPES = [ChannelType.GuildText];
-
-// Mirrors overview.js/honeypot.js's own copy — see resolveDashboardGuild for when this
-// can happen.
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 // Best-effort display name for a saved birthday's user id — the member cache is warmed
 // at startup and kept in sync live (see comboroles/memberCacheWarmer.js), so this only

@@ -1,21 +1,8 @@
 const express = require('express');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const roleLinkManager = require('../../features/rolelinks/roleLinkManager');
 
 const router = express.Router();
-
-// Mirrors honeypot.js's requireGuild — same fallback error page.
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 function roleLabel(guild, roleId) {
   const role = guild.roles.cache.get(roleId);

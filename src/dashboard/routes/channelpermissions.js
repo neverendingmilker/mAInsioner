@@ -1,6 +1,6 @@
 const express = require('express');
 const { ChannelType, PermissionFlagsBits, OverwriteType } = require('discord.js');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 
 const router = express.Router();
 
@@ -93,18 +93,6 @@ function groupsForChannel(channel) {
   if (kind === 'voice') groups.push({ key: 'voice', title: 'Voce', permissions: VOICE_PERMISSIONS });
   groups.push({ key: 'mod', title: 'Moderazione', permissions: MOD_PERMISSIONS });
   return groups;
-}
-
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
 }
 
 function toListItem(channel) {

@@ -1,24 +1,11 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const incidentManager = require('../../features/incident/incidentManager');
 
 const router = express.Router();
 
 const INCIDENT_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
-
-// Mirrors honeypot.js's requireGuild — same fallback error page.
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 async function renderIncidentPage(req, res, guild) {
   const [enabled, config] = await Promise.all([

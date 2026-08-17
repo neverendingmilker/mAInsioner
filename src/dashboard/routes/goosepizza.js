@@ -1,6 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const goosepizzaManager = require('../../features/goosepizza/goosepizzaManager');
 
 const router = express.Router();
@@ -9,19 +9,6 @@ const router = express.Router();
 // targets via the slash command's ChannelSelectMenu, but not practical to list
 // individually in a static checkbox list — text/announcement channels only.
 const GOOSEPIZZA_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
-
-// Mirrors honeypot.js's requireGuild — same fallback error page.
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);

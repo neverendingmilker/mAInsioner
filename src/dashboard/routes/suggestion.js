@@ -1,24 +1,12 @@
 const express = require('express');
 const { ChannelType, PermissionFlagsBits } = require('discord.js');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const suggestionManager = require('../../features/suggestion/suggestionManager');
 
 const router = express.Router();
 
 const SUGGESTION_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
 const MAX_CONTENT_LENGTH = 1000;
-
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 function memberLabel(guild, userId) {
   const member = guild.members.cache.get(userId);

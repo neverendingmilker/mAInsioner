@@ -1,5 +1,5 @@
 const express = require('express');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 const { FEATURES } = require('../../commands/disablefeature');
 const honeypotManager = require('../../features/honeypot/honeypotManager');
 const { formatSeconds } = require('../../utils/duration');
@@ -8,14 +8,8 @@ const router = express.Router();
 
 router.get('/', async (req, res, next) => {
   try {
-    const guild = resolveDashboardGuild(req.client, req.session.guildId);
-    if (!guild) {
-      res.status(500).render('error', {
-        title: 'Server non trovato',
-        message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-      });
-      return;
-    }
+    const guild = requireGuild(req, res);
+    if (!guild) return;
 
     // FEATURES is already alphabetical by key at the source (src/commands/disablefeature) —
     // reused as-is here so the sidebar and /disablefeature never drift out of sync.

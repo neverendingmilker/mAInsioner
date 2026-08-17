@@ -1,6 +1,6 @@
 const express = require('express');
 const { PermissionFlagsBits, OverwriteType } = require('discord.js');
-const { resolveDashboardGuild } = require('../guild');
+const { requireGuild } = require('../guild');
 
 const router = express.Router();
 
@@ -32,18 +32,6 @@ const MOD_PERMISSIONS = [
 ];
 
 const MAX_ENTRIES_SHOWN = 10;
-
-function requireGuild(req, res) {
-  const guild = resolveDashboardGuild(req.client, req.session.guildId);
-  if (!guild) {
-    res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
-    });
-    return null;
-  }
-  return guild;
-}
 
 // Shared computation behind both /2faroles and /modroles — reimplemented here rather than
 // delegated to a manager, because these commands have no persisted state or manager layer
