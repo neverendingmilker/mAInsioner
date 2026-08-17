@@ -204,52 +204,6 @@ a {
   z-index: 2;
 }
 
-/* Collapse toggle — injected by cardReorder.js on every card (Admin and Mod alike, it's
-   just a personal viewing convenience, saved per-browser same as order/size/columns).
-   Sits in the top-right corner, next to any .card-actions icons already there. Collapsing
-   only hides the body content below the heading — the heading itself, and this button,
-   always stay visible so a collapsed card can still be told apart and reopened. */
-.card-collapse-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 22px;
-  height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel-alt);
-  color: var(--text-dim);
-  font-size: 11px;
-  line-height: 1;
-  cursor: pointer;
-  user-select: none;
-}
-
-.card-list .panel:has(.card-actions) .card-collapse-btn {
-  /* Don't overlap the Modifica/Rimuovi icons already in the top-right of cards that have
-     them — sit to their left instead. */
-  right: auto;
-  left: 12px;
-}
-
-.card-collapse-btn:hover {
-  background: var(--panel);
-  color: var(--text);
-}
-
-.card-list .panel.card-collapsed > *:not(h2):not(.card-collapse-btn):not(.card-drag-handle) {
-  display: none;
-}
-
-.card-list .panel.card-collapsed {
-  /* A collapsed card only needs to be tall enough for its heading — ignore any saved/
-     dragged rowSpan while collapsed so it doesn't leave a tall empty gap. */
-  grid-row: span 1 !important;
-}
-
 .sidebar-footer {
   display: flex;
   align-items: center;

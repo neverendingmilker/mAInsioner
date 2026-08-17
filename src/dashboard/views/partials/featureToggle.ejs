@@ -92,16 +92,20 @@
     <% } %>
   </div>
 
-  <%# Column count (2 or 3) for this page's card grid — same browser-local localStorage
-      idea as Reorder above, but NOT Admin-only: it's just a personal viewing preference
-      (like collapsing a card), doesn't change what anyone else sees, so a Mod gets it too.
-      cardReorder.js reads/writes it and sets `--card-cols` on #card-list; the checked
-      radio here is only a starting guess (JS syncs it to whatever's actually saved once
-      the page loads, since server-rendered HTML can't see localStorage). Gated on
-      `pageFeatureKey` (set for every role, unlike the Admin-only `currentFeatureKey`
-      above) so it only shows on real feature pages. %>
+  <%# Column count (1, 2, or 3) for this page's card grid — same browser-local localStorage
+      idea as Reorder above, but NOT Admin-only: it's just a personal viewing preference,
+      doesn't change what anyone else sees, so a Mod gets it too. cardReorder.js reads/
+      writes it and sets `--card-cols` on #card-list; the checked radio here is only a
+      starting guess (JS syncs it to whatever's actually saved once the page loads, since
+      server-rendered HTML can't see localStorage). Gated on `pageFeatureKey` (set for every
+      role, unlike the Admin-only `currentFeatureKey` above) so it only shows on real
+      feature pages. %>
   <% if (typeof pageFeatureKey !== 'undefined' && pageFeatureKey) { %>
     <div class="btn-group" id="card-cols-group">
+      <label class="btn-group-item">
+        <input type="radio" name="card-cols" value="1" />
+        <span>1 Col</span>
+      </label>
       <label class="btn-group-item">
         <input type="radio" name="card-cols" value="2" />
         <span>2 Cols</span>

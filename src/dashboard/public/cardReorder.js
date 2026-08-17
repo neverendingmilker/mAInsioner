@@ -1,18 +1,18 @@
-// Vanilla-JS drag-and-drop reordering, drag-to-resize, collapse, and column-count support
-// for the "cards" (panel sections) on a feature page, no dependencies — same drag-reorder
-// technique as qotdReorder.js/themesReorder.js, plus a "Reorder" switch gating whether
-// dragging/resizing is possible at all (off by default, so browsing a feature page never
-// risks an accidental change). This is the standard for every feature page's #card-list,
-// current and future — nothing here is Anime-Night-specific (it was only ever piloted
-// there before being made the default for every page).
+// Vanilla-JS drag-and-drop reordering, drag-to-resize, and column-count support for the
+// "cards" (panel sections) on a feature page, no dependencies — same drag-reorder technique
+// as qotdReorder.js/themesReorder.js, plus a "Reorder" switch gating whether dragging/
+// resizing is possible at all (off by default, so browsing a feature page never risks an
+// accidental change). This is the standard for every feature page's #card-list, current and
+// future — nothing here is Anime-Night-specific (it was only ever piloted there before being
+// made the default for every page).
 //
-// Everything here — order, per-card grid span, collapsed state, and column count — lives in
-// this browser's own localStorage, keyed by feature, never sent to the server. That's
-// deliberate: the user explicitly didn't want their card layout shared across the whole
-// server, where another Admin could change what everyone sees. Reorder and resize stay
-// Admin-only (only an Admin gets the "Reorder" switch — see featureToggle.ejs), but collapse
-// and column count are personal viewing preferences with no such restriction: both work the
-// same for a Mod as for an Admin, entirely client-side.
+// Everything here — order, per-card grid span, and column count — lives in this browser's
+// own localStorage, keyed by feature, never sent to the server. That's deliberate: the user
+// explicitly didn't want their card layout shared across the whole server, where another
+// Admin could change what everyone sees. Reorder and resize stay Admin-only (only an Admin
+// gets the "Reorder" switch — see featureToggle.ejs), but column count is a personal viewing
+// preference with no such restriction: it works the same for a Mod as for an Admin, entirely
+// client-side.
 (function () {
   // Included from partials/featureToggle.ejs, which every view renders near the TOP of the
   // page (inside .page-header) — well before the #card-list markup further down. Without
@@ -30,7 +30,7 @@
   var ROW_UNIT = 140;
   var GAP = 24;
   var MAX_ROW_SPAN = 6;
-  var MIN_COLS = 2;
+  var MIN_COLS = 1;
   var MAX_COLS = 3;
   var DEFAULT_COLS = 3;
   var STORAGE_PREFIX = 'mainsioner:cardLayout:';
@@ -78,9 +78,8 @@
     var orderKey = STORAGE_PREFIX + featureKey + ':order';
     var sizeKey = STORAGE_PREFIX + featureKey + ':size';
     var colsKey = STORAGE_PREFIX + featureKey + ':cols';
-    var collapseKey = STORAGE_PREFIX + featureKey + ':collapsed';
 
-    // --- Column count (2 or 3 — everyone's, not just Admin's) ---
+    // --- Column count (1, 2, or 3 — everyone's, not just Admin's) ---
     var COLS = clamp(parseInt(readJSON(colsKey, DEFAULT_COLS), 10) || DEFAULT_COLS, MIN_COLS, MAX_COLS);
     list.style.setProperty('--card-cols', String(COLS));
 
@@ -171,55 +170,6 @@
         }
       });
     }
-
-    // --- Collapse (everyone's, not just Admin's) ---
-    // A card that gets too long to scan at a glance (e.g. a long list of saved birthdays)
-    // can be collapsed down to just its heading. Purely a viewing preference — saved per
-    // feature+card, same as everything else here, and available to Admin and Mod alike
-    // since it doesn't change anything anyone else sees.
-    var collapsedIds = readJSON(collapseKey, []);
-    if (!Array.isArray(collapsedIds)) collapsedIds = [];
-    var collapsedSet = {};
-    for (var ci = 0; ci < collapsedIds.length; ci++) collapsedSet[collapsedIds[ci]] = true;
-
-    function saveCollapsed() {
-      var ids = [];
-      var cards = list.querySelectorAll('.panel[data-card-id].card-collapsed');
-      for (var i = 0; i < cards.length; i++) ids.push(cards[i].getAttribute('data-card-id'));
-      writeJSON(collapseKey, ids);
-    }
-
-    function addCollapseToggle(card) {
-      if (card.querySelector('.card-collapse-btn')) return;
-      var id = card.getAttribute('data-card-id');
-      var btn = document.createElement('span');
-      btn.className = 'card-collapse-btn';
-      btn.setAttribute('role', 'button');
-      btn.setAttribute('tabindex', '0');
-      var collapsed = Boolean(collapsedSet[id]);
-      if (collapsed) card.classList.add('card-collapsed');
-      btn.title = collapsed ? 'Espandi' : 'Comprimi';
-      btn.textContent = collapsed ? '▸' : '▾';
-
-      function toggle() {
-        var nowCollapsed = card.classList.toggle('card-collapsed');
-        btn.title = nowCollapsed ? 'Espandi' : 'Comprimi';
-        btn.textContent = nowCollapsed ? '▸' : '▾';
-        saveCollapsed();
-      }
-
-      btn.addEventListener('click', toggle);
-      btn.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          toggle();
-        }
-      });
-      card.appendChild(btn);
-    }
-
-    var allCardsForCollapse = list.querySelectorAll('.panel[data-card-id]');
-    for (var ac = 0; ac < allCardsForCollapse.length; ac++) addCollapseToggle(allCardsForCollapse[ac]);
 
     // --- Drag-reorder + drag-resize (Admin-only — see featureToggle.ejs) ---
     var lockSwitch = document.getElementById('card-lock-btn');
