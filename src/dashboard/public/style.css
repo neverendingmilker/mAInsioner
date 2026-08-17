@@ -512,6 +512,27 @@ a {
   color: #ff9a9c;
 }
 
+.flash-toast {
+  /* Success messages float above the page instead of sitting in normal document flow (see
+     partials/flash.ejs, which also removes this element automatically after 10s) — top:16px
+     from .flash would just be dead space here since position is set via top/right instead. */
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  margin-top: 0;
+  z-index: 1000;
+  max-width: 360px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.flash-toast-hide {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 .panel {
   margin-top: 24px;
   background: var(--panel);

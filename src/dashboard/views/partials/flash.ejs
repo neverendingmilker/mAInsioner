@@ -1,3 +1,25 @@
 <% if (typeof flash !== 'undefined' && flash) { %>
-  <div class="flash flash-<%= flash.type %>"><%= flash.message %></div>
+  <% if (flash.type === 'success') { %>
+    <%# Success messages only — errors stay as the regular inline banner below, since
+        they're worth leaving on screen until the user notices them. This one instead
+        floats as a toast and disappears on its own after 10s, so it doesn't stick around
+        cluttering the page once it's served its purpose. Self-contained (markup + its own
+        tiny script) so every one of this partial's ~20 includes gets the behavior with no
+        separate JS file to also wire up. %>
+    <div class="flash flash-success flash-toast" data-flash-toast><%= flash.message %></div>
+    <script>
+      (function () {
+        var toast = document.currentScript.previousElementSibling;
+        if (!toast || !toast.hasAttribute('data-flash-toast')) return;
+        setTimeout(function () {
+          toast.classList.add('flash-toast-hide');
+          // Give the fade-out transition (see style.css) time to finish before removing —
+          // matches its 300ms duration.
+          setTimeout(function () { toast.remove(); }, 300);
+        }, 10000);
+      })();
+    </script>
+  <% } else { %>
+    <div class="flash flash-<%= flash.type %>"><%= flash.message %></div>
+  <% } %>
 <% } %>
