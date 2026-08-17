@@ -227,6 +227,51 @@ a {
   z-index: 2;
 }
 
+/* A blank, intentional gap in the grid (see "+ Slot vuoto" / cardReorder.js's
+   createEmptySlotCard) — dashed instead of solid so it's obviously a placeholder, not a
+   broken/empty real card. Drag handle and resize grip work on it exactly like a real card
+   (added by the same reorder-mode code path), so it can be moved and sized like any other
+   cell to shape the gap; the ✕ button removes it entirely. */
+.card-list .panel.card-empty-slot {
+  background: transparent;
+  border: 2px dashed var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+}
+
+.card-empty-slot-label {
+  color: var(--text-dim);
+  font-size: 13px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.card-empty-slot-remove {
+  display: none;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.card-empty-slot-remove:hover {
+  color: var(--danger);
+}
+
+/* Same visibility rule as the resize grip — only ever clickable during reorder mode, i.e.
+   only for an Admin who's turned "Riordina card" on. */
+.card-list.reorder-mode .card-empty-slot-remove {
+  display: block;
+}
+
 .sidebar-footer {
   display: flex;
   align-items: center;

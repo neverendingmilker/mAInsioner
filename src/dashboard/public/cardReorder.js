@@ -36,6 +36,10 @@
   var MAX_COLS = 3;
   var DEFAULT_COLS = 3;
   var STORAGE_PREFIX = 'mainsioner:cardLayout:';
+  // Marks a card as an empty placeholder (see "+ Slot vuoto" below) rather than a real
+  // feature panel — nothing server-rendered ever has an id starting with this, so it's safe
+  // to use as the sole way of telling the two apart, both in the DOM and in saved JSON.
+  var EMPTY_SLOT_PREFIX = 'empty-';
 
   function clamp(n, min, max) {
     return Math.max(min, Math.min(max, n));
@@ -85,6 +89,45 @@
     var COLS = clamp(parseInt(readJSON(colsKey, DEFAULT_COLS), 10) || DEFAULT_COLS, MIN_COLS, MAX_COLS);
     list.style.setProperty('--card-cols', String(COLS));
 
+    // An "empty slot" is a blank, draggable/resizable placeholder card with no feature
+    // content — its only purpose is to occupy a grid cell on purpose, so a gap in a row or
+    // column can be left where the user put it instead of repositionAll's dense
+    // "shortest column first" packing always closing it up. Nothing server-rendered ever
+    // produces one; every empty slot that exists was created client-side (see the
+    // "+ Slot vuoto" button below) and only lives in this browser's saved order/size, same
+    // as everything else here.
+    function createEmptySlotCard(id) {
+      var card = document.createElement('section');
+      card.className = 'panel card-empty-slot';
+      card.setAttribute('data-card-id', id);
+
+      var label = document.createElement('span');
+      label.className = 'card-empty-slot-label';
+      label.textContent = 'Slot vuoto';
+      card.appendChild(label);
+
+      // Hidden outside reorder mode via CSS (.card-list.reorder-mode .card-empty-slot-remove)
+      // — same as the resize grip — so only an unlocked Admin session can ever remove one.
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'card-empty-slot-remove';
+      removeBtn.title = 'Rimuovi slot vuoto';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!unlocked) return;
+        card.parentNode.removeChild(card);
+        repositionAll();
+        // Marks the layout dirty so the removal is actually saved once reorder mode turns
+        // back off, same "only write if something changed" rule as drag/resize.
+        moved = true;
+      });
+      card.appendChild(removeBtn);
+
+      return card;
+    }
+
     var savedOrder = readJSON(orderKey, []);
     if (!Array.isArray(savedOrder)) savedOrder = [];
 
@@ -95,6 +138,19 @@
       var byId = {};
       var cards = list.querySelectorAll('.panel[data-card-id]');
       for (var i = 0; i < cards.length; i++) byId[cards[i].getAttribute('data-card-id')] = cards[i];
+
+      // Empty slots referenced by a saved order have no server-rendered element to find
+      // above — recreate them from scratch, for both Admin and Mod sessions alike (the
+      // saved layout is per-browser, not per-role, same as order/size for real cards).
+      for (var e = 0; e < savedOrder.length; e++) {
+        var savedId = savedOrder[e];
+        if (!byId[savedId] && savedId.indexOf(EMPTY_SLOT_PREFIX) === 0) {
+          var emptyCard = createEmptySlotCard(savedId);
+          list.appendChild(emptyCard);
+          byId[savedId] = emptyCard;
+        }
+      }
+
       for (var j = 0; j < savedOrder.length; j++) {
         var card = byId[savedOrder[j]];
         if (card) list.appendChild(card);
@@ -376,6 +432,26 @@
     var initialCards = list.querySelectorAll('.panel[data-card-id]');
     for (var k = 0; k < initialCards.length; k++) attachHandlers(initialCards[k]);
 
+    // "+ Slot vuoto" (featureToggle.ejs) — only shown/enabled during reorder mode, wired up
+    // below alongside the lock switch. Adds one new empty card at the end of the list;
+    // dragging it wherever a gap is wanted is the same drag-reorder every real card already
+    // supports, so no separate "insert a gap here" interaction is needed.
+    var addEmptySlotBtn = document.getElementById('card-add-empty-slot-btn');
+    if (addEmptySlotBtn) {
+      addEmptySlotBtn.addEventListener('click', function () {
+        if (!unlocked) return;
+        var id = EMPTY_SLOT_PREFIX + Math.random().toString(36).slice(2, 10);
+        var card = createEmptySlotCard(id);
+        list.appendChild(card);
+        card.setAttribute('draggable', 'true');
+        attachHandlers(card);
+        addHandle(card);
+        addResizeGrip(card);
+        repositionAll();
+        moved = true;
+      });
+    }
+
     function attachHandlers(card) {
       card.addEventListener('dragstart', function (e) {
         if (!unlocked) {
@@ -419,6 +495,7 @@
         moved = false;
         setDraggable(true);
         list.classList.add('reorder-mode');
+        if (addEmptySlotBtn) addEmptySlotBtn.style.display = '';
         sizesAtLockStart = currentSizes();
         var cards = list.querySelectorAll('.panel[data-card-id]');
         for (var i = 0; i < cards.length; i++) {
@@ -441,6 +518,7 @@
       unlocked = false;
       setDraggable(false);
       list.classList.remove('reorder-mode');
+      if (addEmptySlotBtn) addEmptySlotBtn.style.display = 'none';
       removeHandles();
       removeResizeGrips();
       var sizesNow = currentSizes();
