@@ -224,6 +224,14 @@ Users submit suggestions; Admins approve/deny.
 - **`/suggestion channel`** `Admin` — Sets (or clears) where suggestions get posted.
 - **`/suggestion disable`** `Admin` — Turns the feature on/off.
 
+## 🎨 Themes (`/themes`)
+
+A copy of Question of the Day (same queue/schedule/Google Sheet mechanics), posting a "Tema del giorno" instead of a question — its own fully independent channel, role, schedule and queue, so it can run alongside `/qotd` without interfering. Everything is set up on the dashboard; the command covers the same two things as `/qotd`.
+
+- **`/themes post`** `Admin` — posts the next theme in the queue right now, ignoring the schedule.
+- **`/themes status`** `Admin` — shows the channel/role/schedule currently configured, how many themes are left, and a preview of the next one.
+- **`/themes disable`** `Admin` — turns the feature on/off.
+
 ## ✅ Verification (`/verify`)
 
 - **`/verify config`** `Admin` — Sets the role per type (sub/domme/maledom), a shared role to remove, the report channel, and an optional extra "allowed" role.
@@ -280,6 +288,7 @@ Every page's on/off switch, top-right, is now two radio buttons ("Attivo"/"Disat
 - **Slowmode** — turn it on/off, see and manage every channel with a post cooldown (e.g. one message every 12h), add a new one or remove an existing one. Each configured channel has a "Modifica" section pre-filled with its current cooldown. Limiting an individual thread instead of a whole channel still needs `/slowmode add` on Discord.
 - **Sticky Messages** — turn it on/off, see and manage every channel with a sticky message (content + how long it waits after new activity before reappearing), add a new one or remove an existing one. Each configured channel has a "Modifica" section pre-filled with its current text/delay. Along the way we fixed a bug where editing a sticky (from here or from `/sticky edit`) left the old message sitting in the channel and posted a duplicate underneath instead of replacing it.
 - **Suggestions** — turn it on/off, set the posting channel, see every pending suggestion with buttons to approve/reject/remove it and a "Modifica" to edit the text. Approving/rejecting posts a fresh updated copy instead of editing the original, same as on Discord — submitting a new suggestion is still Discord-only, this page is for moderating what's already there.
+- **Themes** — a copy of Question of the Day: same toggle, channel/role/schedule setup, Google Sheet import, drag-to-reorder queue and exhaustion banner, but posts "🎨 Tema del giorno" instead of a question, with its own independent channel/role/schedule/queue so it can run alongside QOTD. `/themes post` and `/themes status` mirror `/qotd`'s Discord-side commands.
 - **WaifuWar LR** — turn it on/off, see and manage every channel set up for reaction codes, add a new one or remove an existing one (removing also clears its digit mappings). Each channel shows its digit→emoji table with a remove button per row, plus an "Aggiungi/modifica mappature" form where you can set several at once by comma-separating digits and emoji in the same order. The actual "post an image, then type digits" part only works live on Discord — this page just manages the setup behind it.
 - **Warnings** — turn it on/off, set the two escalation roles and the posting channel, issue a warning by raw user ID (works even for someone who already left) with automatic role escalation, or a role-less verbal note for a current member, a recent-activity table, and a section listing whatever warnings/verbals *you* issued with a "Modifica" to change the reason/date — same "only the person who issued it can edit it" rule as `/warning edit`. There's no delete button because there's no delete on Discord either.
 

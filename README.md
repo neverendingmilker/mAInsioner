@@ -70,6 +70,7 @@ Server-rendered (Express + EJS) web dashboard, running in the **same process and
   - **Slowmode** — toggle, list/add/remove per-channel post cooldowns (e.g. one message every 12h), inline edit re-using the same add form. Applying it to individual threads instead of a whole channel still requires `/slowmode add` on Discord.
   - **Sticky Messages** — toggle, list/add/remove per-channel sticky messages with their repost delay, inline edit re-using the same add form (fixed a bug in the process: editing used to leave the old sticky message behind and post a duplicate instead of replacing it — now fixed for both the dashboard and `/sticky edit` on Discord). Applying it to a single thread instead of a whole channel still requires `/sticky add` on Discord.
   - **Suggestions** — toggle, configure the posting channel, list of pending suggestions with approve/reject/remove and an inline "Modifica" for the text. Approving/rejecting posts an updated copy rather than editing the original message, same as the Discord command; creating a suggestion is still Discord-only (the dashboard is for moderating, not submitting).
+  - **Themes** — a copy of Question of the Day (toggle, channel/role/schedule, Google Sheet import, drag-and-drop reorderable queue, exhaustion banner), posting a "🎨 Tema del giorno" instead of a question, with its own fully independent channel/role/schedule/queue. `/themes post` and `/themes status` mirror `/qotd`'s Discord-side commands.
   - **WaifuWar LR** — toggle, list/add/remove channels set up for reaction codes, and per-channel digit→emoji mappings (add/overwrite several at once by comma-separating both, remove one at a time). Posting an image then a digits-only message still only works live on Discord (that part reads real messages/attachments as they're posted) — the dashboard only manages the channel list and the mapping, not the runtime behavior itself.
   - **Warnings** — toggle, configure the two escalation roles and the posting channel, issue a warning (by raw user ID, so it still works for someone who's left) with automatic role escalation or a role-less verbal note, a recent activity table, and a "your own warnings" section to edit the reason/date of whatever you personally issued (matches `/warning edit`'s own-issuer-only rule). There's still no way to delete a warning — that's true of the Discord commands too, not a dashboard limitation.
 
@@ -250,6 +251,12 @@ Reposts messages that collect enough reactions to a dedicated channel — severa
 - `approve` / `reject number:<...>` `Admin` — decides one (or react to the suggestion message, or right-click → Apps → Approve/Reject).
 - `channel [channel]` `Admin` — sets (or clears) where suggestions get posted.
 - `disable` `Admin` — turns the feature on/off.
+
+### Themes (`/themes`)
+Copy of Question of the Day's mechanics (queue, schedule, Google Sheet import), posting a "Tema del giorno" instead of a question — fully independent queue/channel/role/schedule. Config is dashboard-only (sidebar → "Themes").
+- `disable` `Admin` — turns the feature on/off.
+- `post` `Admin` — posts the next theme in the queue right now, regardless of the schedule.
+- `status` `Admin` — shows the current configuration, queue size, and the next theme preview.
 
 ### Verification (`/verify`)
 - `config [verified_sub] [verified_domme] [verified_maledom] [remove] [channel] [allowedrole]` `Admin` — sets the role per type, a shared role to remove, the report channel, and an optional extra allowed role.

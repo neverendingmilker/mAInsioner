@@ -915,3 +915,93 @@ a {
   border: 1px solid var(--border);
   border-radius: 8px;
 }
+
+/* --- Themes: draggable theme queue (copy of the Question of the Day rules above) --- */
+
+.themes-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: grab;
+  background: var(--panel);
+}
+
+.themes-item:last-child {
+  margin-bottom: 0;
+}
+
+.themes-item.themes-dragging {
+  opacity: 0.4;
+}
+
+.themes-drag-handle {
+  color: var(--text-dim);
+  font-size: 16px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.themes-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.themes-item-text {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.themes-next-badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(155, 89, 182, 0.18);
+  border: 1px solid #9b59b6;
+  color: #cd9ee0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.themes-source-badge {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.themes-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.themes-item-actions form {
+  margin: 0;
+}
+
+.themes-item-actions details {
+  position: relative;
+}
+
+.themes-item-actions .config-edit summary {
+  list-style: none;
+}
+
+.themes-edit-popover {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 5;
+  margin-top: 6px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  width: 280px;
+}

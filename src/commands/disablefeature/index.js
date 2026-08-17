@@ -22,6 +22,7 @@ const FEATURES = {
   starboard: { label: 'Starboard', manager: require('../../features/starboard/starboardManager') },
   sticky: { label: 'Sticky Messages', manager: require('../../features/sticky/stickyManager') },
   suggestion: { label: 'Suggestions', manager: require('../../features/suggestion/suggestionManager') },
+  themes: { label: 'Themes', manager: require('../../features/themes/themesManager') },
   verify: { label: 'Verification', manager: require('../../features/verify/verifyManager') },
   waifuwarlr: { label: 'WaifuWar LR', manager: require('../../features/waifuwarlr/waifuWarLRManager') },
   warning: { label: 'Warnings', manager: require('../../features/warning/warningManager') },

@@ -1,0 +1,142 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Themes</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/themes/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <% if (exhausted) { %>
+      <div class="flash flash-error">
+        La lista di temi è esaurita — sono già stati postati tutti. Il posting è in pausa finché non aggiungi altri temi
+        (manualmente o sincronizzando di nuovo il foglio).
+      </div>
+    <% } %>
+
+    <section class="panel">
+      <h2>Configurazione</h2>
+      <form method="POST" action="/themes/config" class="form">
+        <label>
+          Canale
+          <select name="channelId">
+            <option value="">Nessuno</option>
+            <% textChannels.forEach((c) => { %>
+              <option value="<%= c.id %>" <%= config.channelId === c.id ? 'selected' : '' %>><%= c.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Ruolo da pingare (opzionale)
+          <select name="roleId">
+            <option value="">Nessuno</option>
+            <% roles.forEach((r) => { %>
+              <option value="<%= r.id %>" <%= config.roleId === r.id ? 'selected' : '' %>><%= r.name %></option>
+            <% }) %>
+          </select>
+        </label>
+
+        <div>
+          <label class="checkbox-label">
+            <input type="radio" name="scheduleMode" value="daily" id="themes-mode-daily" <%= config.scheduleMode === 'daily' ? 'checked' : '' %> onchange="document.getElementById('themes-daily-field').style.display='flex';document.getElementById('themes-interval-field').style.display='none';" />
+            A un orario fisso ogni giorno
+          </label>
+          <label class="checkbox-label">
+            <input type="radio" name="scheduleMode" value="interval" id="themes-mode-interval" <%= config.scheduleMode === 'interval' ? 'checked' : '' %> onchange="document.getElementById('themes-daily-field').style.display='none';document.getElementById('themes-interval-field').style.display='flex';" />
+            Ogni tot ore
+          </label>
+        </div>
+
+        <div class="schedule-mode-fields" id="themes-daily-field" style="<%= config.scheduleMode === 'daily' ? '' : 'display:none;' %>">
+          <label>
+            Orario (fuso orario del server del bot)
+            <input type="time" name="dailyTime" value="<%= config.dailyTime %>" />
+          </label>
+        </div>
+
+        <div class="schedule-mode-fields" id="themes-interval-field" style="<%= config.scheduleMode === 'interval' ? '' : 'display:none;' %>">
+          <label>
+            Ogni quante ore
+            <input type="number" name="intervalHours" min="1" max="720" value="<%= config.intervalHours %>" />
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary">Salva configurazione</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Importa da Google Sheet</h2>
+      <p class="hint">
+        Pubblica il foglio come CSV (nel foglio: File → Condividi → Pubblica sul web → formato CSV) e incolla qui il link.
+        Ogni sincronizzazione legge la prima colonna di ogni riga (saltando la prima riga, trattata come intestazione) e
+        aggiunge in coda solo i temi non già presenti — puoi risincronizzare quante volte vuoi senza creare doppioni.
+      </p>
+      <form method="POST" action="/themes/sync" class="form">
+        <label>
+          Link CSV pubblicato
+          <input type="url" name="sheetUrl" value="<%= config.sheetUrl %>" placeholder="https://docs.google.com/.../pub?output=csv" />
+        </label>
+        <button type="submit" class="btn-primary">Salva e sincronizza</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Temi in coda (<%= totalThemes %>, <%= remaining %> da postare)</h2>
+      <p class="hint">Trascina un tema per cambiarne l'ordine — l'ordine è anche l'ordine di posting.</p>
+
+      <% if (themeRows.length === 0) { %>
+        <p class="hint">Nessun tema ancora — aggiungine uno qui sotto o sincronizza da un Google Sheet.</p>
+      <% } else { %>
+        <div id="themes-item-list">
+          <% themeRows.forEach((t) => { %>
+            <div class="themes-item" data-id="<%= t.id %>">
+              <span class="themes-drag-handle" title="Trascina per riordinare">⠿</span>
+              <div class="themes-item-body">
+                <% if (t.isNext) { %><span class="themes-next-badge">Prossimo</span><br /><% } %>
+                <span class="themes-item-text"><%= t.theme %></span>
+                <% if (t.source === 'sheet') { %> <span class="themes-source-badge">(da Google Sheet)</span><% } %>
+              </div>
+              <div class="themes-item-actions">
+                <details>
+                  <summary class="btn-secondary-sm">Modifica</summary>
+                  <div class="themes-edit-popover">
+                    <form method="POST" action="/themes/items/<%= t.id %>/edit" class="form">
+                      <label>
+                        Testo
+                        <textarea name="theme" rows="3" required><%= t.theme %></textarea>
+                      </label>
+                      <button type="submit" class="btn-primary-sm">Salva</button>
+                    </form>
+                  </div>
+                </details>
+                <form method="POST" action="/themes/items/<%= t.id %>/remove" onsubmit="return confirm('Rimuovere questo tema?');">
+                  <button type="submit" class="btn-danger-sm">Rimuovi</button>
+                </form>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <form id="themes-reorder-form" method="POST" action="/themes/items/reorder" style="display:none;">
+        <input type="hidden" id="themes-order-input" name="order" value="" />
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Aggiungi tema manualmente</h2>
+      <form method="POST" action="/themes/items/add" class="form">
+        <label>
+          Testo del tema
+          <textarea name="theme" rows="3" required maxlength="500"></textarea>
+        </label>
+        <button type="submit" class="btn-primary">Aggiungi</button>
+      </form>
+    </section>
+  </main>
+</div>
+<script src="/themesReorder.js"></script>
+<%- include('partials/footer') %>

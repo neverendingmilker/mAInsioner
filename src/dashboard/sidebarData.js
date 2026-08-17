@@ -20,6 +20,7 @@ const FEATURE_PAGES = {
   slowmode: '/slowmode',
   sticky: '/sticky',
   suggestion: '/suggestion',
+  themes: '/themes',
   waifuwarlr: '/waifuwarlr',
   warning: '/warning',
 };

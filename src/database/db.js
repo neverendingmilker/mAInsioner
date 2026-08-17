@@ -467,6 +467,32 @@ async function createTables() {
         created_at INTEGER NOT NULL
       )`,
       `CREATE INDEX IF NOT EXISTS qotd_questions_guild_idx ON qotd_questions (guild_id, position)`,
+
+      // Themes: a straight copy of Question of the Day's schema/mechanics (same config
+      // shape, same ordered-queue-with-cursor design) but posting a "Tema del giorno"
+      // instead of a question — kept as its own tables/feature so the two queues run
+      // fully independently (separate channel/role/schedule/queue).
+      `CREATE TABLE IF NOT EXISTS themes_config (
+        guild_id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 0,
+        channel_id TEXT,
+        role_id TEXT,
+        schedule_mode TEXT NOT NULL DEFAULT 'daily',
+        daily_time TEXT,
+        interval_hours INTEGER,
+        next_position INTEGER NOT NULL DEFAULT 0,
+        last_posted_at INTEGER,
+        sheet_url TEXT
+      )`,
+      `CREATE TABLE IF NOT EXISTS themes_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id TEXT NOT NULL,
+        theme TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        source TEXT NOT NULL DEFAULT 'manual',
+        created_at INTEGER NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS themes_items_guild_idx ON themes_items (guild_id, position)`,
     ],
     'write'
   );
