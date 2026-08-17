@@ -1,6 +1,7 @@
 // Vanilla-JS card grid for a feature page's #card-list: explicit (row, column) placement,
-// multi-column span (1..COLS), free height, and deliberate empty cells — plus drag-and-drop
-// to move cards around and a resize grip for width/height. No dependencies, no build step.
+// multi-column span (1..COLS), multi-row span, and deliberate empty cells — plus drag-and-
+// drop to move cards around and a resize grip for width/height. No dependencies, no build
+// step.
 //
 // --- The model ---
 // Think of the grid as an invisible spreadsheet: COLS columns (1-3, same picker as before)
@@ -19,9 +20,9 @@
 // - A drop (or a resize growing into another card's space) is only allowed if the target
 //   cells are actually free; otherwise the card snaps back to its last valid spot. Nothing
 //   here ever silently overlaps or swaps two cards.
-// - Width still moves in whole-column steps (CSS Grid's equal-width columns can't do
-//   fractional widths); height stays completely free in pixels, with the same magnetic
-//   snap-to-a-neighbor's-edge (and automatic release once you drag past it) as before.
+// - Both width and height move in whole-cell steps now (columns and rows), same idea on
+//   both axes, so a card's footprint is always some whole number of cells — `heightPx` is
+//   just that row-count expressed in pixels (rowSpan * rowUnit + (rowSpan-1) * gap).
 //
 // Reorder/resize are Admin-only (gated by whether #card-lock-btn exists — see
 // featureToggle.ejs); column count is a personal viewing preference open to Admin and Mod.
@@ -40,16 +41,21 @@
     minCols: 1,
     maxCols: 3,
     defaultCols: 3,
-    minHeightPx: 140, // == rowUnit
-    maxHeightPx: 140 * 6 + 24 * 5, // same ceiling earlier versions used (6 row-tracks)
-    // How close (in px) a card's dragged-to bottom edge needs to land to another visible
-    // card's bottom edge before it magnetically snaps to match it exactly.
-    snapThresholdPx: 14,
+    minRowSpan: 1,
+    maxRowSpan: 6, // same ceiling earlier free-height versions used (6 row-tracks)
     // How many extra empty rows to show past the lowest occupied row while dragging or
     // resizing, so there's always visible room to drop something further down too.
     bufferRows: 2,
     storagePrefix: 'mainsioner:cardLayout:',
   };
+
+  // A row-span (whole number of grid rows) expressed as the exact pixel height that spans
+  // it, matching `.card-list`'s `grid-auto-rows: minmax(140px, auto)` + gap — the inverse of
+  // footprintRowSpan() below. Every heightPx this file ever stores is one of these exact
+  // values, never an arbitrary pixel number, so resizing always lands on a whole cell.
+  function rowSpanToHeightPx(rowSpan) {
+    return rowSpan * CONFIG.rowUnit + (rowSpan - 1) * CONFIG.gap;
+  }
 
   document.addEventListener('DOMContentLoaded', init);
 
@@ -138,11 +144,19 @@
     }
 
     function setPosition(id, pos) {
+      // heightPx is always normalized to an exact whole-row-span value (never an arbitrary
+      // pixel number) — whatever comes in gets rounded to the nearest row count first, same
+      // as colSpan is rounded to a whole column count below.
+      var normalizedHeight = null;
+      if (typeof pos.heightPx === 'number') {
+        var rowSpan = clamp(footprintRowSpan(pos.heightPx), CONFIG.minRowSpan, CONFIG.maxRowSpan);
+        normalizedHeight = rowSpanToHeightPx(rowSpan);
+      }
       positions[id] = {
         col: clamp(Math.round(pos.col), 0, cols - 1),
         colSpan: clamp(Math.round(pos.colSpan), 1, cols),
         row: Math.max(1, Math.round(pos.row)),
-        heightPx: typeof pos.heightPx === 'number' ? clamp(pos.heightPx, CONFIG.minHeightPx, CONFIG.maxHeightPx) : null,
+        heightPx: normalizedHeight,
       };
       // colSpan can't push the card past the right edge.
       positions[id].colSpan = clamp(positions[id].colSpan, 1, cols - positions[id].col);
@@ -415,10 +429,9 @@
   }
 
   // ---------------------------------------------------------------------------------------
-  // Drag-to-resize. Width moves in whole-column steps; height is completely free in pixels
-  // with a magnetic snap to a neighboring card's bottom edge that releases the moment you
-  // keep dragging past it (recomputed fresh from the raw cursor position every move, never
-  // carried over, so there's no accumulated state that could leave a card stuck). Growing
+  // Drag-to-resize. Both width and height move in whole-cell steps now — the same idea on
+  // both axes, columns for width and rows for height — so a card's footprint is always some
+  // whole number of columns by some whole number of rows, never a free pixel height. Growing
   // in either direction is clamped the moment it would collide with another card's cells —
   // nothing here ever pushes another card out of the way.
   // ---------------------------------------------------------------------------------------
@@ -431,7 +444,7 @@
 
       var startX = startEvent.clientX;
       var startY = startEvent.clientY;
-      var startHeightPx = startPos.heightPx !== null ? startPos.heightPx : clamp(card.getBoundingClientRect().height, CONFIG.minHeightPx, CONFIG.maxHeightPx);
+      var startRowSpan = footprintRowSpan(startPos.heightPx);
       var listRect = list.getBoundingClientRect();
       var cols = grid.getCols();
       var colWidth = (listRect.width - CONFIG.gap * (cols - 1)) / cols;
@@ -448,27 +461,7 @@
         var dy = e.clientY - startY;
 
         var desiredColSpan = clamp(startPos.colSpan + Math.round(dx / (colWidth + CONFIG.gap)), 1, cols - startPos.col);
-
-        var cardTop = card.getBoundingClientRect().top;
-        var rawHeight = clamp(startHeightPx + dy, CONFIG.minHeightPx, CONFIG.maxHeightPx);
-        var proposedBottom = cardTop + rawHeight;
-
-        // Magnetic snap to a neighboring card's bottom edge — same rule as before, just
-        // computed fresh every move so continuing to drag past the threshold releases it.
-        var snappedHeight = null;
-        var bestDelta = CONFIG.snapThresholdPx;
-        var others = cardsOf(list);
-        for (var i = 0; i < others.length; i++) {
-          if (others[i] === card) continue;
-          var otherBottom = others[i].getBoundingClientRect().bottom;
-          var delta = Math.abs(otherBottom - proposedBottom);
-          if (delta < bestDelta) {
-            bestDelta = delta;
-            snappedHeight = clamp(otherBottom - cardTop, CONFIG.minHeightPx, CONFIG.maxHeightPx);
-          }
-        }
-        var desiredHeight = snappedHeight !== null ? snappedHeight : rawHeight;
-        var desiredRowSpan = footprintRowSpan(desiredHeight);
+        var desiredRowSpan = clamp(startRowSpan + Math.round(dy / (CONFIG.rowUnit + CONFIG.gap)), CONFIG.minRowSpan, CONFIG.maxRowSpan);
 
         // Clamp growth against whatever's actually occupied — width first (using the
         // desired row-span), then height (using whatever width just got clamped to), so
@@ -478,10 +471,8 @@
 
         var maxRowSpan = grid.maxRowSpanFrom(occ, startPos.row, startPos.col, finalColSpan);
         var finalRowSpan = clamp(desiredRowSpan, 1, Math.max(1, maxRowSpan));
-        var finalHeight = finalRowSpan >= desiredRowSpan ? desiredHeight : finalRowSpan * CONFIG.rowUnit + (finalRowSpan - 1) * CONFIG.gap;
-        finalHeight = clamp(finalHeight, CONFIG.minHeightPx, CONFIG.maxHeightPx);
 
-        grid.setPosition(id, { col: startPos.col, colSpan: finalColSpan, row: startPos.row, heightPx: finalHeight });
+        grid.setPosition(id, { col: startPos.col, colSpan: finalColSpan, row: startPos.row, heightPx: rowSpanToHeightPx(finalRowSpan) });
         grid.render();
         overlay.showTarget(startPos.row, startPos.col, finalColSpan, finalRowSpan, true);
       }
@@ -506,7 +497,7 @@
       if (card.querySelector('.card-resize-grip')) return;
       var grip = document.createElement('span');
       grip.className = 'card-resize-grip';
-      grip.title = 'Trascina per ridimensionare (larghezza a step, altezza libera — non puoi crescere sopra un’altra card)';
+      grip.title = 'Trascina per ridimensionare a celle intere (larghezza e altezza a step — non puoi crescere sopra un’altra card)';
       grip.addEventListener('mousedown', function (e) {
         e.preventDefault();
         e.stopPropagation();
