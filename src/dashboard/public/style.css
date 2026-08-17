@@ -454,6 +454,23 @@ a {
   background: var(--accent);
 }
 
+/* A Mod's read-only view of an Admin-only group-button item (currently just "Edit") — same
+   colored/muted look so the state still reads at a glance, just not clickable. No hover
+   feedback (unlike the interactive items above) since there's nothing to click here. */
+.btn-group-item-readonly,
+.btn-group-item-readonly:hover,
+.btn-group-item-readonly:has(input:checked):hover {
+  cursor: default;
+  background: var(--panel-alt);
+  color: var(--text-dim);
+}
+
+.btn-group-item-readonly:has(input:checked),
+.btn-group-item-readonly:has(input:checked):hover {
+  background: var(--accent);
+  color: #fff;
+}
+
 .flash {
   margin-top: 16px;
   padding: 10px 14px;

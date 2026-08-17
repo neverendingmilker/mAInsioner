@@ -20,7 +20,7 @@
     <form method="POST" action="<%= toggleAction %>" class="btn-group-form">
       <label class="btn-group-item">
         <input type="checkbox" name="enabled" value="true" <%= enabled ? 'checked' : '' %> onchange="this.form.submit()" />
-        <span>Attivo</span>
+        <span>Active</span>
       </label>
     </form>
 
@@ -38,28 +38,36 @@
       <form method="POST" action="/mod-access/<%= currentFeatureKey %>/toggle" class="btn-group-form">
         <label class="btn-group-item">
           <input type="checkbox" name="soloAdmin" value="true" <%= modAccessEnabled ? '' : 'checked' %> onchange="this.form.submit()" />
-          <span>Solo Admin</span>
+          <span>Admin only</span>
         </label>
       </form>
     <% } %>
 
-    <%# Admin-only: freezes this feature's own add/edit/remove/reorder forms (its list of
-        items) without touching the on/off toggle above or base config (channel/role/
-        schedule) — the feature keeps doing whatever it already does (e.g. QOTD keeps
+    <%# Admin-only TO CHANGE: freezes this feature's own add/edit/remove/reorder forms (its
+        list of items) without touching the on/off toggle above or base config (channel/
+        role/schedule) — the feature keeps doing whatever it already does (e.g. QOTD keeps
         posting on schedule) while locked, only the dashboard's own CRUD forms are blocked
         (enforced centrally in requireDashboardAccess, for Admin and Mod alike). Posts to a
         route generic across every feature page — `featureLocked` local set by the same
-        middleware. Label is always "Modificabile" — colored (active) means editable,
-        uncolored means locked; the checkbox name `editable` is intentionally the inverse
-        of `featureLocked`, so the route computes `locked = req.body.editable !== 'true'`
-        (unchecked → locked). %>
+        middleware, and Admin-only server-side too (routes/featureLockRoutes.js 403s a Mod
+        POST), so a Mod gets a disabled, read-only copy of the same button below instead of
+        this interactive one — just enough to see whether the feature is currently locked
+        (and why their own add/edit/remove forms might be blocked), not to change it. Label
+        is always "Edit" — colored (active) means editable, uncolored means locked; the
+        checkbox name `editable` is intentionally the inverse of `featureLocked`, so the
+        route computes `locked = req.body.editable !== 'true'` (unchecked → locked). %>
     <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
       <form method="POST" action="/feature-lock/<%= currentFeatureKey %>/toggle" class="btn-group-form">
         <label class="btn-group-item">
           <input type="checkbox" name="editable" value="true" <%= typeof featureLocked !== 'undefined' && featureLocked ? '' : 'checked' %> onchange="this.form.submit()" />
-          <span>Modificabile</span>
+          <span>Edit</span>
         </label>
       </form>
+    <% } else if (typeof role !== 'undefined' && role === 'mod' && typeof featureLocked !== 'undefined') { %>
+      <label class="btn-group-item btn-group-item-readonly" title="Solo un Admin può cambiarlo">
+        <input type="checkbox" <%= featureLocked ? '' : 'checked' %> disabled />
+        <span>Edit</span>
+      </label>
     <% } %>
 
     <%# Card-reorder + card-resize support: `cardOrder` (drag order) and `cardSizes` (grid
@@ -87,7 +95,7 @@
     <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
       <label class="btn-group-item">
         <input type="checkbox" id="card-lock-btn" />
-        <span>Riordina card</span>
+        <span>Reorder</span>
       </label>
       <form id="card-reorder-form" method="POST" action="/card-order/<%= currentFeatureKey %>/reorder" style="display:none;">
         <input type="hidden" id="card-order-input" name="order" value="" />
