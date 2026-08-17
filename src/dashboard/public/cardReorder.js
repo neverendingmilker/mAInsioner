@@ -332,10 +332,11 @@
   // ---------------------------------------------------------------------------------------
   // Drag-to-move: mouse-driven (not native HTML5 DnD — that's built around reordering a
   // list by sibling position, not dropping onto an arbitrary cell in a 2D grid). Tracks the
-  // cursor, converts its position into a candidate (row, col), and only ever actually moves
-  // the card when that candidate is fully free — hovering over an occupied spot just shows
-  // the red preview and leaves the card at its last valid position, so a drop can never
-  // land on top of (or swap with) another card.
+  // cursor, converts its position into a candidate (row, col). If the card's own cell
+  // (anchor) is already occupied, the drop is rejected outright — same as before, no swaps,
+  // no overlaps. Otherwise, if the card's full size doesn't fit at that spot (a neighbor, or
+  // just the grid's right edge, is in the way), it's shrunk down to whatever fits there —
+  // never left blocked just because the empty slot underneath is smaller than the card.
   // ---------------------------------------------------------------------------------------
 
   function createDragController(grid, list, overlay) {
@@ -365,15 +366,37 @@
         var e = latestEvent;
         var cardLeft = e.clientX - grabOffsetX;
         var cardTop = e.clientY - grabOffsetY;
-        var col = clamp(Math.round((cardLeft - listRect.left) / (colWidth + CONFIG.gap)), 0, cols - startPos.colSpan);
+        // Clamped to the grid itself (not `cols - colSpan` like before) — a card can now be
+        // dropped anywhere along the row, including spots too narrow for its current width,
+        // and shrink to fit instead of being kept out of reach of the edge.
+        var col = clamp(Math.round((cardLeft - listRect.left) / (colWidth + CONFIG.gap)), 0, cols - 1);
         var row = Math.max(1, Math.round((cardTop - listRect.top) / (CONFIG.rowUnit + CONFIG.gap)) + 1);
 
-        var valid = grid.fits(occ, row, col, startPos.colSpan, rowSpan);
-        if (valid) {
-          grid.setPosition(id, { col: col, colSpan: startPos.colSpan, row: row, heightPx: startPos.heightPx });
-          grid.render();
+        // The card's own top-left cell has to be genuinely free — shrinking never helps if
+        // you're dropping straight on top of another card, only if the card is just too big
+        // for an otherwise-open spot.
+        if (occ[row + ',' + col]) {
+          overlay.showTarget(row, col, startPos.colSpan, rowSpan, false);
+          return;
         }
-        overlay.showTarget(row, col, startPos.colSpan, rowSpan, valid);
+
+        // Same clamp order resize uses: width first (against the card's original height),
+        // then height (against whatever width just got clamped to) — so the two never
+        // disagree about which cells the final, possibly-shrunk footprint covers.
+        var maxColSpan = grid.maxColSpanFrom(occ, row, col, rowSpan);
+        var effectiveColSpan = clamp(startPos.colSpan, 1, Math.max(1, maxColSpan));
+
+        var maxRowSpan = grid.maxRowSpanFrom(occ, row, col, effectiveColSpan);
+        var effectiveRowSpan = clamp(rowSpan, 1, Math.max(1, maxRowSpan));
+
+        // Only touch heightPx if the row-span actually had to shrink — a free/natural height
+        // (null) or one that already fit stays exactly as it was.
+        var effectiveHeightPx =
+          effectiveRowSpan < rowSpan ? effectiveRowSpan * CONFIG.rowUnit + (effectiveRowSpan - 1) * CONFIG.gap : startPos.heightPx;
+
+        grid.setPosition(id, { col: col, colSpan: effectiveColSpan, row: row, heightPx: effectiveHeightPx });
+        grid.render();
+        overlay.showTarget(row, col, effectiveColSpan, effectiveRowSpan, true);
       }
 
       var scheduleApply = rafThrottle(apply);
