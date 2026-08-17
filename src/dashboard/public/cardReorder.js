@@ -22,14 +22,16 @@
   document.addEventListener('DOMContentLoaded', init);
 
   // Must match public/style.css's `.card-list { grid-auto-rows: minmax(140px, auto) }` —
-  // used only to translate a resize drag's pixel delta into a row count, not to size
-  // anything itself (the grid's own CSS does that). A row can render taller than this if
-  // its content needs it to, so the row math below is a snapping approximation, not a
-  // pixel-exact measurement. Column width is measured live instead (colWidth below), since
-  // it now depends on the chosen column count.
+  // ROW_UNIT is only used to (a) convert an old saved rowSpan into an equivalent pixel
+  // height the first time a browser loads this new version, and (b) estimate how many
+  // grid row-tracks a free-height card needs to reserve for layout bookkeeping (see
+  // repositionAll). Column width is measured live instead (colWidth below), since it
+  // depends on the chosen column count.
   var ROW_UNIT = 140;
   var GAP = 24;
-  var MAX_ROW_SPAN = 6;
+  var MIN_HEIGHT_PX = ROW_UNIT;
+  var MAX_HEIGHT_PX = ROW_UNIT * 6 + GAP * 5; // same ceiling the old 6-row cap gave
+  var SNAP_THRESHOLD_PX = 14; // how close to a neighbor's edge before it snaps to match it
   var MIN_COLS = 1;
   var MAX_COLS = 3;
   var DEFAULT_COLS = 3;
@@ -99,18 +101,30 @@
       }
     }
 
-    function readSpan(card) {
-      return {
-        colSpan: parseInt(card.getAttribute('data-col-span') || String(COLS), 10),
-        rowSpan: parseInt(card.getAttribute('data-row-span') || '1', 10),
-      };
+    function readColSpan(card) {
+      return parseInt(card.getAttribute('data-col-span') || String(COLS), 10);
     }
 
-    function applySpan(card, colSpan, rowSpan) {
+    function applyColSpan(card, colSpan) {
       colSpan = clamp(Math.round(colSpan), 1, COLS);
-      rowSpan = clamp(Math.round(rowSpan), 1, MAX_ROW_SPAN);
       card.setAttribute('data-col-span', String(colSpan));
-      card.setAttribute('data-row-span', String(rowSpan));
+    }
+
+    // Height (in px) is only ever set on a card that's actually been dragged taller/shorter
+    // at some point — null means "never resized," i.e. keep the natural CSS height (one row,
+    // sized to content). Unlike colSpan there's no default to fall back on: forcing every
+    // untouched card to MIN_HEIGHT_PX the moment this ran would shrink normal-content cards
+    // that just happen to render taller than one row.
+    function readHeightPx(card) {
+      var stored = card.getAttribute('data-height-px');
+      return stored ? clamp(parseFloat(stored), MIN_HEIGHT_PX, MAX_HEIGHT_PX) : null;
+    }
+
+    function applyHeightPx(card, heightPx) {
+      heightPx = clamp(heightPx, MIN_HEIGHT_PX, MAX_HEIGHT_PX);
+      card.setAttribute('data-height-px', String(Math.round(heightPx)));
+      card.style.height = heightPx + 'px';
+      return heightPx;
     }
 
     // Explicitly places every card (column-start AND row-start, not just a span) instead
@@ -130,9 +144,13 @@
 
       var cards = list.querySelectorAll('.panel[data-card-id]');
       for (var i = 0; i < cards.length; i++) {
-        var span = readSpan(cards[i]);
-        var colSpan = clamp(span.colSpan, 1, COLS);
-        var rowSpan = clamp(span.rowSpan, 1, MAX_ROW_SPAN);
+        var colSpan = clamp(readColSpan(cards[i]), 1, COLS);
+        var heightPx = readHeightPx(cards[i]);
+        // Bookkeeping only — how many row-tracks to reserve so nothing overlaps. The
+        // card's actual rendered height comes from its own explicit inline height (or,
+        // for a never-resized card, natural content height); this is just an estimate of
+        // how much vertical room that takes up in the shared column grid.
+        var rowSpan = heightPx === null ? 1 : Math.max(1, Math.ceil((heightPx + GAP) / (ROW_UNIT + GAP)));
 
         var bestCol = 0;
         var bestStart = Infinity;
@@ -155,7 +173,8 @@
       var result = {};
       var cards = list.querySelectorAll('.panel[data-card-id]');
       for (var i = 0; i < cards.length; i++) {
-        result[cards[i].getAttribute('data-card-id')] = readSpan(cards[i]);
+        var c = cards[i];
+        result[c.getAttribute('data-card-id')] = { colSpan: readColSpan(c), heightPx: readHeightPx(c) };
       }
       return result;
     }
@@ -163,15 +182,23 @@
     // Apply saved per-card grid spans. Every card defaults to a full-width single row
     // purely from CSS (see .card-list .panel's "grid-column: 1 / -1"), so a page nobody has
     // ever resized needs none of this; it only overrides cards that have an explicit saved
-    // span. Already clamped to the current column count via applySpan above.
+    // span. Already clamped to the current column count via applyColSpan above.
     var savedSizes = readJSON(sizeKey, {});
     if (!savedSizes || typeof savedSizes !== 'object') savedSizes = {};
     var cardsForSize = list.querySelectorAll('.panel[data-card-id]');
     for (var s = 0; s < cardsForSize.length; s++) {
-      var cid = cardsForSize[s].getAttribute('data-card-id');
+      var cardEl = cardsForSize[s];
+      var cid = cardEl.getAttribute('data-card-id');
       var sz = savedSizes[cid];
-      if (sz && typeof sz.colSpan === 'number' && typeof sz.rowSpan === 'number') {
-        applySpan(cardsForSize[s], sz.colSpan, sz.rowSpan);
+      if (!sz) continue;
+      if (typeof sz.colSpan === 'number') applyColSpan(cardEl, sz.colSpan);
+      if (typeof sz.heightPx === 'number') {
+        applyHeightPx(cardEl, sz.heightPx);
+      } else if (typeof sz.rowSpan === 'number') {
+        // Saved by a browser running the old stepped-rowSpan version — convert it to the
+        // equivalent pixel height once so existing layouts don't visually reset the first
+        // time this version loads. From then on it's stored as heightPx like any other.
+        applyHeightPx(cardEl, sz.rowSpan * ROW_UNIT + (sz.rowSpan - 1) * GAP);
       }
     }
     // Every card needs an explicit position, not just the ones with a saved size — this is
@@ -201,8 +228,8 @@
             var id = cardsNow[n].getAttribute('data-card-id');
             var savedSz = sizes[id];
             if (savedSz && typeof savedSz.colSpan === 'number' && savedSz.colSpan > COLS) {
-              applySpan(cardsNow[n], COLS, savedSz.rowSpan);
-              sizes[id] = { colSpan: COLS, rowSpan: savedSz.rowSpan };
+              applyColSpan(cardsNow[n], COLS);
+              sizes[id] = { colSpan: COLS, heightPx: typeof savedSz.heightPx === 'number' ? savedSz.heightPx : null };
               changed = true;
             }
           }
@@ -260,7 +287,7 @@
       if (card.querySelector('.card-resize-grip')) return;
       var grip = document.createElement('span');
       grip.className = 'card-resize-grip';
-      grip.title = 'Trascina per ridimensionare (colonne/righe)';
+      grip.title = 'Trascina per ridimensionare (larghezza a step, altezza libera — avvicinati al bordo di una card vicina per agganciarti)';
       grip.addEventListener('mousedown', function (e) {
         if (!unlocked) return;
         e.preventDefault();
@@ -275,17 +302,28 @@
       for (var i = 0; i < grips.length; i++) grips[i].parentNode.removeChild(grips[i]);
     }
 
-    // Grid spans (integers) don't respond to the native CSS `resize` property, so dragging
-    // the grip is handled entirely here: track the mouse, convert how far it's moved into a
-    // column/row count using the grid's own current column width (ROW_UNIT for rows, since
-    // rows are auto-sized to content and have no single fixed pixel height to measure), and
-    // snap the card's span to that as you go — same interaction shape as a native resize
-    // handle, just quantized to whole grid cells instead of following the cursor 1:1. This
-    // stays step/snapped (not free pixel resize) on purpose, regardless of column count.
+    // Dragging the grip drives two independent axes differently on purpose. Width still
+    // moves in whole-column steps (dx snapped to the grid's own column width) — CSS Grid's
+    // equal-width (1fr) columns don't support arbitrary fractional widths without a much
+    // bigger redesign. Height instead follows the cursor 1:1, completely free — the only
+    // "snapping" is magnetic: if the card's bottom edge lands close to another visible
+    // card's bottom edge, it locks onto that exact edge so matching a neighbor's height
+    // doesn't require pixel-perfect dragging. That snap is recomputed from scratch on every
+    // single mousemove from the raw cursor position (never carried over from the previous
+    // move), so continuing to drag past the snap threshold releases it immediately and goes
+    // back to following the cursor — there's no accumulated state that could leave a card
+    // stuck unable to shrink or grow further.
     function startCardResize(card, startEvent) {
       var startX = startEvent.clientX;
       var startY = startEvent.clientY;
-      var start = readSpan(card);
+      var startColSpan = readColSpan(card);
+      var startHeightPx = readHeightPx(card);
+      if (startHeightPx === null) {
+        // Never explicitly resized yet — start from whatever height it's actually
+        // rendering at right now, so the first drag follows the cursor from there instead
+        // of jumping straight to MIN_HEIGHT_PX.
+        startHeightPx = clamp(card.getBoundingClientRect().height, MIN_HEIGHT_PX, MAX_HEIGHT_PX);
+      }
       var listRect = list.getBoundingClientRect();
       var colWidth = (listRect.width - GAP * (COLS - 1)) / COLS;
       card.classList.add('card-resizing');
@@ -293,12 +331,35 @@
       function onMove(e) {
         var dx = e.clientX - startX;
         var dy = e.clientY - startY;
+
         var deltaCols = Math.round(dx / (colWidth + GAP));
-        var deltaRows = Math.round(dy / (ROW_UNIT + GAP));
-        applySpan(card, start.colSpan + deltaCols, start.rowSpan + deltaRows);
-        // Resizing this one card can change where every other card lands too (a column
-        // it now takes more/less of), so the whole layout is recomputed live as you drag,
-        // not just this card's own box.
+        applyColSpan(card, startColSpan + deltaCols);
+
+        // Read the card's current top edge fresh (reflects the layout as of the last
+        // completed reposition) before touching its height, so the snap comparison below
+        // is always against up-to-date geometry.
+        var cardTop = card.getBoundingClientRect().top;
+        var rawHeight = clamp(startHeightPx + dy, MIN_HEIGHT_PX, MAX_HEIGHT_PX);
+        var proposedBottom = cardTop + rawHeight;
+
+        var snappedHeight = null;
+        var bestDelta = SNAP_THRESHOLD_PX;
+        var others = list.querySelectorAll('.panel[data-card-id]');
+        for (var i = 0; i < others.length; i++) {
+          if (others[i] === card) continue;
+          var otherBottom = others[i].getBoundingClientRect().bottom;
+          var delta = Math.abs(otherBottom - proposedBottom);
+          if (delta < bestDelta) {
+            bestDelta = delta;
+            snappedHeight = clamp(otherBottom - cardTop, MIN_HEIGHT_PX, MAX_HEIGHT_PX);
+          }
+        }
+
+        applyHeightPx(card, snappedHeight !== null ? snappedHeight : rawHeight);
+
+        // Resizing this one card can change where every other card lands too (a column it
+        // now takes more/less of, or the row-track bookkeeping used for layout), so the
+        // whole layout is recomputed live as you drag, not just this card's own box.
         repositionAll();
       }
 

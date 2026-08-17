@@ -127,23 +127,24 @@ a {
   grid-template-columns: repeat(var(--card-cols), 1fr);
   grid-auto-rows: minmax(140px, auto);
   grid-auto-flow: row dense;
-  /* Same-row cards no longer stretch to match each other's height by default — only an
-     explicit rowSpan (set via resize, see cardReorder.js) makes a card taller. A card
-     that HAS an explicit rowSpan > 1 opts back into stretching (see the rule below),
-     since that's exactly the point of resizing it — e.g. the bento layout where a tall
-     card sits beside two/three stacked shorter ones needs to actually fill that height,
-     not just shrink to its own content. */
+  /* Same-row cards no longer stretch to match each other's height by default — a card
+     only gets taller once it's been explicitly resized (drag the grip, see
+     cardReorder.js), which now also sets an explicit inline pixel height directly on the
+     card. An explicit height always wins over align-items regardless of its value, so the
+     rule below is mostly a safety net for the row-track area itself (in case the card's
+     set height doesn't exactly fill the tracks reserved for it, e.g. after a snap). */
   align-items: start;
   gap: 24px;
   margin-top: 24px;
 }
 
-.card-list .panel[data-row-span]:not([data-row-span='1']) {
-  /* Undoes the grid's own align-items: start for a card that's been explicitly resized
-     taller than one row — it should fill the full multi-row area it was dragged to span
-     (matching however many stacked cards sit next to it), not just its own content
-     height. Cards that were never resized (no data-row-span attribute at all) are
-     untouched by this and keep the natural, un-stretched height above. */
+.card-list .panel[data-height-px] {
+  /* Belt-and-suspenders for a card that's been explicitly resized: its own inline height
+     (set by cardReorder.js) already determines how tall it renders, but this keeps it
+     filling its reserved grid-row area too, so there's no dead space if the row-track
+     bookkeeping reserved slightly more room than the exact pixel height needed. Cards
+     that were never resized (no data-height-px attribute at all) are untouched by this
+     and keep the natural, un-stretched height above. */
   align-self: stretch;
 }
 
