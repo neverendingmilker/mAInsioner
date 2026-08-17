@@ -2,6 +2,7 @@ const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
 const warningManager = require('../../features/warning/warningManager');
+const { isoToDMY } = require('../../utils/dateFormat');
 
 const router = express.Router();
 
@@ -32,12 +33,7 @@ function roleLabel(guild, roleId) {
 }
 
 // The DB/parseWarningDate side speaks "DD/MM/YYYY", an <input type="date"> speaks ISO —
-// same conversion helper as animenight.js's isoToDMY, duplicated locally rather than
-// shared since it's a two-line function and the two features are unrelated.
-function isoToDMY(iso) {
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
+// see utils/dateFormat.js's isoToDMY (shared with animenight.js).
 
 function formatDate(ts) {
   return new Date(Number(ts)).toLocaleDateString('it-IT');

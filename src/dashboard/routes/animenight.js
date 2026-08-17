@@ -1,6 +1,7 @@
 const express = require('express');
 const { resolveDashboardGuild } = require('../guild');
 const animeNightManager = require('../../features/animenight/animeNightManager');
+const { isoToDMY } = require('../../utils/dateFormat');
 
 const router = express.Router();
 
@@ -21,11 +22,7 @@ function requireGuild(req, res) {
 // also exactly what an <input type="date"> reads and writes — no conversion needed for
 // display or for identifying a session. animeNightManager.parseWatchedDate (used by
 // addAnime/editSession) only accepts "DD/MM[/YYYY]" though, so a date coming FROM a
-// form submission needs converting before being handed to the manager.
-function isoToDMY(iso) {
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
+// form submission needs converting before being handed to the manager (see utils/dateFormat.js).
 
 router.get('/animenight', async (req, res, next) => {
   try {
