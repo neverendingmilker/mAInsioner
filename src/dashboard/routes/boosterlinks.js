@@ -46,6 +46,10 @@ async function renderBoosterlinksPage(req, res, guild) {
         userLabel: memberLabel(guild, l.user_id),
         roleLabel: roleLabel(guild, l.role_id),
         isBooster: Boolean(member?.roles.premiumSubscriberRole),
+        // Set while the member isn't boosting — the role itself has been removed, but the
+        // link is kept (not deleted) so it comes back automatically the moment they boost
+        // again (see boosterLinkManager's pauseActiveLinks/restorePausedLinks).
+        isPaused: Number(l.paused) === 1,
         // Both badges reflect the member's CURRENT roles, not anything tracked by this
         // feature — a Mod who's demoted, or whose OG/Fren role is later revoked, simply
         // stops showing the badge on next page load, no cleanup needed anywhere.

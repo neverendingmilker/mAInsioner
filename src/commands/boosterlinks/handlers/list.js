@@ -30,7 +30,7 @@ async function handleList(interaction) {
 
   const buildEmbed = (page) => {
     const pageLinks = links.slice(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE);
-    const lines = pageLinks.map((l) => `<@${l.user_id}> — <@&${l.role_id}>`);
+    const lines = pageLinks.map((l) => `<@${l.user_id}> — <@&${l.role_id}>${Number(l.paused) === 1 ? ' *(in pausa — non sta boostando)*' : ''}`);
 
     return new EmbedBuilder()
       .setColor(EMBED_COLOR)

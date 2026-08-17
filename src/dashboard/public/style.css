@@ -916,6 +916,15 @@ a {
   color: #7ee2a0;
 }
 
+/* Booster Links: a link whose role is currently off the member (they stopped boosting) but
+   is still tracked, waiting to be restored automatically if they boost again — neutral/dim
+   rather than mod/og-fren's accent colors, since it's a state, not an earned role. */
+.badge-paused {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
 .config-meta {
   color: var(--text-dim);
   font-size: 13px;

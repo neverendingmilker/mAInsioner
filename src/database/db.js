@@ -156,12 +156,18 @@ async function createTables() {
         enabled INTEGER NOT NULL DEFAULT 1,
         og_fren_role_id TEXT
       )`,
+      // `paused` (0/1): set when the member loses the booster role — the linked role gets
+      // removed from them, but the row itself stays instead of being deleted, so it can be
+      // restored automatically if they boost again (see boosterLinkManager's
+      // pauseActiveLinks/restorePausedLinks). It's only ever hard-deleted by an explicit
+      // unlink (Mod dashboard/command action), never by the boost-loss handler itself.
       `CREATE TABLE IF NOT EXISTS booster_link_links (
         guild_id TEXT NOT NULL,
         user_id TEXT NOT NULL,
         role_id TEXT NOT NULL,
         created_by TEXT,
         created_at INTEGER,
+        paused INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (guild_id, user_id, role_id)
       )`,
       `CREATE TABLE IF NOT EXISTS booster_link_exempt_roles (
@@ -723,6 +729,14 @@ async function migrate() {
   const boosterLinkConfigColumns = await client.execute('PRAGMA table_info(booster_link_config)');
   if (!boosterLinkConfigColumns.rows.some((c) => c.name === 'og_fren_role_id')) {
     await client.execute('ALTER TABLE booster_link_config ADD COLUMN og_fren_role_id TEXT');
+  }
+
+  // `paused` used to not exist — every pre-existing link is, by definition, for someone
+  // who was a booster at the time (the old code deleted links the moment boost was lost),
+  // so backfilling 0 (active) for all of them is correct, not just a safe default.
+  const boosterLinkLinksColumns = await client.execute('PRAGMA table_info(booster_link_links)');
+  if (!boosterLinkLinksColumns.rows.some((c) => c.name === 'paused')) {
+    await client.execute('ALTER TABLE booster_link_links ADD COLUMN paused INTEGER NOT NULL DEFAULT 0');
   }
 
   // Adds the "enabled" toggle (default: on) to every guild config table that didn't

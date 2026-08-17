@@ -22,8 +22,16 @@
                 <%= l.userLabel %>
                 <% if (l.isMod) { %><span class="badge badge-mod">Mod</span><% } %>
                 <% if (l.isOgFren) { %><span class="badge badge-og-fren">OG/Fren</span><% } %>
+                <% if (l.isPaused) { %><span class="badge badge-paused">In pausa</span><% } %>
               </span>
-              <span class="config-meta"><%= l.roleLabel %><%= l.isBooster ? '' : ' — non sta più boostando' %></span>
+              <span class="config-meta">
+                <%= l.roleLabel %>
+                <% if (l.isPaused) { %>
+                   — non sta più boostando, ruolo rimosso (torna automaticamente se ricomincia)
+                <% } else if (!l.isBooster) { %>
+                   — non risulta più boostare
+                <% } %>
+              </span>
               <div class="card-actions">
                 <% if (roles.length > 0) { %>
                   <details>

@@ -73,22 +73,35 @@ async function isMemberExempt(member) {
   return exemptRoleIds.some((roleId) => member.roles.cache.has(roleId));
 }
 
-// Called from guildMemberUpdate: if the member just lost the server's Booster
-// role, remove every custom role linked to them and stop tracking those links —
-// the perk no longer applies once they stop boosting.
+// Called from guildMemberUpdate on any boost-status change: losing the booster role pauses
+// (not deletes) every linked role, and regaining it restores whatever was paused. The link
+// itself only ever goes away via an explicit unlink (Mod dashboard/command action).
 async function handleMemberUpdate(oldMember, newMember) {
   if (!(await repo.isEnabled(newMember.guild.id))) return; // feature disabled for this guild
 
   const hadBooster = oldMember.roles.premiumSubscriberRole !== null;
   const hasBooster = newMember.roles.premiumSubscriberRole !== null;
-  if (!hadBooster || hasBooster) return; // wasn't a booster before, or still is one
+  if (hadBooster === hasBooster) return; // boost status didn't change
 
+  if (hasBooster) {
+    await restorePausedLinks(newMember);
+  } else {
+    await pauseActiveLinks(newMember);
+  }
+}
+
+// Lost the booster role: remove every currently-active linked role from the member and mark
+// those links paused instead of deleting them, so restorePausedLinks can put them back if
+// they boost again later. Exempt members are skipped entirely — same as before, their custom
+// roles are never touched by boost status at all.
+async function pauseActiveLinks(newMember) {
   if (await isMemberExempt(newMember)) return; // has at least one exempt role — skip regardless of boost status
 
   const links = await repo.getLinksForUser(newMember.guild.id, newMember.id);
-  if (links.length === 0) return;
+  const activeLinks = links.filter((row) => Number(row.paused) !== 1);
+  if (activeLinks.length === 0) return;
 
-  for (const linkRow of links) {
+  for (const linkRow of activeLinks) {
     try {
       if (newMember.roles.cache.has(linkRow.role_id)) {
         await newMember.roles.remove(linkRow.role_id).catch((err) => {
@@ -98,12 +111,50 @@ async function handleMemberUpdate(oldMember, newMember) {
           );
         });
       }
-      await repo.removeLink(linkRow.guild_id, linkRow.user_id, linkRow.role_id);
+      await repo.setPaused(linkRow.guild_id, linkRow.user_id, linkRow.role_id, true);
       console.log(
-        `[boosterlinks] ${newMember.id} stopped boosting guild ${newMember.guild.id}; removed and untracked role ${linkRow.role_id}.`
+        `[boosterlinks] ${newMember.id} stopped boosting guild ${newMember.guild.id}; removed role ${linkRow.role_id} and paused the link (comes back automatically if they boost again).`
       );
     } catch (err) {
       console.error(`[boosterlinks] Error handling custom-role cleanup for ${newMember.id}:`, err);
+    }
+  }
+}
+
+// Started boosting again: re-add every role that was paused last time they lost the boost.
+// A role that's since been deleted, or that the bot can no longer assign (its own role fell
+// below it in the hierarchy meanwhile), is left paused rather than silently dropped — it's
+// still visible on the dashboard/`/boosterlink list` for a Mod to sort out or remove.
+async function restorePausedLinks(newMember) {
+  const links = await repo.getLinksForUser(newMember.guild.id, newMember.id);
+  const pausedLinks = links.filter((row) => Number(row.paused) === 1);
+  if (pausedLinks.length === 0) return;
+
+  for (const linkRow of pausedLinks) {
+    try {
+      const role = newMember.guild.roles.cache.get(linkRow.role_id);
+      if (!role) {
+        console.warn(`[boosterlinks] Paused role ${linkRow.role_id} for ${newMember.id} no longer exists — leaving the link paused.`);
+        continue;
+      }
+
+      const botMember = newMember.guild.members.me;
+      if (!botMember || botMember.roles.highest.position <= role.position) {
+        console.warn(
+          `[boosterlinks] Can't restore ${role.id} for ${newMember.id} in guild ${newMember.guild.id} — my role is no longer above it.`
+        );
+        continue;
+      }
+
+      if (!newMember.roles.cache.has(role.id)) {
+        await newMember.roles.add(role).catch((err) => {
+          throw new Error(`Could not assign ${role.id}: ${err.message}`);
+        });
+      }
+      await repo.setPaused(linkRow.guild_id, linkRow.user_id, linkRow.role_id, false);
+      console.log(`[boosterlinks] ${newMember.id} started boosting guild ${newMember.guild.id} again; restored role ${role.id}.`);
+    } catch (err) {
+      console.error(`[boosterlinks] Error restoring custom role for ${newMember.id}:`, err);
     }
   }
 }

@@ -49,10 +49,10 @@ async function setOgFrenRoleId(guildId, roleId) {
 async function addLink(guildId, userId, roleId, createdBy) {
   await db.ready;
   await db.client.execute({
-    sql: `INSERT INTO booster_link_links (guild_id, user_id, role_id, created_by, created_at)
-          VALUES (?, ?, ?, ?, ?)
+    sql: `INSERT INTO booster_link_links (guild_id, user_id, role_id, created_by, created_at, paused)
+          VALUES (?, ?, ?, ?, ?, 0)
           ON CONFLICT(guild_id, user_id, role_id) DO UPDATE SET
-            created_by = excluded.created_by, created_at = excluded.created_at`,
+            created_by = excluded.created_by, created_at = excluded.created_at, paused = 0`,
     args: [guildId, userId, roleId, createdBy, Date.now()],
   });
 }
@@ -62,6 +62,18 @@ async function removeLink(guildId, userId, roleId) {
   await db.client.execute({
     sql: 'DELETE FROM booster_link_links WHERE guild_id = ? AND user_id = ? AND role_id = ?',
     args: [guildId, userId, roleId],
+  });
+}
+
+// Flips a link between active (0) and paused (1) — used when a member loses/regains the
+// booster role (see boosterLinkManager's pauseActiveLinks/restorePausedLinks). Unlike
+// removeLink, this never deletes the row: a paused link is still "tracked", just with its
+// role currently off the member.
+async function setPaused(guildId, userId, roleId, paused) {
+  await db.ready;
+  await db.client.execute({
+    sql: 'UPDATE booster_link_links SET paused = ? WHERE guild_id = ? AND user_id = ? AND role_id = ?',
+    args: [paused ? 1 : 0, guildId, userId, roleId],
   });
 }
 
@@ -132,6 +144,7 @@ module.exports = {
   setOgFrenRoleId,
   addLink,
   removeLink,
+  setPaused,
   removeAllLinksForUser,
   getLinksForUser,
   getAllLinksInGuild,
