@@ -2,17 +2,16 @@
     checkbox. Wrapped in one div so `.page-header`'s flex layout (h1 vs. everything else)
     still only ever sees two children, regardless of whether the second form below renders.
     Locals: `enabled` (bool), `toggleAction` (the feature's own POST /<feature>/toggle
-    route — already expects `enabled` as the literal string "true"/"false", so the radios'
-    values match as-is). %>
+    route — already expects `enabled` as the literal string "true"/"false"). A single
+    checkbox works here without a hidden fallback field: every route already reads
+    `req.body.enabled === 'true'`, and an unchecked checkbox simply omits `enabled` from
+    the POST body entirely, which that comparison already treats as false. %>
 <div class="feature-toggle-group">
   <form method="POST" action="<%= toggleAction %>" class="feature-toggle">
-    <label class="radio-option">
-      <input type="radio" name="enabled" value="true" <%= enabled ? 'checked' : '' %> onchange="this.form.submit()" />
-      Attivo
-    </label>
-    <label class="radio-option">
-      <input type="radio" name="enabled" value="false" <%= !enabled ? 'checked' : '' %> onchange="this.form.submit()" />
-      Disattivo
+    <label class="switch">
+      <input type="checkbox" name="enabled" value="true" <%= enabled ? 'checked' : '' %> onchange="this.form.submit()" />
+      <span class="switch-slider"></span>
+      <span class="switch-label"><%= enabled ? 'Attivo' : 'Disattivo' %></span>
     </label>
   </form>
 

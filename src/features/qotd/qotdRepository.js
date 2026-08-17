@@ -1,6 +1,6 @@
 const db = require('../../database/db');
 
-// --- Config (one row per guild: channel/role, schedule, queue cursor, sheet URL) ---
+// --- Config (one row per guild: channel/role, schedule, queue cursor) ---
 
 function mapConfigRow(row) {
   return {
@@ -12,8 +12,6 @@ function mapConfigRow(row) {
     interval_hours: row.interval_hours === null || row.interval_hours === undefined ? null : Number(row.interval_hours),
     next_position: Number(row.next_position ?? 0),
     last_posted_at: row.last_posted_at === null || row.last_posted_at === undefined ? null : Number(row.last_posted_at),
-    sheet_url: row.sheet_url,
-    sheet_column: row.sheet_column,
   };
 }
 
@@ -32,8 +30,6 @@ async function getConfig(guildId) {
         interval_hours: null,
         next_position: 0,
         last_posted_at: null,
-        sheet_url: null,
-        sheet_column: null,
       };
 }
 
@@ -82,24 +78,6 @@ async function setSchedule(guildId, { scheduleMode, dailyTime, intervalHours }) 
             daily_time = excluded.daily_time,
             interval_hours = excluded.interval_hours`,
     args: [guildId, scheduleMode, dailyTime ?? null, intervalHours ?? null],
-  });
-}
-
-async function setSheetUrl(guildId, url) {
-  await db.ready;
-  await db.client.execute({
-    sql: `INSERT INTO qotd_config (guild_id, sheet_url) VALUES (?, ?)
-          ON CONFLICT(guild_id) DO UPDATE SET sheet_url = excluded.sheet_url`,
-    args: [guildId, url],
-  });
-}
-
-async function setSheetColumn(guildId, columnName) {
-  await db.ready;
-  await db.client.execute({
-    sql: `INSERT INTO qotd_config (guild_id, sheet_column) VALUES (?, ?)
-          ON CONFLICT(guild_id) DO UPDATE SET sheet_column = excluded.sheet_column`,
-    args: [guildId, columnName],
   });
 }
 
@@ -172,8 +150,8 @@ async function removeQuestion(guildId, id) {
 }
 
 // Empties the whole queue for a guild in one go and resets the cursor back to 0, so a
-// freshly-refilled queue (manual add or a new sheet sync) starts posting from the top
-// instead of resuming from wherever the old, now-gone queue had gotten to.
+// freshly-refilled queue starts posting from the top instead of resuming from wherever
+// the old, now-gone queue had gotten to.
 async function clearQuestions(guildId) {
   await db.ready;
   await db.client.execute({ sql: 'DELETE FROM qotd_questions WHERE guild_id = ?', args: [guildId] });
@@ -223,8 +201,6 @@ module.exports = {
   setChannel,
   setRole,
   setSchedule,
-  setSheetUrl,
-  setSheetColumn,
   markPosted,
   getAllConfiguredGuildIds,
   listQuestions,

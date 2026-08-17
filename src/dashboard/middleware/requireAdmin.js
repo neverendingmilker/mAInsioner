@@ -1,5 +1,6 @@
 const { getSidebarFeatures, getSidebarToolsForPath, getFeatureKeyForPath, getToolKeyForPath } = require('../sidebarData');
 const modAccess = require('../modAccess');
+const sidebarOrder = require('../sidebarOrder');
 
 // Gates every dashboard page behind: Discord login, being an Administrator OR the
 // configured Mod role in at least one server the bot is in (both checked once at login,
@@ -42,9 +43,10 @@ async function requireDashboardAccess(req, res, next) {
 
   if (current.role === 'admin') {
     res.locals.tools = getSidebarToolsForPath(req.path);
-    res.locals.features = getSidebarFeatures(featureKey);
-    res.locals.currentFeatureKey = featureKey;
     try {
+      const customOrder = await sidebarOrder.getOrder(req.session.guildId);
+      res.locals.features = getSidebarFeatures(featureKey, undefined, customOrder);
+      res.locals.currentFeatureKey = featureKey;
       res.locals.modAccessEnabled = featureKey ? await modAccess.isFeatureModAccessible(req.session.guildId, featureKey) : false;
     } catch (err) {
       return next(err);
@@ -61,7 +63,8 @@ async function requireDashboardAccess(req, res, next) {
   try {
     const allowedKeys = await modAccess.listModAccessibleFeatureKeys(req.session.guildId);
     req.modAccessibleKeys = allowedKeys;
-    res.locals.features = getSidebarFeatures(featureKey, allowedKeys);
+    const customOrder = await sidebarOrder.getOrder(req.session.guildId);
+    res.locals.features = getSidebarFeatures(featureKey, allowedKeys, customOrder);
 
     if (getToolKeyForPath(req.path)) {
       return res.status(403).render('403', { title: 'Accesso negato', message: 'Questa sezione è riservata agli Admin.' });

@@ -59,8 +59,6 @@ async function renderQotdPage(req, res, guild) {
       scheduleMode: config.schedule_mode || 'daily',
       dailyTime: config.daily_time || '',
       intervalHours: config.interval_hours || '',
-      sheetUrl: config.sheet_url || '',
-      sheetColumn: config.sheet_column || '',
     },
     textChannels,
     roles,
@@ -141,35 +139,6 @@ router.post('/qotd/config', async (req, res, next) => {
     }
 
     req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configurazione aggiornata.' };
-    res.redirect('/qotd');
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Salva il link CSV inviato (anche se identico a quello già salvato — riscriverlo è
-// innocuo) e lo sincronizza subito, in un solo passaggio: lo stesso form serve sia per il
-// primo collegamento del foglio sia per i "sincronizza di nuovo" successivi.
-router.post('/qotd/sync', async (req, res, next) => {
-  try {
-    const guild = requireGuild(req, res);
-    if (!guild) return;
-
-    try {
-      const url = await qotdManager.setSheetUrl(guild.id, req.body.sheetUrl);
-      const columnName = await qotdManager.setSheetColumn(guild.id, req.body.sheetColumn);
-      const result = await qotdManager.syncFromSheet(guild.id, url, columnName);
-      req.session.flash = {
-        type: 'success',
-        message: `Sincronizzato: ${result.imported} nuova/e domanda/e importata/e${result.skipped > 0 ? `, ${result.skipped} già presente/i ignorata/e` : ''}.`,
-      };
-    } catch (err) {
-      if (err instanceof qotdManager.ValidationError) {
-        req.session.flash = { type: 'error', message: err.message };
-      } else {
-        throw err;
-      }
-    }
     res.redirect('/qotd');
   } catch (err) {
     next(err);

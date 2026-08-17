@@ -441,11 +441,14 @@ async function createTables() {
       `CREATE INDEX IF NOT EXISTS dashboard_sessions_expires_idx ON dashboard_sessions (expires_at)`,
 
       // Question of the Day: one config row per guild (posting channel/role, schedule,
-      // where the queue's cursor currently is, and the last-synced Google Sheet CSV URL),
-      // plus an ordered list of questions. `next_position` is the 0-based index (into the
-      // list ordered by `position`) of the next question to post — when it reaches the end
-      // of the list, posting stops until more questions are added (checked live at query
-      // time, not tracked with a separate "exhausted" flag).
+      // where the queue's cursor currently is), plus an ordered list of questions.
+      // `next_position` is the 0-based index (into the list ordered by `position`) of the
+      // next question to post — when it reaches the end of the list, posting stops until
+      // more questions are added (checked live at query time, not tracked with a separate
+      // "exhausted" flag). Questions are added manually only — the Google Sheet CSV import
+      // that used to also feed this list was removed (unreliable: it kept importing
+      // whatever a broken/redirected link happened to return, once literally a JS library's
+      // source code, as if every line were a real question).
       `CREATE TABLE IF NOT EXISTS qotd_config (
         guild_id TEXT PRIMARY KEY,
         enabled INTEGER NOT NULL DEFAULT 0,
@@ -455,9 +458,7 @@ async function createTables() {
         daily_time TEXT,
         interval_hours INTEGER,
         next_position INTEGER NOT NULL DEFAULT 0,
-        last_posted_at INTEGER,
-        sheet_url TEXT,
-        sheet_column TEXT
+        last_posted_at INTEGER
       )`,
       `CREATE TABLE IF NOT EXISTS qotd_questions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -482,9 +483,7 @@ async function createTables() {
         daily_time TEXT,
         interval_hours INTEGER,
         next_position INTEGER NOT NULL DEFAULT 0,
-        last_posted_at INTEGER,
-        sheet_url TEXT,
-        sheet_column TEXT
+        last_posted_at INTEGER
       )`,
       `CREATE TABLE IF NOT EXISTS themes_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -506,6 +505,17 @@ async function createTables() {
         guild_id TEXT NOT NULL,
         feature_key TEXT NOT NULL,
         PRIMARY KEY (guild_id, feature_key)
+      )`,
+
+      // Custom drag-and-drop order for the sidebar's feature list, per guild — Admin-only to
+      // edit (see routes/sidebarOrderRoutes.js), shown as-is to everyone (Admin and Mod
+      // alike) who can see that sidebar. `order_json` is a JSON array of feature keys; any
+      // FEATURES key not present in it (a brand-new feature, or one never explicitly moved)
+      // just falls back to the default alphabetical position, appended after the ones that
+      // were explicitly ordered — see sidebarData.js's getSidebarFeatures.
+      `CREATE TABLE IF NOT EXISTS dashboard_sidebar_order (
+        guild_id TEXT PRIMARY KEY,
+        order_json TEXT NOT NULL DEFAULT '[]'
       )`,
     ],
     'write'
@@ -832,19 +842,26 @@ async function migrate() {
     await client.execute('ALTER TABLE invitetracker_config ADD COLUMN default_channel_id TEXT');
   }
 
-  // QOTD/Themes: an Admin can now optionally name the exact header cell to import from
-  // (e.g. "Domanda"/"Tema"), instead of always relying on the automatic column/header
-  // detection. Existing installs just start with no name set (NULL) — same automatic
-  // behavior as before until one is configured.
+  // QOTD/Themes: the Google Sheet CSV import was removed entirely — it kept importing
+  // garbage whenever the configured link wasn't a genuinely published CSV (a normal share
+  // link, or one that redirected through a Google sign-in/consent page), with no reliable
+  // way to fully rule that out client-side. Drops the now-unused sheet_url/sheet_column
+  // columns for existing installs; a fresh install's CREATE TABLE above never had them.
   const qotdConfigColumns = await client.execute('PRAGMA table_info(qotd_config)');
   const qotdConfigColumnNames = qotdConfigColumns.rows.map((row) => row.name);
-  if (!qotdConfigColumnNames.includes('sheet_column')) {
-    await client.execute('ALTER TABLE qotd_config ADD COLUMN sheet_column TEXT');
+  if (qotdConfigColumnNames.includes('sheet_url')) {
+    await client.execute('ALTER TABLE qotd_config DROP COLUMN sheet_url');
+  }
+  if (qotdConfigColumnNames.includes('sheet_column')) {
+    await client.execute('ALTER TABLE qotd_config DROP COLUMN sheet_column');
   }
   const themesConfigColumns = await client.execute('PRAGMA table_info(themes_config)');
   const themesConfigColumnNames = themesConfigColumns.rows.map((row) => row.name);
-  if (!themesConfigColumnNames.includes('sheet_column')) {
-    await client.execute('ALTER TABLE themes_config ADD COLUMN sheet_column TEXT');
+  if (themesConfigColumnNames.includes('sheet_url')) {
+    await client.execute('ALTER TABLE themes_config DROP COLUMN sheet_url');
+  }
+  if (themesConfigColumnNames.includes('sheet_column')) {
+    await client.execute('ALTER TABLE themes_config DROP COLUMN sheet_column');
   }
 }
 

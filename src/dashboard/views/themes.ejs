@@ -11,8 +11,7 @@
 
     <% if (exhausted) { %>
       <div class="flash flash-error">
-        La lista di temi è esaurita — sono già stati postati tutti. Il posting è in pausa finché non aggiungi altri temi
-        (manualmente o sincronizzando di nuovo il foglio).
+        La lista di temi è esaurita — sono già stati postati tutti. Il posting è in pausa finché non aggiungi altri temi.
       </div>
     <% } %>
 
@@ -68,35 +67,11 @@
     </section>
 
     <section class="panel">
-      <h2>Importa da Google Sheet</h2>
-      <p class="hint">
-        Pubblica il foglio come CSV (nel foglio: File → Condividi → Pubblica sul web → formato CSV) e incolla qui il link.
-        Ogni sincronizzazione capisce da sola quale colonna contiene i temi (di solito quella con il testo più lungo e
-        più costante, a differenza di colonne come numero/categoria/data) e se la prima riga è un'intestazione da
-        saltare o è già un tema vero e proprio — e aggiunge in coda solo i temi non già presenti. Puoi risincronizzare
-        quante volte vuoi senza creare doppioni. Se preferisci, indica anche il nome esatto della colonna
-        d'intestazione da usare (es. "Tema") per bypassare la scelta automatica — se il nome non corrisponde a
-        nessuna intestazione del foglio, viene ignorato e si torna alla scelta automatica.
-      </p>
-      <form method="POST" action="/themes/sync" class="form">
-        <label>
-          Link CSV pubblicato
-          <input type="url" name="sheetUrl" value="<%= config.sheetUrl %>" placeholder="https://docs.google.com/.../pub?output=csv" />
-        </label>
-        <label>
-          Nome colonna (opzionale)
-          <input type="text" name="sheetColumn" value="<%= config.sheetColumn %>" placeholder="es. Tema" />
-        </label>
-        <button type="submit" class="btn-primary">Salva e sincronizza</button>
-      </form>
-    </section>
-
-    <section class="panel">
       <h2>Temi in coda (<%= totalThemes %>, <%= remaining %> da postare)</h2>
       <p class="hint">Trascina un tema per cambiarne l'ordine — l'ordine è anche l'ordine di posting.</p>
 
       <% if (themeRows.length === 0) { %>
-        <p class="hint">Nessun tema ancora — aggiungine uno qui sotto o sincronizza da un Google Sheet.</p>
+        <p class="hint">Nessun tema ancora — aggiungine uno qui sotto.</p>
       <% } else { %>
         <div id="themes-item-list">
           <% themeRows.forEach((t) => { %>

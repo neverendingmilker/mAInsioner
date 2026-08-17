@@ -4,8 +4,8 @@ const config = require('../../config/config');
 
 // Straight copy of qotdManager.js — same validation/scheduling/posting logic, just posting
 // a "Tema del giorno" embed instead of a question. See that file for the reasoning behind
-// the design choices (public-CSV-only sheet import, live-computed exhaustion, poll-based
-// scheduler instead of dynamic cron expressions).
+// the design choices (live-computed exhaustion, poll-based scheduler instead of dynamic
+// cron expressions).
 
 const MAX_THEME_LENGTH = 500;
 const HHMM_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -90,185 +90,6 @@ async function removeTheme(guildId, id) {
 
 async function reorderThemes(guildId, orderedIds) {
   await repo.reorderThemes(guildId, orderedIds);
-}
-
-// --- Google Sheet import ---
-// Deliberately only supports a published-CSV link (Google Sheets: File → Condividi →
-// Pubblica sul web → CSV) — no Google API credentials needed, just a plain fetch(). Which
-// column holds the theme and whether the first row is a header are both figured out from
-// the sheet's own content instead of assumed — see chooseThemeColumn/firstRowIsHeader.
-
-function parseCsv(text) {
-  const rows = [];
-  let row = [];
-  let field = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    if (inQuotes) {
-      if (char === '"') {
-        if (text[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        field += char;
-      }
-    } else if (char === '"') {
-      inQuotes = true;
-    } else if (char === ',') {
-      row.push(field);
-      field = '';
-    } else if (char === '\n' || char === '\r') {
-      if (char === '\r' && text[i + 1] === '\n') i++;
-      row.push(field);
-      field = '';
-      rows.push(row);
-      row = [];
-    } else {
-      field += char;
-    }
-  }
-  if (field.length > 0 || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-  return rows;
-}
-
-async function setSheetUrl(guildId, url) {
-  const trimmed = (url || '').trim();
-  if (!/^https?:\/\//i.test(trimmed)) {
-    throw new ValidationError('Il link deve essere un URL valido (http:// o https://).');
-  }
-  await repo.setSheetUrl(guildId, trimmed);
-  return trimmed;
-}
-
-// Optional override: an admin can name the exact header cell to import from (e.g. "Tema")
-// instead of relying on the automatic detection below. Empty clears it back to automatic.
-// Not validated against the sheet here — that's checked at sync time, since the sheet's
-// headers can change independently of when this is saved.
-async function setSheetColumn(guildId, columnName) {
-  const trimmed = (columnName || '').trim();
-  await repo.setSheetColumn(guildId, trimmed || null);
-  return trimmed;
-}
-
-// Looks up an admin-named column by matching it (trimmed, case-insensitive) against row 0
-// — naming a column implies row 0 holds its header label, so unlike the automatic path
-// below, row 0 is always treated as a header when this matches. Returns -1 if no name was
-// given or nothing in row 0 matches, so the caller can fall back to automatic detection
-// silently instead of failing the whole sync over a stale/misspelled column name.
-function findNamedColumn(rows, columnName) {
-  if (!columnName) return -1;
-  const header = rows[0] || [];
-  const target = columnName.trim().toLowerCase();
-  return header.findIndex((cell) => (cell || '').trim().toLowerCase() === target);
-}
-
-// Picks ONE column to use for the whole sheet, instead of the longest cell independently
-// per row — a per-row pick can jump between columns if some row's metadata cell happens
-// to be long, while the real theme column stays consistent. The theme column is whichever
-// one is both populated in most rows and long on average — an id/category/date column is
-// short and/or sparse next to it either way.
-function chooseThemeColumn(rows) {
-  const numCols = rows.reduce((max, r) => Math.max(max, r.length), 0);
-  let bestCol = 0;
-  let bestScore = -1;
-  for (let c = 0; c < numCols; c++) {
-    const cells = rows.map((r) => (r[c] || '').trim()).filter((v) => v.length > 0);
-    if (cells.length === 0) continue;
-    const avgLen = cells.reduce((sum, v) => sum + v.length, 0) / cells.length;
-    const score = avgLen * cells.length; // rewards a column that's both long AND consistently filled
-    if (score > bestScore) {
-      bestScore = score;
-      bestCol = c;
-    }
-  }
-  return bestCol;
-}
-
-// Once the theme column is known, decides whether ITS first cell is a header label
-// ("Tema", "Idea del giorno", ...) or already real data — rather than always assuming a
-// header row is present. A header reads as a short label; real theme text is virtually
-// always noticeably longer, so a first cell much shorter than the rest of that same
-// column is the signal to skip it.
-function firstRowIsHeader(columnValues) {
-  const [first, ...rest] = columnValues;
-  const restValues = rest.filter((v) => v.length > 0);
-  if (!first || restValues.length === 0) return false; // nothing to compare against — assume it's data
-  const avgRestLen = restValues.reduce((sum, v) => sum + v.length, 0) / restValues.length;
-  return avgRestLen > 0 && first.length < avgRestLen * 0.6;
-}
-
-// Fetches the CSV, skips rows already present (exact text match, case-insensitive) so
-// syncing repeatedly doesn't create duplicates, and appends the rest at the end of the
-// queue (in sheet order).
-// A published-CSV link should respond with actual comma-separated theme text. If the URL
-// isn't really a "Pubblica sul web → CSV" link (e.g. a normal share link, or one that
-// redirects through a Google sign-in/consent interstitial), the response can instead be an
-// HTML page or even a JS bundle — which would otherwise get parsed as if every line/cell
-// were a real theme. Checked BEFORE parsing, using both the response's declared
-// content-type and, as a backup for hosts that mislabel or omit it, whether the body
-// itself starts like markup or code instead of data.
-function looksLikeNonCsvResponse(contentType, text) {
-  const type = (contentType || '').toLowerCase();
-  if (type.includes('html') || type.includes('javascript')) return true;
-  const head = text.slice(0, 200).trimStart();
-  return /^(<!doctype|<html|\/\*|\(function\s*\(|function\s*\()/i.test(head);
-}
-
-async function syncFromSheet(guildId, url, columnName) {
-  let response;
-  try {
-    response = await fetch(url);
-  } catch (err) {
-    throw new ValidationError(`Impossibile raggiungere il link: ${err.message}`);
-  }
-  if (!response.ok) {
-    throw new ValidationError(`Il link ha risposto con un errore (HTTP ${response.status}).`);
-  }
-
-  const text = await response.text();
-  if (looksLikeNonCsvResponse(response.headers.get('content-type'), text)) {
-    throw new ValidationError(
-      'Il link non sembra restituire un CSV valido (sembra una pagina HTML o del codice, non un foglio) — verifica di aver usato "Pubblica sul web → CSV" (File → Condividi → Pubblica sul web) e non un normale link di condivisione.'
-    );
-  }
-  const rows = parseCsv(text).filter((r) => r.some((cell) => (cell || '').trim().length > 0));
-  const namedCol = findNamedColumn(rows, columnName);
-
-  let candidates;
-  if (namedCol >= 0) {
-    candidates = rows
-      .slice(1)
-      .map((r) => (r[namedCol] || '').trim())
-      .filter((v) => v.length > 0);
-  } else {
-    const themeCol = chooseThemeColumn(rows);
-    const columnValues = rows.map((r) => (r[themeCol] || '').trim());
-    const dataValues = firstRowIsHeader(columnValues) ? columnValues.slice(1) : columnValues;
-    candidates = dataValues.filter((v) => v.length > 0);
-  }
-
-  const existing = new Set((await repo.listThemes(guildId)).map((t) => t.theme.trim().toLowerCase()));
-  const seenInBatch = new Set();
-  let imported = 0;
-
-  for (const candidate of candidates) {
-    const key = candidate.toLowerCase();
-    if (existing.has(key) || seenInBatch.has(key)) continue;
-    seenInBatch.add(key);
-    if (candidate.length > MAX_THEME_LENGTH) continue; // silently skip absurdly long cells
-    await repo.addTheme(guildId, candidate, 'sheet');
-    imported++;
-  }
-
-  return { imported, total: candidates.length, skipped: candidates.length - imported };
 }
 
 // --- Posting ---
@@ -389,9 +210,6 @@ module.exports = {
   editTheme,
   removeTheme,
   reorderThemes,
-  setSheetUrl,
-  setSheetColumn,
-  syncFromSheet,
   postNext,
   checkAndPostIfDue,
   checkAllDue,

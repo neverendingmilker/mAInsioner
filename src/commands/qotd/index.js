@@ -4,10 +4,10 @@ const { buildDisableSubcommand, createDisableHandler } = require('../shared/disa
 
 const handleDisable = createDisableHandler(qotdManager, PermissionFlagsBits.Administrator, 'Question of the Day');
 
-// Config (channel, ping role, schedule, question list + reordering, Google Sheet import)
-// is dashboard-only — see /channelpermissions and /roleaudit for the same pattern of a
-// dashboard-first feature. This command only covers the two things worth doing from
-// Discord itself: forcing an out-of-schedule post, and a quick status check.
+// Config (channel, ping role, schedule, question list + reordering) is dashboard-only —
+// see /channelpermissions and /roleaudit for the same pattern of a dashboard-first
+// feature. This command only covers the two things worth doing from Discord itself:
+// forcing an out-of-schedule post, and a quick status check.
 const data = new SlashCommandBuilder()
   .setName('qotd')
   .setDescription('Question of the Day: posts a question from the configured queue on a schedule')
@@ -33,7 +33,7 @@ async function execute(interaction) {
     const result = await qotdManager.postNext(interaction.client, interaction.guildId);
     const messages = {
       no_channel_configured: '⚠️ No posting channel is configured yet — set one on the dashboard.',
-      no_questions: '⚠️ The question queue is empty — add some on the dashboard, or import from a Google Sheet.',
+      no_questions: '⚠️ The question queue is empty — add some on the dashboard.',
       exhausted: '⚠️ Every question in the queue has already been posted — add more on the dashboard to resume.',
       guild_not_found: '⚠️ Something went wrong resolving this server.',
       channel_not_found: '⚠️ The configured channel no longer exists — set a new one on the dashboard.',

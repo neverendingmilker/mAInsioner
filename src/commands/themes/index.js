@@ -4,9 +4,9 @@ const { buildDisableSubcommand, createDisableHandler } = require('../shared/disa
 
 const handleDisable = createDisableHandler(themesManager, PermissionFlagsBits.Administrator, 'Themes');
 
-// Straight copy of /qotd — config (channel, ping role, schedule, theme list + reordering,
-// Google Sheet import) is dashboard-only, this command only covers forcing an
-// out-of-schedule post and a quick status check. See /qotd for the same pattern.
+// Straight copy of /qotd — config (channel, ping role, schedule, theme list + reordering)
+// is dashboard-only, this command only covers forcing an out-of-schedule post and a quick
+// status check. See /qotd for the same pattern.
 const data = new SlashCommandBuilder()
   .setName('themes')
   .setDescription('Themes: posts a theme from the configured queue on a schedule')
@@ -32,7 +32,7 @@ async function execute(interaction) {
     const result = await themesManager.postNext(interaction.client, interaction.guildId);
     const messages = {
       no_channel_configured: '⚠️ No posting channel is configured yet — set one on the dashboard.',
-      no_themes: '⚠️ The theme queue is empty — add some on the dashboard, or import from a Google Sheet.',
+      no_themes: '⚠️ The theme queue is empty — add some on the dashboard.',
       exhausted: '⚠️ Every theme in the queue has already been posted — add more on the dashboard to resume.',
       guild_not_found: '⚠️ Something went wrong resolving this server.',
       channel_not_found: '⚠️ The configured channel no longer exists — set a new one on the dashboard.',
