@@ -88,6 +88,10 @@ async function removeTheme(guildId, id) {
   await repo.removeTheme(guildId, id);
 }
 
+async function clearThemes(guildId) {
+  await repo.clearThemes(guildId);
+}
+
 async function reorderThemes(guildId, orderedIds) {
   await repo.reorderThemes(guildId, orderedIds);
 }
@@ -209,6 +213,7 @@ module.exports = {
   addTheme,
   editTheme,
   removeTheme,
+  clearThemes,
   reorderThemes,
   postNext,
   checkAndPostIfDue,

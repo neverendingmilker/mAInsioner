@@ -182,6 +182,19 @@ router.post('/themes/items/:id/remove', async (req, res, next) => {
   }
 });
 
+router.post('/themes/items/clear', async (req, res, next) => {
+  try {
+    const guild = requireGuild(req, res);
+    if (!guild) return;
+
+    await themesManager.clearThemes(guild.id);
+    req.session.flash = { type: 'success', message: 'Coda svuotata — tutti i temi sono stati rimossi.' };
+    res.redirect('/themes');
+  } catch (err) {
+    next(err);
+  }
+});
+
 // `order` è una lista di ID separati da virgola, popolata dal trascinamento lato client
 // (public/themesReorder.js) prima dell'invio automatico del form.
 router.post('/themes/items/reorder', async (req, res, next) => {

@@ -68,7 +68,14 @@
     </section>
 
     <section class="panel" data-card-id="temi-in-coda-da-postare">
-      <h2>Temi in coda (<%= totalThemes %>, <%= remaining %> da postare)</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <h2>Temi in coda (<%= totalThemes %>, <%= remaining %> da postare)</h2>
+        <% if (themeRows.length > 0) { %>
+          <form method="POST" action="/themes/items/clear" onsubmit="return confirm('Svuotare tutta la coda? Verranno rimossi tutti i <%= totalThemes %> temi, azione non reversibile.');">
+            <button type="submit" class="btn-danger-sm">Svuota coda</button>
+          </form>
+        <% } %>
+      </div>
       <p class="hint">Trascina un tema per cambiarne l'ordine — l'ordine è anche l'ordine di posting.</p>
 
       <% if (themeRows.length === 0) { %>
@@ -77,7 +84,7 @@
         <div id="themes-item-list">
           <% themeRows.forEach((t) => { %>
             <div class="reorder-item" data-id="<%= t.id %>">
-              <span class="reorder-drag-handle" title="Trascina per riordinare">⠿</span>
+              <span class="reorder-drag-handle" title="Trascina per riordinare">⣿</span>
               <div class="reorder-item-body">
                 <% if (t.isNext) { %><span class="pill next-badge pill-purple">Prossimo</span><br /><% } %>
                 <span class="reorder-item-text"><%= t.theme %></span>

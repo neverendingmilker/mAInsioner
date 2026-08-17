@@ -153,6 +153,19 @@ async function removeTheme(guildId, id) {
   await compactPositions(guildId);
 }
 
+// Empties the whole queue for a guild in one go and resets the cursor back to 0 — same as
+// qotdRepository.js's clearQuestions, so a freshly-refilled queue starts posting from the
+// top instead of resuming from wherever the old, now-gone queue had gotten to.
+async function clearThemes(guildId) {
+  await db.ready;
+  await db.client.execute({ sql: 'DELETE FROM themes_items WHERE guild_id = ?', args: [guildId] });
+  await db.client.execute({
+    sql: `INSERT INTO themes_config (guild_id, next_position) VALUES (?, 0)
+          ON CONFLICT(guild_id) DO UPDATE SET next_position = 0`,
+    args: [guildId],
+  });
+}
+
 // Applies a brand-new order (array of theme IDs, in the desired order) — used by the
 // dashboard's drag-and-drop reordering. IDs not belonging to this guild are ignored.
 async function reorderThemes(guildId, orderedIds) {
@@ -198,5 +211,6 @@ module.exports = {
   addTheme,
   updateThemeText,
   removeTheme,
+  clearThemes,
   reorderThemes,
 };
