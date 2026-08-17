@@ -122,10 +122,16 @@ a {
    them up for the spanning card. */
 
 .card-list {
+  --card-cols: 3;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(var(--card-cols), 1fr);
   grid-auto-rows: minmax(140px, auto);
   grid-auto-flow: row dense;
+  /* Same-row cards no longer stretch to match each other's height — only an explicit
+     rowSpan (set via resize, see cardReorder.js) makes a card taller, e.g. the bento
+     layout where a tall card sits beside two stacked shorter ones. Without this, every
+     card in a row silently grew to the tallest sibling's height even with rowSpan: 1. */
+  align-items: start;
   gap: 24px;
   margin-top: 24px;
 }
@@ -134,7 +140,11 @@ a {
   position: relative;
   margin-top: 0;
   min-width: 0;
-  grid-column: span 3;
+  /* Full-width default regardless of the current column count (2 or 3) — "span 3" would
+     overflow/clip in a 2-column grid, "1 / -1" always spans every column there is.
+     cardReorder.js overrides this per-card with an explicit inline "span N" once a card
+     has a saved, deliberately-chosen size. */
+  grid-column: 1 / -1;
   grid-row: span 1;
 }
 
@@ -192,6 +202,52 @@ a {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   z-index: 2;
+}
+
+/* Collapse toggle — injected by cardReorder.js on every card (Admin and Mod alike, it's
+   just a personal viewing convenience, saved per-browser same as order/size/columns).
+   Sits in the top-right corner, next to any .card-actions icons already there. Collapsing
+   only hides the body content below the heading — the heading itself, and this button,
+   always stay visible so a collapsed card can still be told apart and reopened. */
+.card-collapse-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-alt);
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.card-list .panel:has(.card-actions) .card-collapse-btn {
+  /* Don't overlap the Modifica/Rimuovi icons already in the top-right of cards that have
+     them — sit to their left instead. */
+  right: auto;
+  left: 12px;
+}
+
+.card-collapse-btn:hover {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.card-list .panel.card-collapsed > *:not(h2):not(.card-collapse-btn):not(.card-drag-handle) {
+  display: none;
+}
+
+.card-list .panel.card-collapsed {
+  /* A collapsed card only needs to be tall enough for its heading — ignore any saved/
+     dragged rowSpan while collapsed so it doesn't leave a tall empty gap. */
+  grid-row: span 1 !important;
 }
 
 .sidebar-footer {
@@ -808,6 +864,30 @@ a {
 .config-name {
   font-weight: 600;
   font-size: 14px;
+}
+
+/* Small role-based pill badges next to a .config-name (currently just Booster Links' Mod/
+   OG-Fren indicators) — same pill shape as .qotd-next-badge, different colors per role. */
+.badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.badge-mod {
+  background: rgba(88, 101, 242, 0.18);
+  border: 1px solid var(--accent);
+  color: #b3baf7;
+}
+
+.badge-og-fren {
+  background: rgba(59, 165, 92, 0.15);
+  border: 1px solid #3ba55c;
+  color: #7ee2a0;
 }
 
 .config-meta {

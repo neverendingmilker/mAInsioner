@@ -70,38 +70,47 @@
       </label>
     <% } %>
 
-    <%# Card-reorder + card-resize support: `cardOrder` (drag order) and `cardSizes` (grid
-        column/row span) are always set by requireDashboardAccess, for both Admin and Mod,
-        so both apply for anyone viewing the page — only this button + the drag handles/
-        resize grips it reveals are Admin-only. See public/cardReorder.js and each view's
-        `<div class="card-list" id="card-list">` wrapping its `.panel[data-card-id]`
-        sections — the standard for every feature page, current and future. Unlike the
+    <%# Card-reorder + card-resize support: drag order AND per-card grid span are saved in
+        the browser's own localStorage (see public/cardReorder.js), keyed by feature so each
+        page keeps its own — NOT saved server-side, on purpose: the user explicitly didn't
+        want their layout shared across the server, where another Admin (or a Mod, if this
+        control were ever opened up to them) could change what they see. That also means the
+        layout is personal to this one browser — it won't follow the same Admin to a
+        different device, and a Mod always sees the untouched default layout, since only an
+        Admin gets this button at all and localStorage never leaves this browser. Unlike the
         three items above, this one is NOT wired to submit-on-change: it's a pure
         client-side mode toggle (unlocked = draggable + resizable) handled entirely by
-        cardReorder.js, which decides on its own whether re-locking needs to POST the
-        hidden #card-reorder-form below (only if something was actually dragged or resized
-        — see that file). Label is always "Riordina card". %>
-    <% if (typeof cardOrder !== 'undefined') { %>
-      <script id="card-order-data" type="application/json"><%- JSON.stringify(cardOrder) %></script>
-    <% } %>
-    <%# Saved per-card CSS Grid span, keyed by data-card-id — an empty object on a page
-        nobody has resized yet, harmless (every card just keeps its default full-width
-        span). Applied on load and re-saved alongside order in the same
-        #card-reorder-form/POST — see cardReorder.js and the "sizes" field handling in
-        routes/cardOrderRoutes.js. %>
-    <% if (typeof cardSizes !== 'undefined') { %>
-      <script id="card-size-data" type="application/json"><%- JSON.stringify(cardSizes) %></script>
-    <% } %>
+        cardReorder.js, which decides on its own whether re-locking needs to write to
+        localStorage (only if something was actually dragged or resized — see that file).
+        `data-feature-key` is how cardReorder.js knows which page's data to read/write.
+        Label is always "Reorder". %>
     <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
       <label class="btn-group-item">
-        <input type="checkbox" id="card-lock-btn" />
+        <input type="checkbox" id="card-lock-btn" data-feature-key="<%= currentFeatureKey %>" />
         <span>Reorder</span>
       </label>
-      <form id="card-reorder-form" method="POST" action="/card-order/<%= currentFeatureKey %>/reorder" style="display:none;">
-        <input type="hidden" id="card-order-input" name="order" value="" />
-        <input type="hidden" id="card-size-input" name="sizes" value="" />
-      </form>
     <% } %>
   </div>
+
+  <%# Column count (2 or 3) for this page's card grid — same browser-local localStorage
+      idea as Reorder above, but NOT Admin-only: it's just a personal viewing preference
+      (like collapsing a card), doesn't change what anyone else sees, so a Mod gets it too.
+      cardReorder.js reads/writes it and sets `--card-cols` on #card-list; the checked
+      radio here is only a starting guess (JS syncs it to whatever's actually saved once
+      the page loads, since server-rendered HTML can't see localStorage). Gated on
+      `pageFeatureKey` (set for every role, unlike the Admin-only `currentFeatureKey`
+      above) so it only shows on real feature pages. %>
+  <% if (typeof pageFeatureKey !== 'undefined' && pageFeatureKey) { %>
+    <div class="btn-group" id="card-cols-group">
+      <label class="btn-group-item">
+        <input type="radio" name="card-cols" value="2" />
+        <span>2 Cols</span>
+      </label>
+      <label class="btn-group-item">
+        <input type="radio" name="card-cols" value="3" />
+        <span>3 Cols</span>
+      </label>
+    </div>
+  <% } %>
 </div>
 <script src="/cardReorder.js"></script>

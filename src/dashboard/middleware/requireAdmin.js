@@ -1,7 +1,5 @@
 const { getSidebarFeatures, getSidebarToolsForPath, getFeatureKeyForPath, getToolKeyForPath, FEATURE_PAGES } = require('../sidebarData');
 const modAccess = require('../modAccess');
-const cardOrder = require('../cardOrder');
-const cardSize = require('../cardSize');
 const featureLock = require('../featureLock');
 
 // Gates every dashboard page behind: Discord login, being an Administrator OR the
@@ -51,6 +49,12 @@ async function requireDashboardAccess(req, res, next) {
   res.locals.role = current.role;
 
   const featureKey = getFeatureKeyForPath(req.path);
+  // Unlike `currentFeatureKey` below (Admin-only — it names the routes for Admin-only
+  // forms like Reorder/Admin only/Edit), this is just which feature page we're on, exposed
+  // to Mod sessions too. Purely presentational: it lets featureToggle.ejs show the
+  // (non-destructive, browser-local) column-count picker to Mods as well, without opening
+  // up any of the Admin-only POST routes to them.
+  res.locals.pageFeatureKey = featureKey;
 
   let locked;
   try {
@@ -74,8 +78,6 @@ async function requireDashboardAccess(req, res, next) {
     res.locals.featureLocked = locked;
     try {
       res.locals.modAccessEnabled = featureKey ? await modAccess.isFeatureModAccessible(req.session.guildId, featureKey) : false;
-      res.locals.cardOrder = featureKey ? await cardOrder.getOrder(req.session.guildId, featureKey) : [];
-      res.locals.cardSizes = featureKey ? await cardSize.getSizes(req.session.guildId, featureKey) : {};
     } catch (err) {
       return next(err);
     }
@@ -88,8 +90,6 @@ async function requireDashboardAccess(req, res, next) {
   res.locals.currentFeatureKey = null;
   res.locals.modAccessEnabled = false;
   res.locals.featureLocked = locked;
-  res.locals.cardOrder = [];
-  res.locals.cardSizes = {};
 
   try {
     const allowedKeys = await modAccess.listModAccessibleFeatureKeys(req.session.guildId);
@@ -112,8 +112,6 @@ async function requireDashboardAccess(req, res, next) {
           message: "Solo un Admin può accendere/spegnere una feature o cambiarne la configurazione di base (canale/ruolo/programma).",
         });
       }
-      res.locals.cardOrder = await cardOrder.getOrder(req.session.guildId, featureKey);
-      res.locals.cardSizes = await cardSize.getSizes(req.session.guildId, featureKey);
     }
 
     next();

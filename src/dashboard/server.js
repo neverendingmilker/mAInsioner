@@ -28,7 +28,6 @@ const channelpermissionsRoutes = require('./routes/channelpermissions');
 const qotdRoutes = require('./routes/qotd');
 const themesRoutes = require('./routes/themes');
 const modAccessRoutes = require('./routes/modAccessRoutes');
-const cardOrderRoutes = require('./routes/cardOrderRoutes');
 const featureLockRoutes = require('./routes/featureLockRoutes');
 
 // Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator OR
@@ -102,7 +101,6 @@ function start(client) {
     // route below needs to compute or pass any of that itself.
     requireDashboardAccess,
     modAccessRoutes,
-    cardOrderRoutes,
     featureLockRoutes,
     overviewRoutes,
     honeypotRoutes,

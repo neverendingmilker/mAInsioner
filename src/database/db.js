@@ -507,20 +507,6 @@ async function createTables() {
         PRIMARY KEY (guild_id, feature_key)
       )`,
 
-      // Custom drag-and-drop order for the "cards" (panel sections) inside a single feature
-      // page, per guild AND per feature — Admin-only to edit (see routes/cardOrderRoutes.js),
-      // shown as-is to everyone (Admin and Mod alike) who can open that feature page.
-      // `order_json` is a JSON array of that page's card ids (see each view's
-      // `data-card-id` attributes); any card id not present in it (a brand-new card, or one
-      // never explicitly moved) just falls back to its default position in the view's own
-      // markup, appended after the ones that were explicitly ordered.
-      `CREATE TABLE IF NOT EXISTS dashboard_card_order (
-        guild_id TEXT NOT NULL,
-        feature_key TEXT NOT NULL,
-        order_json TEXT NOT NULL DEFAULT '[]',
-        PRIMARY KEY (guild_id, feature_key)
-      )`,
-
       // Freezes a feature's own add/edit/remove/reorder forms (its list of items) without
       // touching the feature's on/off state or its base config (channel/role/schedule) —
       // e.g. QOTD keeps posting on schedule while locked, only the dashboard's own CRUD
@@ -533,21 +519,6 @@ async function createTables() {
         PRIMARY KEY (guild_id, feature_key)
       )`,
 
-      // Saved per-card CSS Grid span (column + row) for every feature page's card list (see
-      // public/cardReorder.js and public/style.css's `.card-list`) — Admin-only to change,
-      // shown as-is to everyone (Admin and Mod alike), same convention as
-      // dashboard_card_order. Standard for every feature page, current and future.
-      // `sizes_json` is a JSON object keyed by that page's `data-card-id` values, e.g.
-      // {"sessioni": {"colSpan": 1, "rowSpan": 2}}; a card id missing from it just keeps its
-      // default full-width single-row span. NOTE: this used to store pixel {width, height}
-      // from a two-column-only pilot on Anime Night — see the DELETE in migrate() below,
-      // which clears out that now-meaningless old shape the one time this ships.
-      `CREATE TABLE IF NOT EXISTS dashboard_card_size (
-        guild_id TEXT NOT NULL,
-        feature_key TEXT NOT NULL,
-        sizes_json TEXT NOT NULL DEFAULT '{}',
-        PRIMARY KEY (guild_id, feature_key)
-      )`,
     ],
     'write'
   );
@@ -896,26 +867,27 @@ async function migrate() {
   }
 
   // Dashboard sidebar reordering was replaced, in the same session it was added, with
-  // per-feature card reordering instead (see dashboard_card_order above) — the user wanted
-  // to reorder the panels *inside* a feature page, not the sidebar's list of features.
-  // Drops the now-unused table for any install that had already picked it up.
+  // per-feature card reordering instead — the user wanted to reorder the panels *inside* a
+  // feature page, not the sidebar's list of features. Drops the now-unused table for any
+  // install that had already picked it up.
   await client.execute('DROP TABLE IF EXISTS dashboard_sidebar_order');
 
   // The two-column layout's shared resize divider (a single width split for both columns)
   // was replaced, in the same session it was added, with per-card resize handles instead —
   // the user wanted to grab each card's own borders (width AND height), not one shared
   // divider between two fixed columns. Drops the now-unused table for any install that had
-  // already picked it up; the new approach doesn't persist card sizes at all (yet).
+  // already picked it up.
   await client.execute('DROP TABLE IF EXISTS dashboard_card_layout');
 
-  // dashboard_card_size's per-card resize grew from a two-column-only pixel {width, height}
-  // pilot (Anime Night) into the standard grid {colSpan, rowSpan} system for every feature
-  // page. A row saved under the old shape is meaningless under the new one (a saved pixel
-  // width like 281 would otherwise get clamped into a nonsensical colSpan), so clear out
-  // any row still holding it — detected by content (the old shape's "width" key can't
-  // appear in the new one), not a one-shot version flag, so this stays safe to run on every
-  // boot: once every old-shaped row is gone the query matches nothing and it's a no-op.
-  await client.execute('DELETE FROM dashboard_card_size WHERE sizes_json LIKE \'%"width"%\'');
+  // Card order (dashboard_card_order) and per-card resize (dashboard_card_size) both moved
+  // from server-side, per-guild storage to plain browser localStorage (see
+  // public/cardReorder.js) — the user explicitly wanted their layout tied to their own
+  // browser, not shared server-side where another Admin on the same server could change it
+  // for everyone. Drops both now-unused tables for any install that had already picked them
+  // up; nobody's layout is preserved across this switch (it was never meant to be — it's a
+  // different, per-device concept now), so there's nothing to migrate the data into.
+  await client.execute('DROP TABLE IF EXISTS dashboard_card_order');
+  await client.execute('DROP TABLE IF EXISTS dashboard_card_size');
 }
 
 const ready = createTables()
