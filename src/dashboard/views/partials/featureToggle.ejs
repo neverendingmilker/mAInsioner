@@ -1,84 +1,89 @@
-<%# Shared on/off control for a feature page's header, plus (Admin-only) the Mod-access
-    switch, the "blocca modifiche" switch, and the card-reorder switch. Wrapped in
-    one div so `.page-header`'s flex layout (h1 vs. everything else) still only ever sees
-    two children, regardless of how many of the pieces below actually render.
+<%# Shared controls for a feature page's header: on/off, plus (Admin-only) Solo Admin,
+    Modificabile, and Riordina card — rendered as one connected segmented button group,
+    active state colored (accent), inactive using the default muted button color. Started
+    as an experiment on Anime Night only (partials/featureToggleGrouped.ejs); once the user
+    liked it, it became the standard here so every current AND future feature page gets it
+    automatically just by including this partial, same as before.
+    Each item is still a real (hidden) checkbox under the hood — only the visual skin is a
+    button group instead of individual switches (public/style.css's .btn-group rules).
+    Active/colored state is driven purely by CSS `:has(input:checked)` (same technique
+    already used in channelpermissions.ejs), no JS or server-computed class needed.
+    Wrapped in one outer div so `.page-header`'s flex layout (h1 vs. everything else) still
+    only ever sees two children, regardless of how many buttons actually render.
     Locals: `enabled` (bool), `toggleAction` (the feature's own POST /<feature>/toggle
     route — already expects `enabled` as the literal string "true"/"false"). A single
     checkbox works here without a hidden fallback field: every route already reads
     `req.body.enabled === 'true'`, and an unchecked checkbox simply omits `enabled` from
     the POST body entirely, which that comparison already treats as false. %>
 <div class="feature-toggle-group">
-  <form method="POST" action="<%= toggleAction %>" class="feature-toggle">
-    <label class="switch">
-      <input type="checkbox" name="enabled" value="true" <%= enabled ? 'checked' : '' %> onchange="this.form.submit()" />
-      <span class="switch-slider"></span>
-      <span class="switch-label"><%= enabled ? 'Attivo' : 'Disattivo' %></span>
-    </label>
-  </form>
-
-  <%# Admin-only: whether this feature's page is also opened to the server's Mod role.
-      Set globally by requireDashboardAccess (middleware/requireAdmin.js), not passed by
-      each route — `role`/`currentFeatureKey`/`modAccessEnabled` are all res.locals
-      already. Mods themselves never see this (their `role` is 'mod'), so they can't grant
-      themselves more access. Toggling it doesn't affect what a Mod can do INSIDE an
-      already-allowed feature — that's always full parity with Admin — only whether they
-      can open this page at all. Label is always "Solo Admin" (doesn't flip to something
-      like "Consentito ai Mod") — ON means mods are locked out, OFF means they're allowed;
-      the checkbox name `soloAdmin` is intentionally the inverse of `modAccessEnabled`, so
-      the route computes `allowed = req.body.soloAdmin !== 'true'` (unchecked → allowed). %>
-  <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
-    <form method="POST" action="/mod-access/<%= currentFeatureKey %>/toggle" class="mod-access-toggle">
-      <label class="switch">
-        <input type="checkbox" name="soloAdmin" value="true" <%= modAccessEnabled ? '' : 'checked' %> onchange="this.form.submit()" />
-        <span class="switch-slider"></span>
-        <span class="switch-label">Solo Admin</span>
+  <div class="btn-group">
+    <form method="POST" action="<%= toggleAction %>" class="btn-group-form">
+      <label class="btn-group-item">
+        <input type="checkbox" name="enabled" value="true" <%= enabled ? 'checked' : '' %> onchange="this.form.submit()" />
+        <span>Attivo</span>
       </label>
     </form>
-  <% } %>
 
-  <%# Admin-only: freezes this feature's own add/edit/remove/reorder forms (its list of
-      items) without touching the on/off switch above or base config (channel/role/
-      schedule) — the feature keeps doing whatever it already does (e.g. QOTD keeps
-      posting on schedule) while locked, only the dashboard's own CRUD forms are blocked
-      (enforced centrally in requireDashboardAccess, for Admin and Mod alike). Posts to a
-      route generic across every feature page — `featureLocked` local set by the same
-      middleware. Label is always "Modificabile" (doesn't flip to "Bloccato") — ON means
-      editable, OFF means locked; the checkbox name `editable` is intentionally the inverse
-      of `featureLocked`, so the route computes `locked = req.body.editable !== 'true'`
-      (unchecked → locked). %>
-  <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
-    <form method="POST" action="/feature-lock/<%= currentFeatureKey %>/toggle" class="feature-lock-toggle">
-      <label class="switch">
-        <input type="checkbox" name="editable" value="true" <%= typeof featureLocked !== 'undefined' && featureLocked ? '' : 'checked' %> onchange="this.form.submit()" />
-        <span class="switch-slider"></span>
-        <span class="switch-label">Modificabile</span>
+    <%# Admin-only: whether this feature's page is also opened to the server's Mod role.
+        Set globally by requireDashboardAccess (middleware/requireAdmin.js), not passed by
+        each route — `role`/`currentFeatureKey`/`modAccessEnabled` are all res.locals
+        already. Mods themselves never see this (their `role` is 'mod'), so they can't
+        grant themselves more access. Toggling it doesn't affect what a Mod can do INSIDE
+        an already-allowed feature — that's always full parity with Admin — only whether
+        they can open this page at all. Label is always "Solo Admin" — colored (active)
+        means mods are locked out, uncolored means they're allowed; the checkbox name
+        `soloAdmin` is intentionally the inverse of `modAccessEnabled`, so the route
+        computes `allowed = req.body.soloAdmin !== 'true'` (unchecked → allowed). %>
+    <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
+      <form method="POST" action="/mod-access/<%= currentFeatureKey %>/toggle" class="btn-group-form">
+        <label class="btn-group-item">
+          <input type="checkbox" name="soloAdmin" value="true" <%= modAccessEnabled ? '' : 'checked' %> onchange="this.form.submit()" />
+          <span>Solo Admin</span>
+        </label>
+      </form>
+    <% } %>
+
+    <%# Admin-only: freezes this feature's own add/edit/remove/reorder forms (its list of
+        items) without touching the on/off toggle above or base config (channel/role/
+        schedule) — the feature keeps doing whatever it already does (e.g. QOTD keeps
+        posting on schedule) while locked, only the dashboard's own CRUD forms are blocked
+        (enforced centrally in requireDashboardAccess, for Admin and Mod alike). Posts to a
+        route generic across every feature page — `featureLocked` local set by the same
+        middleware. Label is always "Modificabile" — colored (active) means editable,
+        uncolored means locked; the checkbox name `editable` is intentionally the inverse
+        of `featureLocked`, so the route computes `locked = req.body.editable !== 'true'`
+        (unchecked → locked). %>
+    <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
+      <form method="POST" action="/feature-lock/<%= currentFeatureKey %>/toggle" class="btn-group-form">
+        <label class="btn-group-item">
+          <input type="checkbox" name="editable" value="true" <%= typeof featureLocked !== 'undefined' && featureLocked ? '' : 'checked' %> onchange="this.form.submit()" />
+          <span>Modificabile</span>
+        </label>
+      </form>
+    <% } %>
+
+    <%# Card-reorder support: `cardOrder` (the saved drag order for this page's panels) is
+        always set by requireDashboardAccess, for both Admin and Mod, so the reorder
+        applies for anyone viewing the page — only this button + the drag handles it
+        reveals are Admin-only. See public/cardReorder.js and each view's `<div
+        class="card-list" id="card-list">` wrapping its `.panel[data-card-id]` sections.
+        Unlike the three items above, this one is NOT wired to submit-on-change: it's a
+        pure client-side mode toggle (unlocked = draggable, handles visible) handled
+        entirely by cardReorder.js, which decides on its own whether re-locking needs to
+        POST the hidden #card-reorder-form below (only if something was actually dragged —
+        see that file). Label is always "Riordina card". %>
+    <% if (typeof cardOrder !== 'undefined') { %>
+      <script id="card-order-data" type="application/json"><%- JSON.stringify(cardOrder) %></script>
+    <% } %>
+    <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
+      <label class="btn-group-item">
+        <input type="checkbox" id="card-lock-btn" />
+        <span>Riordina card</span>
       </label>
-    </form>
-  <% } %>
-
-  <%# Card-reorder support: `cardOrder` (the saved drag order for this page's panels) is
-      always set by requireDashboardAccess, for both Admin and Mod, so the reorder applies
-      for anyone viewing the page — only this switch + the drag handles it reveals are
-      Admin-only. See public/cardReorder.js and each view's `<div class="card-list"
-      id="card-list">` wrapping its `.panel[data-card-id]` sections. Unlike the three
-      switches above, this one is NOT wired to submit-on-change: it's a pure client-side
-      mode toggle (unlocked = draggable, handles visible) handled entirely by
-      cardReorder.js, which decides on its own whether re-locking needs to POST the hidden
-      #card-reorder-form below (only if something was actually dragged — see that file).
-      Label is always "Riordina card", same fixed-label convention as Solo Admin/
-      Modificabile above. %>
-  <% if (typeof cardOrder !== 'undefined') { %>
-    <script id="card-order-data" type="application/json"><%- JSON.stringify(cardOrder) %></script>
-  <% } %>
-  <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
-    <label class="switch">
-      <input type="checkbox" id="card-lock-btn" />
-      <span class="switch-slider"></span>
-      <span class="switch-label">Riordina card</span>
-    </label>
-    <form id="card-reorder-form" method="POST" action="/card-order/<%= currentFeatureKey %>/reorder" style="display:none;">
-      <input type="hidden" id="card-order-input" name="order" value="" />
-    </form>
-  <% } %>
+      <form id="card-reorder-form" method="POST" action="/card-order/<%= currentFeatureKey %>/reorder" style="display:none;">
+        <input type="hidden" id="card-order-input" name="order" value="" />
+      </form>
+    <% } %>
+  </div>
 </div>
 <script src="/cardReorder.js"></script>
