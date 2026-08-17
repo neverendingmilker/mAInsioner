@@ -74,12 +74,18 @@
         Ogni sincronizzazione capisce da sola quale colonna contiene i temi (di solito quella con il testo più lungo e
         più costante, a differenza di colonne come numero/categoria/data) e se la prima riga è un'intestazione da
         saltare o è già un tema vero e proprio — e aggiunge in coda solo i temi non già presenti. Puoi risincronizzare
-        quante volte vuoi senza creare doppioni.
+        quante volte vuoi senza creare doppioni. Se preferisci, indica anche il nome esatto della colonna
+        d'intestazione da usare (es. "Tema") per bypassare la scelta automatica — se il nome non corrisponde a
+        nessuna intestazione del foglio, viene ignorato e si torna alla scelta automatica.
       </p>
       <form method="POST" action="/themes/sync" class="form">
         <label>
           Link CSV pubblicato
           <input type="url" name="sheetUrl" value="<%= config.sheetUrl %>" placeholder="https://docs.google.com/.../pub?output=csv" />
+        </label>
+        <label>
+          Nome colonna (opzionale)
+          <input type="text" name="sheetColumn" value="<%= config.sheetColumn %>" placeholder="es. Tema" />
         </label>
         <button type="submit" class="btn-primary">Salva e sincronizza</button>
       </form>

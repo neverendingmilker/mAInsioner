@@ -60,6 +60,7 @@ async function renderQotdPage(req, res, guild) {
       dailyTime: config.daily_time || '',
       intervalHours: config.interval_hours || '',
       sheetUrl: config.sheet_url || '',
+      sheetColumn: config.sheet_column || '',
     },
     textChannels,
     roles,
@@ -156,7 +157,8 @@ router.post('/qotd/sync', async (req, res, next) => {
 
     try {
       const url = await qotdManager.setSheetUrl(guild.id, req.body.sheetUrl);
-      const result = await qotdManager.syncFromSheet(guild.id, url);
+      const columnName = await qotdManager.setSheetColumn(guild.id, req.body.sheetColumn);
+      const result = await qotdManager.syncFromSheet(guild.id, url, columnName);
       req.session.flash = {
         type: 'success',
         message: `Sincronizzato: ${result.imported} nuova/e domanda/e importata/e${result.skipped > 0 ? `, ${result.skipped} già presente/i ignorata/e` : ''}.`,

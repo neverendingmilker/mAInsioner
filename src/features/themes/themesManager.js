@@ -148,6 +148,28 @@ async function setSheetUrl(guildId, url) {
   return trimmed;
 }
 
+// Optional override: an admin can name the exact header cell to import from (e.g. "Tema")
+// instead of relying on the automatic detection below. Empty clears it back to automatic.
+// Not validated against the sheet here — that's checked at sync time, since the sheet's
+// headers can change independently of when this is saved.
+async function setSheetColumn(guildId, columnName) {
+  const trimmed = (columnName || '').trim();
+  await repo.setSheetColumn(guildId, trimmed || null);
+  return trimmed;
+}
+
+// Looks up an admin-named column by matching it (trimmed, case-insensitive) against row 0
+// — naming a column implies row 0 holds its header label, so unlike the automatic path
+// below, row 0 is always treated as a header when this matches. Returns -1 if no name was
+// given or nothing in row 0 matches, so the caller can fall back to automatic detection
+// silently instead of failing the whole sync over a stale/misspelled column name.
+function findNamedColumn(rows, columnName) {
+  if (!columnName) return -1;
+  const header = rows[0] || [];
+  const target = columnName.trim().toLowerCase();
+  return header.findIndex((cell) => (cell || '').trim().toLowerCase() === target);
+}
+
 // Picks ONE column to use for the whole sheet, instead of the longest cell independently
 // per row — a per-row pick can jump between columns if some row's metadata cell happens
 // to be long, while the real theme column stays consistent. The theme column is whichever
@@ -186,7 +208,7 @@ function firstRowIsHeader(columnValues) {
 // Fetches the CSV, skips rows already present (exact text match, case-insensitive) so
 // syncing repeatedly doesn't create duplicates, and appends the rest at the end of the
 // queue (in sheet order).
-async function syncFromSheet(guildId, url) {
+async function syncFromSheet(guildId, url, columnName) {
   let response;
   try {
     response = await fetch(url);
@@ -199,10 +221,20 @@ async function syncFromSheet(guildId, url) {
 
   const text = await response.text();
   const rows = parseCsv(text).filter((r) => r.some((cell) => (cell || '').trim().length > 0));
-  const themeCol = chooseThemeColumn(rows);
-  const columnValues = rows.map((r) => (r[themeCol] || '').trim());
-  const dataValues = firstRowIsHeader(columnValues) ? columnValues.slice(1) : columnValues;
-  const candidates = dataValues.filter((v) => v.length > 0);
+  const namedCol = findNamedColumn(rows, columnName);
+
+  let candidates;
+  if (namedCol >= 0) {
+    candidates = rows
+      .slice(1)
+      .map((r) => (r[namedCol] || '').trim())
+      .filter((v) => v.length > 0);
+  } else {
+    const themeCol = chooseThemeColumn(rows);
+    const columnValues = rows.map((r) => (r[themeCol] || '').trim());
+    const dataValues = firstRowIsHeader(columnValues) ? columnValues.slice(1) : columnValues;
+    candidates = dataValues.filter((v) => v.length > 0);
+  }
 
   const existing = new Set((await repo.listThemes(guildId)).map((t) => t.theme.trim().toLowerCase()));
   const seenInBatch = new Set();
@@ -339,6 +371,7 @@ module.exports = {
   removeTheme,
   reorderThemes,
   setSheetUrl,
+  setSheetColumn,
   syncFromSheet,
   postNext,
   checkAndPostIfDue,

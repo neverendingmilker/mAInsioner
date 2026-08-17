@@ -13,6 +13,7 @@ function mapConfigRow(row) {
     next_position: Number(row.next_position ?? 0),
     last_posted_at: row.last_posted_at === null || row.last_posted_at === undefined ? null : Number(row.last_posted_at),
     sheet_url: row.sheet_url,
+    sheet_column: row.sheet_column,
   };
 }
 
@@ -32,6 +33,7 @@ async function getConfig(guildId) {
         next_position: 0,
         last_posted_at: null,
         sheet_url: null,
+        sheet_column: null,
       };
 }
 
@@ -89,6 +91,15 @@ async function setSheetUrl(guildId, url) {
     sql: `INSERT INTO qotd_config (guild_id, sheet_url) VALUES (?, ?)
           ON CONFLICT(guild_id) DO UPDATE SET sheet_url = excluded.sheet_url`,
     args: [guildId, url],
+  });
+}
+
+async function setSheetColumn(guildId, columnName) {
+  await db.ready;
+  await db.client.execute({
+    sql: `INSERT INTO qotd_config (guild_id, sheet_column) VALUES (?, ?)
+          ON CONFLICT(guild_id) DO UPDATE SET sheet_column = excluded.sheet_column`,
+    args: [guildId, columnName],
   });
 }
 
@@ -200,6 +211,7 @@ module.exports = {
   setRole,
   setSchedule,
   setSheetUrl,
+  setSheetColumn,
   markPosted,
   getAllConfiguredGuildIds,
   listQuestions,

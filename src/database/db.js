@@ -456,7 +456,8 @@ async function createTables() {
         interval_hours INTEGER,
         next_position INTEGER NOT NULL DEFAULT 0,
         last_posted_at INTEGER,
-        sheet_url TEXT
+        sheet_url TEXT,
+        sheet_column TEXT
       )`,
       `CREATE TABLE IF NOT EXISTS qotd_questions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -482,7 +483,8 @@ async function createTables() {
         interval_hours INTEGER,
         next_position INTEGER NOT NULL DEFAULT 0,
         last_posted_at INTEGER,
-        sheet_url TEXT
+        sheet_url TEXT,
+        sheet_column TEXT
       )`,
       `CREATE TABLE IF NOT EXISTS themes_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -828,6 +830,21 @@ async function migrate() {
   const invitetrackerConfigColumnNames = invitetrackerConfigColumns.rows.map((row) => row.name);
   if (!invitetrackerConfigColumnNames.includes('default_channel_id')) {
     await client.execute('ALTER TABLE invitetracker_config ADD COLUMN default_channel_id TEXT');
+  }
+
+  // QOTD/Themes: an Admin can now optionally name the exact header cell to import from
+  // (e.g. "Domanda"/"Tema"), instead of always relying on the automatic column/header
+  // detection. Existing installs just start with no name set (NULL) — same automatic
+  // behavior as before until one is configured.
+  const qotdConfigColumns = await client.execute('PRAGMA table_info(qotd_config)');
+  const qotdConfigColumnNames = qotdConfigColumns.rows.map((row) => row.name);
+  if (!qotdConfigColumnNames.includes('sheet_column')) {
+    await client.execute('ALTER TABLE qotd_config ADD COLUMN sheet_column TEXT');
+  }
+  const themesConfigColumns = await client.execute('PRAGMA table_info(themes_config)');
+  const themesConfigColumnNames = themesConfigColumns.rows.map((row) => row.name);
+  if (!themesConfigColumnNames.includes('sheet_column')) {
+    await client.execute('ALTER TABLE themes_config ADD COLUMN sheet_column TEXT');
   }
 }
 

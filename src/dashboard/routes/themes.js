@@ -60,6 +60,7 @@ async function renderThemesPage(req, res, guild) {
       dailyTime: config.daily_time || '',
       intervalHours: config.interval_hours || '',
       sheetUrl: config.sheet_url || '',
+      sheetColumn: config.sheet_column || '',
     },
     textChannels,
     roles,
@@ -156,7 +157,8 @@ router.post('/themes/sync', async (req, res, next) => {
 
     try {
       const url = await themesManager.setSheetUrl(guild.id, req.body.sheetUrl);
-      const result = await themesManager.syncFromSheet(guild.id, url);
+      const columnName = await themesManager.setSheetColumn(guild.id, req.body.sheetColumn);
+      const result = await themesManager.syncFromSheet(guild.id, url, columnName);
       req.session.flash = {
         type: 'success',
         message: `Sincronizzato: ${result.imported} nuovo/i tema/i importato/i${result.skipped > 0 ? `, ${result.skipped} già presente/i ignorato/i` : ''}.`,
