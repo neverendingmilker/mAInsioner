@@ -439,6 +439,34 @@ async function createTables() {
         expires_at INTEGER NOT NULL
       )`,
       `CREATE INDEX IF NOT EXISTS dashboard_sessions_expires_idx ON dashboard_sessions (expires_at)`,
+
+      // Question of the Day: one config row per guild (posting channel/role, schedule,
+      // where the queue's cursor currently is, and the last-synced Google Sheet CSV URL),
+      // plus an ordered list of questions. `next_position` is the 0-based index (into the
+      // list ordered by `position`) of the next question to post — when it reaches the end
+      // of the list, posting stops until more questions are added (checked live at query
+      // time, not tracked with a separate "exhausted" flag).
+      `CREATE TABLE IF NOT EXISTS qotd_config (
+        guild_id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 0,
+        channel_id TEXT,
+        role_id TEXT,
+        schedule_mode TEXT NOT NULL DEFAULT 'daily',
+        daily_time TEXT,
+        interval_hours INTEGER,
+        next_position INTEGER NOT NULL DEFAULT 0,
+        last_posted_at INTEGER,
+        sheet_url TEXT
+      )`,
+      `CREATE TABLE IF NOT EXISTS qotd_questions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        guild_id TEXT NOT NULL,
+        question TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        source TEXT NOT NULL DEFAULT 'manual',
+        created_at INTEGER NOT NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS qotd_questions_guild_idx ON qotd_questions (guild_id, position)`,
     ],
     'write'
   );

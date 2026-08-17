@@ -1,0 +1,142 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Question of the Day</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/qotd/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <% if (exhausted) { %>
+      <div class="flash flash-error">
+        La lista di domande è esaurita — sono già state postate tutte. Il posting è in pausa finché non aggiungi altre domande
+        (manualmente o sincronizzando di nuovo il foglio).
+      </div>
+    <% } %>
+
+    <section class="panel">
+      <h2>Configurazione</h2>
+      <form method="POST" action="/qotd/config" class="form">
+        <label>
+          Canale
+          <select name="channelId">
+            <option value="">Nessuno</option>
+            <% textChannels.forEach((c) => { %>
+              <option value="<%= c.id %>" <%= config.channelId === c.id ? 'selected' : '' %>><%= c.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Ruolo da pingare (opzionale)
+          <select name="roleId">
+            <option value="">Nessuno</option>
+            <% roles.forEach((r) => { %>
+              <option value="<%= r.id %>" <%= config.roleId === r.id ? 'selected' : '' %>><%= r.name %></option>
+            <% }) %>
+          </select>
+        </label>
+
+        <div>
+          <label class="checkbox-label">
+            <input type="radio" name="scheduleMode" value="daily" id="qotd-mode-daily" <%= config.scheduleMode === 'daily' ? 'checked' : '' %> onchange="document.getElementById('qotd-daily-field').style.display='flex';document.getElementById('qotd-interval-field').style.display='none';" />
+            A un orario fisso ogni giorno
+          </label>
+          <label class="checkbox-label">
+            <input type="radio" name="scheduleMode" value="interval" id="qotd-mode-interval" <%= config.scheduleMode === 'interval' ? 'checked' : '' %> onchange="document.getElementById('qotd-daily-field').style.display='none';document.getElementById('qotd-interval-field').style.display='flex';" />
+            Ogni tot ore
+          </label>
+        </div>
+
+        <div class="schedule-mode-fields" id="qotd-daily-field" style="<%= config.scheduleMode === 'daily' ? '' : 'display:none;' %>">
+          <label>
+            Orario (fuso orario del server del bot)
+            <input type="time" name="dailyTime" value="<%= config.dailyTime %>" />
+          </label>
+        </div>
+
+        <div class="schedule-mode-fields" id="qotd-interval-field" style="<%= config.scheduleMode === 'interval' ? '' : 'display:none;' %>">
+          <label>
+            Ogni quante ore
+            <input type="number" name="intervalHours" min="1" max="720" value="<%= config.intervalHours %>" />
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary">Salva configurazione</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Importa da Google Sheet</h2>
+      <p class="hint">
+        Pubblica il foglio come CSV (nel foglio: File → Condividi → Pubblica sul web → formato CSV) e incolla qui il link.
+        Ogni sincronizzazione legge la prima colonna di ogni riga (saltando la prima riga, trattata come intestazione) e
+        aggiunge in coda solo le domande non già presenti — puoi risincronizzare quante volte vuoi senza creare doppioni.
+      </p>
+      <form method="POST" action="/qotd/sync" class="form">
+        <label>
+          Link CSV pubblicato
+          <input type="url" name="sheetUrl" value="<%= config.sheetUrl %>" placeholder="https://docs.google.com/.../pub?output=csv" />
+        </label>
+        <button type="submit" class="btn-primary">Salva e sincronizza</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Domande in coda (<%= totalQuestions %>, <%= remaining %> da postare)</h2>
+      <p class="hint">Trascina una domanda per cambiarne l'ordine — l'ordine è anche l'ordine di posting.</p>
+
+      <% if (questionRows.length === 0) { %>
+        <p class="hint">Nessuna domanda ancora — aggiungine una qui sotto o sincronizza da un Google Sheet.</p>
+      <% } else { %>
+        <div id="qotd-question-list">
+          <% questionRows.forEach((q) => { %>
+            <div class="qotd-question" data-id="<%= q.id %>">
+              <span class="qotd-drag-handle" title="Trascina per riordinare">⠿</span>
+              <div class="qotd-question-body">
+                <% if (q.isNext) { %><span class="qotd-next-badge">Prossima</span><br /><% } %>
+                <span class="qotd-question-text"><%= q.question %></span>
+                <% if (q.source === 'sheet') { %> <span class="qotd-source-badge">(da Google Sheet)</span><% } %>
+              </div>
+              <div class="qotd-question-actions">
+                <details>
+                  <summary class="btn-secondary-sm">Modifica</summary>
+                  <div class="qotd-edit-popover">
+                    <form method="POST" action="/qotd/questions/<%= q.id %>/edit" class="form">
+                      <label>
+                        Testo
+                        <textarea name="question" rows="3" required><%= q.question %></textarea>
+                      </label>
+                      <button type="submit" class="btn-primary-sm">Salva</button>
+                    </form>
+                  </div>
+                </details>
+                <form method="POST" action="/qotd/questions/<%= q.id %>/remove" onsubmit="return confirm('Rimuovere questa domanda?');">
+                  <button type="submit" class="btn-danger-sm">Rimuovi</button>
+                </form>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <form id="qotd-reorder-form" method="POST" action="/qotd/questions/reorder" style="display:none;">
+        <input type="hidden" id="qotd-order-input" name="order" value="" />
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Aggiungi domanda manualmente</h2>
+      <form method="POST" action="/qotd/questions/add" class="form">
+        <label>
+          Testo della domanda
+          <textarea name="question" rows="3" required maxlength="500"></textarea>
+        </label>
+        <button type="submit" class="btn-primary">Aggiungi</button>
+      </form>
+    </section>
+  </main>
+</div>
+<script src="/qotdReorder.js"></script>
+<%- include('partials/footer') %>

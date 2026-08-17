@@ -14,6 +14,7 @@ const FEATURES = {
   honeypot: { label: 'Honeypot', manager: require('../../features/honeypot/honeypotManager') },
   incident: { label: 'Incident Counter', manager: require('../../features/incident/incidentManager') },
   invitetracker: { label: 'Invite Tracker', manager: require('../../features/invitetracker/inviteTrackerManager') },
+  qotd: { label: 'Question of the Day', manager: require('../../features/qotd/qotdManager') },
   reactionlimit: { label: 'Reaction Limit', manager: require('../../features/reactionlimit/reactionLimitManager') },
   rolelink: { label: 'Role Links', manager: require('../../features/rolelinks/roleLinkManager') },
   serverbackup: { label: 'Server Backup', manager: require('../../features/serverbackup/serverBackupManager') },

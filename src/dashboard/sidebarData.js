@@ -13,6 +13,7 @@ const FEATURE_PAGES = {
   honeypot: '/honeypot',
   incident: '/incident',
   invitetracker: '/invitetracker',
+  qotd: '/qotd',
   reactionlimit: '/reactionlimit',
   rolelink: '/rolelink',
   serverbackup: '/serverbackup',

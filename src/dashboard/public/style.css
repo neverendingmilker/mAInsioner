@@ -816,3 +816,102 @@ a {
   border-color: var(--text-dim);
   color: var(--text);
 }
+
+/* --- Question of the Day: draggable question queue --- */
+
+.qotd-question {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: grab;
+  background: var(--panel);
+}
+
+.qotd-question:last-child {
+  margin-bottom: 0;
+}
+
+.qotd-question.qotd-dragging {
+  opacity: 0.4;
+}
+
+.qotd-drag-handle {
+  color: var(--text-dim);
+  font-size: 16px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.qotd-question-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.qotd-question-text {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.qotd-next-badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(88, 101, 242, 0.18);
+  border: 1px solid var(--accent);
+  color: #b3baf7;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.qotd-source-badge {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.qotd-question-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.qotd-question-actions form {
+  margin: 0;
+}
+
+.qotd-question-actions details {
+  position: relative;
+}
+
+.qotd-question-actions .config-edit summary {
+  list-style: none;
+}
+
+.qotd-edit-popover {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 5;
+  margin-top: 6px;
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  width: 280px;
+}
+
+.schedule-mode-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}

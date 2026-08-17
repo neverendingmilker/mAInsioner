@@ -133,6 +133,16 @@ Both `Admin`. Two related security-audit commands, always used together:
 
 Both take an optional `ignore_bots:true` to skip bot-owned roles.
 
+## ❓ Question of the Day (`/qotd`)
+
+Posts a question from a queue on a schedule — a fixed time every day, or every N hours — optionally pinging a role in the post. Everything about the queue (channel, ping role, schedule, the questions themselves, their order) is set up on the dashboard; this command only covers what's worth doing from Discord itself.
+
+- **`/qotd post`** `Admin` — posts the next question in the queue right now, ignoring the schedule.
+- **`/qotd status`** `Admin` — shows the channel/role/schedule currently configured, how many questions are left, and a preview of the next one.
+- **`/qotd disable`** `Admin` — turns the feature on/off.
+
+If the queue runs out, posting pauses automatically (no looping or reshuffling) and the dashboard shows a warning until more questions are added.
+
 ## 🖐️ Reaction Limit (`/reactionlimit`)
 
 Caps how many times each person can react per thread — configurable per channel (1–100, default 5). Mods/Admins always exempt.
@@ -263,6 +273,7 @@ Every page's on/off switch, top-right, is now two radio buttons ("Attivo"/"Disat
 - **Honeypot** — turn it on/off, see and manage every trap channel (add a new one with an optional custom message/button label/bait emoji, or remove an existing one), and the full kick log with totals. Each trap also has an "Edit" section, pre-filled with whatever the message/button/emoji currently are — saving it edits that same message live in the channel (and swaps its bait reaction) instead of posting a new one. Picking a different channel there instead *moves* the trap: the old message is deleted and a fresh one is posted in the new channel. The emoji field has a picker button next to it (😀) showing a grid of common emoji plus the server's own custom emoji — click one instead of typing it in by hand.
 - **Incident Counter** — turn it on/off, see the current count and posting channel at a glance, change the channel, or manually set/reset the counter. Each of those reposts the sign image right away, same as `/incident channel`, `/incident set` and `/incident reset`.
 - **Invite Tracker** — turn it on/off, set the channel new invites open into, a top-10 leaderboard, and every invite currently assigned to someone with its live uses/expiry (pulled straight from Discord, not just what's saved), with a revoke button. Make a brand-new invite for a member (with optional max uses / hours until expiry), or credit one that already exists by pasting its code or link. One-per-member self-service invites and per-invite channel overrides are still Discord-only.
+- **Question of the Day** — turn it on/off, pick the posting channel and an optional role to ping, and set the schedule (a fixed time every day, or every N hours). Import questions by pasting a published Google Sheet CSV link (the link itself is saved, so re-syncing later just adds anything new without duplicating) or add them one at a time by hand. Drag questions to reorder the queue — that order is also the posting order — and edit or remove any question inline. If the queue empties out, a banner warns you and posting pauses until you add more; `/qotd post` and `/qotd status` cover a manual out-of-schedule post and a quick status check from Discord.
 - **Reaction Limit** — turn it on/off, see and manage every configured channel (max reactions per person per thread, with an option to exclude the thread's starter message), add a new one or remove an existing one. Each configured channel has an "Modifica" section pre-filled with its current settings — saving it just overwrites the same channel's config. Applying it to a single thread instead of a whole channel still needs `/reactionlimit add` on Discord.
 - **Role Links** — turn it on/off, see and manage every role1 → role2 link (losing role1 removes role2, and the other way round too if "viceversa" is on), add a new one or remove an existing one. Each link has a "Modifica" section to change either role or the direction. Linking one role to several roles at once still needs `/rolelink add` on Discord.
 - **Server Backup** — turn it on/off, see every backup taken on this server (label, date, who made it, how many emoji/sticker/soundboard sounds), make a new one (pick what to include — roles, channels, members, assets, or everything), and restore one through a confirmation page that shows which bot/integration roles would be skipped first, or just re-sync member roles for anyone who joined after a restore already ran. Only shows/restores backups from this server, even though a backup can be restored onto any server the bot's in via the Discord command.
