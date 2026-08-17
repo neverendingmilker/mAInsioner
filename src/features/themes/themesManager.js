@@ -94,9 +94,9 @@ async function reorderThemes(guildId, orderedIds) {
 
 // --- Google Sheet import ---
 // Deliberately only supports a published-CSV link (Google Sheets: File → Condividi →
-// Pubblica sul web → CSV) — no Google API credentials needed, just a plain fetch(). The
-// first row is always treated as a header and skipped; the first column of every row
-// after that becomes one theme.
+// Pubblica sul web → CSV) — no Google API credentials needed, just a plain fetch(). Which
+// column holds the theme and whether the first row is a header are both figured out from
+// the sheet's own content instead of assumed — see chooseThemeColumn/firstRowIsHeader.
 
 function parseCsv(text) {
   const rows = [];
@@ -148,6 +148,41 @@ async function setSheetUrl(guildId, url) {
   return trimmed;
 }
 
+// Picks ONE column to use for the whole sheet, instead of the longest cell independently
+// per row — a per-row pick can jump between columns if some row's metadata cell happens
+// to be long, while the real theme column stays consistent. The theme column is whichever
+// one is both populated in most rows and long on average — an id/category/date column is
+// short and/or sparse next to it either way.
+function chooseThemeColumn(rows) {
+  const numCols = rows.reduce((max, r) => Math.max(max, r.length), 0);
+  let bestCol = 0;
+  let bestScore = -1;
+  for (let c = 0; c < numCols; c++) {
+    const cells = rows.map((r) => (r[c] || '').trim()).filter((v) => v.length > 0);
+    if (cells.length === 0) continue;
+    const avgLen = cells.reduce((sum, v) => sum + v.length, 0) / cells.length;
+    const score = avgLen * cells.length; // rewards a column that's both long AND consistently filled
+    if (score > bestScore) {
+      bestScore = score;
+      bestCol = c;
+    }
+  }
+  return bestCol;
+}
+
+// Once the theme column is known, decides whether ITS first cell is a header label
+// ("Tema", "Idea del giorno", ...) or already real data — rather than always assuming a
+// header row is present. A header reads as a short label; real theme text is virtually
+// always noticeably longer, so a first cell much shorter than the rest of that same
+// column is the signal to skip it.
+function firstRowIsHeader(columnValues) {
+  const [first, ...rest] = columnValues;
+  const restValues = rest.filter((v) => v.length > 0);
+  if (!first || restValues.length === 0) return false; // nothing to compare against — assume it's data
+  const avgRestLen = restValues.reduce((sum, v) => sum + v.length, 0) / restValues.length;
+  return avgRestLen > 0 && first.length < avgRestLen * 0.6;
+}
+
 // Fetches the CSV, skips rows already present (exact text match, case-insensitive) so
 // syncing repeatedly doesn't create duplicates, and appends the rest at the end of the
 // queue (in sheet order).
@@ -163,15 +198,11 @@ async function syncFromSheet(guildId, url) {
   }
 
   const text = await response.text();
-  const rows = parseCsv(text);
-  const dataRows = rows.slice(1); // first row is always treated as a header
-  // The theme text isn't reliably in column A — sheets often have it alongside a row
-  // number, category, or timestamp column. Instead of assuming a fixed column, take the
-  // longest cell in each row: the actual theme is virtually always much longer than any
-  // surrounding metadata, which is what was being picked up as "junk" before this fix.
-  const candidates = dataRows
-    .map((r) => r.reduce((longest, cell) => (((cell || '').trim().length > longest.length) ? (cell || '').trim() : longest), ''))
-    .filter((v) => v.length > 0);
+  const rows = parseCsv(text).filter((r) => r.some((cell) => (cell || '').trim().length > 0));
+  const themeCol = chooseThemeColumn(rows);
+  const columnValues = rows.map((r) => (r[themeCol] || '').trim());
+  const dataValues = firstRowIsHeader(columnValues) ? columnValues.slice(1) : columnValues;
+  const candidates = dataValues.filter((v) => v.length > 0);
 
   const existing = new Set((await repo.listThemes(guildId)).map((t) => t.theme.trim().toLowerCase()));
   const seenInBatch = new Set();
