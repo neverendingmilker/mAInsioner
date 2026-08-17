@@ -424,6 +424,13 @@
         for (var i = 0; i < cards.length; i++) {
           addHandle(cards[i]);
           addResizeGrip(cards[i]);
+          // A card resized shorter than its own content scrolls internally (see style.css's
+          // overflow-y: auto on [data-height-px]) — and the drag handle/resize grip just
+          // added above are, like the rest of the card's content, part of that scrolled
+          // area, so a card left scrolled partway down from normal browsing could otherwise
+          // open reorder mode with its own controls scrolled out of reach. Reset to the top
+          // every time reorder mode turns on so both are always immediately reachable.
+          cards[i].scrollTop = 0;
         }
         return;
       }

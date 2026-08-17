@@ -146,6 +146,17 @@ a {
      that were never resized (no data-height-px attribute at all) are untouched by this
      and keep the natural, un-stretched height above. */
   align-self: stretch;
+  /* Free-height resizing (see cardReorder.js) lets a card end up shorter than its own
+     content needs — the content used to just spill out past the card's edge and overlap
+     whatever sat below/beside it. Scroll internally instead once that happens. Horizontal
+     overflow is clipped rather than scrollable: it's not something dragging the height
+     grip can cause, so a stray 1px rounding overflow shouldn't grow an unwanted scrollbar.
+     .card-drag-handle/.card-resize-grip stay correctly pinned to the card's own visible
+     corners even though they're absolutely-positioned children of this same scrolling
+     element — offsets like `bottom: 6px` resolve against the container's own (fixed-size)
+     padding box, not the scrolled content, so they don't scroll away with the content. */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .card-list .panel {
