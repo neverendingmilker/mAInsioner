@@ -72,11 +72,6 @@ async function renderBoosterlinksPage(req, res, guild) {
     .sort((a, b) => b.position - a.position)
     .map((r) => ({ id: r.id, name: r.name }));
 
-  const members = [...guild.members.cache.values()]
-    .filter((m) => !m.user.bot)
-    .sort((a, b) => a.user.tag.localeCompare(b.user.tag))
-    .map((m) => ({ id: m.id, label: m.user.tag, isBooster: Boolean(m.roles.premiumSubscriberRole) }));
-
   res.render('boosterlinks', {
     title: 'Booster Links',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
@@ -85,7 +80,6 @@ async function renderBoosterlinksPage(req, res, guild) {
     exemptRoles,
     roles,
     allRoles,
-    members,
     ogFrenRoleId,
     ogFrenRoleName: ogFrenRoleId ? roleLabel(guild, ogFrenRoleId) : null,
   });
@@ -135,35 +129,6 @@ router.post('/boosterlinks/og-fren-role/config', async (req, res, next) => {
       type: 'success',
       message: roleId ? `Ruolo OG/Fren impostato su ${roleLabel(guild, roleId)}.` : 'Ruolo OG/Fren rimosso — il badge non comparirà più.',
     };
-    res.redirect('/boosterlinks');
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.post('/boosterlinks/add', async (req, res, next) => {
-  try {
-    const guild = requireGuild(req, res);
-    if (!guild) return;
-
-    const member = guild.members.cache.get(req.body.userId);
-    const role = guild.roles.cache.get(req.body.roleId);
-    if (!member || !role) {
-      req.session.flash = { type: 'error', message: 'Utente o ruolo non valido — riprova.' };
-      res.redirect('/boosterlinks');
-      return;
-    }
-
-    try {
-      await boosterLinkManager.link(guild, member.id, role, req.session.user.id);
-      req.session.flash = { type: 'success', message: `${role.name} collegato a ${member.user.tag}.` };
-    } catch (err) {
-      if (err instanceof boosterLinkManager.ValidationError) {
-        req.session.flash = { type: 'error', message: err.message };
-      } else {
-        throw err;
-      }
-    }
     res.redirect('/boosterlinks');
   } catch (err) {
     next(err);
@@ -222,15 +187,25 @@ router.post('/boosterlinks/exempt/add', async (req, res, next) => {
     const guild = requireGuild(req, res);
     if (!guild) return;
 
-    const role = guild.roles.cache.get(req.body.roleId);
-    if (!role) {
-      req.session.flash = { type: 'error', message: 'Ruolo non valido — riprova.' };
+    // The picker is a multi-select (see boosterlinks.ejs) so more than one role can be
+    // exempted in a single submit. A single selection still posts as one plain string
+    // rather than a 1-item array — same normalization every other multi-value form field
+    // in this codebase needs from Express's urlencoded body parser.
+    const rawIds = req.body.roleIds;
+    const ids = Array.isArray(rawIds) ? rawIds : rawIds ? [rawIds] : [];
+    const roles = ids.map((id) => guild.roles.cache.get(id)).filter(Boolean);
+
+    if (roles.length === 0) {
+      req.session.flash = { type: 'error', message: 'Nessun ruolo valido selezionato — riprova.' };
       res.redirect('/boosterlinks');
       return;
     }
 
-    await boosterLinkManager.addExemptRole(guild.id, role.id, req.session.user.id);
-    req.session.flash = { type: 'success', message: `${role.name} è ora esente dalla rimozione automatica.` };
+    await Promise.all(roles.map((role) => boosterLinkManager.addExemptRole(guild.id, role.id, req.session.user.id)));
+    req.session.flash = {
+      type: 'success',
+      message: roles.length === 1 ? `${roles[0].name} è ora esente dalla rimozione automatica.` : `${roles.length} ruoli sono ora esenti dalla rimozione automatica.`,
+    };
     res.redirect('/boosterlinks');
   } catch (err) {
     next(err);

@@ -57,36 +57,6 @@
       <% } %>
     </section>
 
-    <section class="panel" data-card-id="aggiungi-collegamento">
-      <h2>Aggiungi collegamento</h2>
-      <% if (members.length === 0 || roles.length === 0) { %>
-        <p class="hint">Servono almeno un membro e un ruolo assegnabile.</p>
-      <% } else { %>
-        <form method="POST" action="/boosterlinks/add" class="form">
-          <label>
-            Utente
-            <select name="userId" required>
-              <option value="" disabled selected>Scegli un membro…</option>
-              <% members.forEach((m) => { %>
-                <option value="<%= m.id %>"><%= m.label %><%= m.isBooster ? ' (booster)' : '' %></option>
-              <% }) %>
-            </select>
-          </label>
-          <label>
-            Ruolo personalizzato da collegare
-            <select name="roleId" required>
-              <option value="" disabled selected>Scegli un ruolo…</option>
-              <% roles.forEach((r) => { %>
-                <option value="<%= r.id %>"><%= r.name %></option>
-              <% }) %>
-            </select>
-          </label>
-          <button type="submit" class="btn-primary">Aggiungi collegamento</button>
-        </form>
-        <p class="hint">Il ruolo del bot deve essere più in alto di quello scelto, altrimenti non potrà rimuoverlo in seguito.</p>
-      <% } %>
-    </section>
-
     <section class="panel" data-card-id="ruoli-esenti">
       <h2>Ruoli esenti (<%= exemptRoles.length %>)</h2>
       <p class="hint">I membri con uno qualsiasi di questi ruoli non vengono mai toccati dalla rimozione automatica, indipendentemente dal boost.</p>
@@ -108,15 +78,15 @@
       <% if (allRoles.length > 0) { %>
         <form method="POST" action="/boosterlinks/exempt/add" class="form">
           <label>
-            Aggiungi ruolo esente
-            <select name="roleId" required>
-              <option value="" disabled selected>Scegli un ruolo…</option>
+            Aggiungi ruoli esenti
+            <select name="roleIds" multiple required size="<%= Math.min(allRoles.length, 8) %>">
               <% allRoles.forEach((r) => { %>
                 <option value="<%= r.id %>"><%= r.name %></option>
               <% }) %>
             </select>
           </label>
-          <button type="submit" class="btn-primary">Aggiungi ruolo esente</button>
+          <p class="hint">Tieni premuto Ctrl (o ⌘ su Mac) per selezionarne più di uno.</p>
+          <button type="submit" class="btn-primary">Aggiungi ruoli esenti</button>
         </form>
       <% } %>
     </section>
