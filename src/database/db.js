@@ -507,6 +507,20 @@ async function createTables() {
       )`,
       `CREATE INDEX IF NOT EXISTS themes_items_guild_idx ON themes_items (guild_id, position)`,
 
+      // One row per guild: posting channel + optional pinged role, plus the pending-timer
+      // state itself. `next_reminder_at` is NULL whenever there's nothing to remind about
+      // (no bump recorded yet, or the last reminder was already posted) — set to
+      // now+2h whenever a Disboard bump is detected, cleared back to NULL once the
+      // scheduler posts the reminder. See features/bumpreminder/.
+      `CREATE TABLE IF NOT EXISTS bumpreminder_config (
+        guild_id TEXT PRIMARY KEY,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        channel_id TEXT,
+        role_id TEXT,
+        next_reminder_at INTEGER,
+        last_bumped_by TEXT
+      )`,
+
       // Which dashboard feature pages a server's Mods (not just Admins) are allowed into —
       // opt-in per feature, toggled from a checkbox on that feature's own dashboard page
       // (see src/dashboard/modAccess.js and routes/modAccessRoutes.js). A row's mere

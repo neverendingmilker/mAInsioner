@@ -5,6 +5,7 @@ const incidentScheduler = require('../features/incident/incidentScheduler');
 const inviteTrackerManager = require('../features/invitetracker/inviteTrackerManager');
 const qotdScheduler = require('../features/qotd/qotdScheduler');
 const themesScheduler = require('../features/themes/themesScheduler');
+const bumpReminderScheduler = require('../features/bumpreminder/bumpReminderScheduler');
 
 module.exports = {
   name: 'clientReady', // renamed from 'ready': in discord.js v15 this will be the only name available
@@ -24,6 +25,7 @@ module.exports = {
     incidentScheduler.start(client);
     qotdScheduler.start(client);
     themesScheduler.start(client);
+    bumpReminderScheduler.start(client);
 
     for (const guild of client.guilds.cache.values()) {
       inviteTrackerManager.warmInviteCache(guild).catch((err) => {

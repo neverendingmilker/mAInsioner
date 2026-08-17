@@ -8,6 +8,7 @@ const FEATURES = {
   autoresponder: { label: 'Autoresponder', manager: require('../../features/autoresponder/autoresponderManager') },
   birthday: { label: 'Birthday', manager: require('../../features/birthday/birthdayManager') },
   boosterlink: { label: 'Booster Links', manager: require('../../features/boosterlinks/boosterLinkManager') },
+  bumpreminder: { label: 'Bump Reminder', manager: require('../../features/bumpreminder/bumpReminderManager') },
   comboroles: { label: 'Combined Role Search', manager: require('../../features/comboroles/comboRolesManager') },
   goosepizza: { label: 'GoosePizza', manager: require('../../features/goosepizza/goosepizzaManager') },
   highlight: { label: 'Highlight', manager: require('../../features/highlight/highlightManager') },

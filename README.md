@@ -117,6 +117,14 @@ Alphabetical by feature. `Admin` = Administrator permission. `Mod` = the server'
 - `exempt add/remove/list` `Admin` — manages roles exempt from the pause/removal.
 - `disable` `Admin` — turns the feature on/off.
 
+### Bump Reminder (`/bumpreminder`)
+- `channel channel:<#channel>` `Mod` — sets which channel the reminder gets posted in.
+- `role [role]` `Mod` — sets (or clears) the role pinged when the reminder posts.
+- `status` `Mod` — shows the current configuration and when the next reminder is due.
+- `disable` `Admin` — turns the feature on/off.
+
+Watches for Disboard's own "Bump done" confirmation and, 2 hours later (Disboard's own cooldown), posts a reminder in the configured channel with an optional role ping. Also has a dashboard page.
+
 ### Combined Role Search (`/comboroles`)
 - `search role1..role5 [but1..but3]` `Mod` — shows users who have **all** the given roles, optionally excluding anyone with one of up to three "BUT" roles. Paginated.
 - `disable` `Admin` — turns the feature on/off.

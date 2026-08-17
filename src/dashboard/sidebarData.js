@@ -8,6 +8,7 @@ const FEATURE_PAGES = {
   autoresponder: '/autoresponder',
   birthday: '/birthday',
   boosterlink: '/boosterlinks',
+  bumpreminder: '/bumpreminder',
   comboroles: '/comboroles',
   goosepizza: '/goosepizza',
   honeypot: '/honeypot',

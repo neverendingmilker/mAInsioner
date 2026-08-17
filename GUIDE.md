@@ -44,6 +44,17 @@ Tracks custom perk roles given to boosters. Stopping a boost removes the role an
 - **`/boosterlink exempt`** `Mod` — Manages roles exempt from the pause/removal.
 - **`/boosterlink disable`** `Admin` — Turns the feature on/off.
 
+## ⏰ Bump Reminder (`/bumpreminder`)
+
+Watches for Disboard's own bump confirmation and, once its 2-hour cooldown is over, pings the server to run `/bump` again.
+
+- **`/bumpreminder channel`** `Mod` — Sets which channel the reminder gets posted in.
+- **`/bumpreminder role`** `Mod` — Sets (or clears) the role pinged when the reminder posts.
+- **`/bumpreminder status`** `Mod` — Shows the current configuration and when the next reminder is due.
+- **`/bumpreminder disable`** `Admin` — Turns the feature on/off.
+
+Also has its own dashboard page, same as the other feature pages.
+
 ## 🔎 Combined Role Search (`/comboroles`)
 
 - **`/comboroles search`** `Mod` — Shows users who have **all** the given roles, optionally excluding anyone with one of up to three "BUT" roles. Paginated.

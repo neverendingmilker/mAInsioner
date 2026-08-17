@@ -5,11 +5,19 @@ const autoresponderManager = require('../features/autoresponder/autoresponderMan
 const waifuWarLRManager = require('../features/waifuwarlr/waifuWarLRManager');
 const highlightManager = require('../features/highlight/highlightManager');
 const honeypotManager = require('../features/honeypot/honeypotManager');
+const bumpReminderManager = require('../features/bumpreminder/bumpReminderManager');
 const { runInOrder } = require('../utils/channelQueue');
 
 async function processMessage(message) {
   await honeypotManager.handleMessage(message).catch((err) => {
     console.error('[honeypot] Error handling new message:', err);
+  });
+
+  // Disboard's own bot message (a bump confirmation), not something any of the other
+  // handlers below care about — checked early and independently of them, same "one
+  // handler's failure doesn't block the rest" pattern as everything else here.
+  await bumpReminderManager.handleMessage(message).catch((err) => {
+    console.error('[bumpreminder] Error handling new message:', err);
   });
 
   const wasBlocked = await slowModeManager.checkAndEnforce(message).catch((err) => {
@@ -41,7 +49,7 @@ module.exports = {
   name: 'messageCreate',
   once: false,
   async execute(message) {
-    if (!message.guild) return; // sticky/goosepizza/slowmode/autoresponder/waifuwarlr/highlight/honeypot only make sense in guild channels
+    if (!message.guild) return; // sticky/goosepizza/slowmode/autoresponder/waifuwarlr/highlight/honeypot/bumpreminder only make sense in guild channels
 
     // Serialized per channel: without this, two messages sent moments apart in the same
     // channel could have their processing interleave and finish out of order (e.g. a

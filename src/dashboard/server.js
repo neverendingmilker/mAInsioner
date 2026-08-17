@@ -27,6 +27,7 @@ const roleauditRoutes = require('./routes/roleaudit');
 const channelpermissionsRoutes = require('./routes/channelpermissions');
 const qotdRoutes = require('./routes/qotd');
 const themesRoutes = require('./routes/themes');
+const bumpreminderRoutes = require('./routes/bumpreminder');
 const modAccessRoutes = require('./routes/modAccessRoutes');
 const featureLockRoutes = require('./routes/featureLockRoutes');
 
@@ -123,7 +124,8 @@ function start(client) {
     roleauditRoutes,
     channelpermissionsRoutes,
     qotdRoutes,
-    themesRoutes
+    themesRoutes,
+    bumpreminderRoutes
   );
 
   app.use((req, res) => {

@@ -1,0 +1,65 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Bump Reminder</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/bumpreminder/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="stato-attuale">
+      <h2>Stato attuale</h2>
+      <div class="cards">
+        <div class="card">
+          <div class="card-label">Prossimo promemoria</div>
+          <div class="card-value" style="font-size: 16px;">
+            <% if (nextReminderAt) { %>
+              <span class="pill pill-accent"><%= new Date(nextReminderAt).toLocaleString('it-IT') %></span>
+            <% } else { %>
+              Nessuno — in attesa del prossimo <code>/bump</code>
+            <% } %>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Ultimo bump di</div>
+          <div class="card-value" style="font-size: 16px;"><%= lastBumpedBy || 'sconosciuto' %></div>
+        </div>
+      </div>
+      <p class="hint">Il promemoria viene armato automaticamente ogni volta che Disboard conferma un <code>/bump</code>, e postato 2 ore dopo.</p>
+    </section>
+
+    <section class="panel" data-card-id="configurazione">
+      <h2>Configurazione</h2>
+      <% if (textChannels.length === 0) { %>
+        <p class="hint">Nessun canale testuale disponibile.</p>
+      <% } else { %>
+        <form method="POST" action="/bumpreminder/config" class="form">
+          <label>
+            Canale
+            <select name="channelId">
+              <option value="">Nessuno</option>
+              <% textChannels.forEach((c) => { %>
+                <option value="<%= c.id %>" <%= config.channelId === c.id ? 'selected' : '' %>><%= c.name %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>
+            Ruolo da pingare (opzionale)
+            <select name="roleId">
+              <option value="">Nessuno</option>
+              <% roles.forEach((r) => { %>
+                <option value="<%= r.id %>" <%= config.roleId === r.id ? 'selected' : '' %>><%= r.name %></option>
+              <% }) %>
+            </select>
+          </label>
+          <button type="submit" class="btn-primary-sm">Salva configurazione</button>
+        </form>
+      <% } %>
+    </section>
+</div>
+  </main>
+</div>
+<%- include('partials/footer') %>
