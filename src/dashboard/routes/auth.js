@@ -1,6 +1,7 @@
 const express = require('express');
 const { PermissionFlagsBits } = require('discord.js');
 const { buildAuthorizeUrl, getRedirectUri, exchangeCode, fetchDiscordUser } = require('../discordOAuth');
+const { isMod } = require('../../utils/modRole');
 
 const router = express.Router();
 
@@ -24,16 +25,29 @@ router.get('/auth/discord/callback', async (req, res) => {
     const token = await exchangeCode(code, getRedirectUri(req));
     const discordUser = await fetchDiscordUser(token.access_token);
 
-    // No "guilds" OAuth scope is requested (see discordOAuth.js) — instead, admin
-    // status is computed directly against every server the BOT is currently in, using
-    // the bot's own token, same as the single-guild version of this check used to do.
-    // Cached in the session so it isn't re-checked on every request (cost: a permission
-    // change elsewhere only takes effect after the next login, not immediately).
+    // No "guilds" OAuth scope is requested (see discordOAuth.js) — instead, access is
+    // computed directly against every server the BOT is currently in, using the bot's own
+    // token, same as the original Admin-only check used to do. Cached in the session so
+    // it isn't re-checked on every request (cost: a permission/role change elsewhere only
+    // takes effect after the next login, not immediately).
+    // Two ways in: Administrator (role 'admin', always full access) or this server's
+    // configured Mod role (role 'mod' — see src/utils/modRole.js's isMod, which already
+    // treats Administrator as a superset so an Admin is never double-counted as Mod).
+    // WHICH dashboard pages a 'mod' session can actually reach is enforced later, per
+    // request, by requireDashboardAccess — this only decides who gets in the door at all.
     const guilds = [...req.client.guilds.cache.values()];
     const memberships = await Promise.all(guilds.map((g) => g.members.fetch(discordUser.id).catch(() => null)));
-    const adminGuilds = guilds
-      .filter((g, i) => memberships[i]?.permissions.has(PermissionFlagsBits.Administrator))
-      .map((g) => ({ id: g.id, name: g.name, iconURL: g.iconURL({ size: 64 }) }));
+    const guildAccess = [];
+    for (let i = 0; i < guilds.length; i++) {
+      const member = memberships[i];
+      if (!member) continue;
+      const admin = member.permissions.has(PermissionFlagsBits.Administrator);
+      // eslint-disable-next-line no-await-in-loop
+      const mod = !admin && (await isMod(member));
+      if (admin || mod) {
+        guildAccess.push({ id: guilds[i].id, name: guilds[i].name, iconURL: guilds[i].iconURL({ size: 64 }), role: admin ? 'admin' : 'mod' });
+      }
+    }
 
     req.session.user = {
       id: discordUser.id,
@@ -42,17 +56,17 @@ router.get('/auth/discord/callback', async (req, res) => {
         ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png?size=64`
         : null,
     };
-    req.session.adminGuilds = adminGuilds;
+    req.session.guildAccess = guildAccess;
 
-    if (adminGuilds.length === 0) {
+    if (guildAccess.length === 0) {
       res.status(403).render('403', { title: 'Accesso negato' });
       return;
     }
 
-    if (adminGuilds.length === 1) {
+    if (guildAccess.length === 1) {
       // Only one option — pick it automatically instead of making them click it, same
       // one-click experience as the original single-server dashboard had.
-      req.session.guildId = adminGuilds[0].id;
+      req.session.guildId = guildAccess[0].id;
       const returnTo = req.session.returnTo;
       delete req.session.returnTo;
       res.redirect(returnTo || '/');
@@ -71,18 +85,18 @@ router.get('/auth/discord/callback', async (req, res) => {
 
 router.get('/select-server', (req, res) => {
   if (!req.session.user) return res.redirect('/login');
-  const adminGuilds = req.session.adminGuilds || [];
-  if (adminGuilds.length === 0) {
+  const guildAccess = req.session.guildAccess || [];
+  if (guildAccess.length === 0) {
     res.status(403).render('403', { title: 'Accesso negato' });
     return;
   }
-  res.render('selectServer', { title: 'Scegli server', guilds: adminGuilds });
+  res.render('selectServer', { title: 'Scegli server', guilds: guildAccess });
 });
 
 router.post('/select-server', (req, res) => {
   if (!req.session.user) return res.redirect('/login');
-  const adminGuilds = req.session.adminGuilds || [];
-  const chosen = adminGuilds.find((g) => g.id === req.body.guildId);
+  const guildAccess = req.session.guildAccess || [];
+  const chosen = guildAccess.find((g) => g.id === req.body.guildId);
   if (!chosen) {
     res.status(403).render('403', { title: 'Accesso negato' });
     return;

@@ -1,7 +1,6 @@
 const express = require('express');
 const { PermissionFlagsBits, OverwriteType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 
 const router = express.Router();
 
@@ -125,7 +124,6 @@ router.get('/roleaudit', async (req, res, next) => {
     res.render('roleaudit', {
       title: 'Ruoli & Permessi',
       guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-      features: getSidebarFeatures(null),
       ignoreBots,
       mfa,
       mod,

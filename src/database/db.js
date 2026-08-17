@@ -493,6 +493,18 @@ async function createTables() {
         created_at INTEGER NOT NULL
       )`,
       `CREATE INDEX IF NOT EXISTS themes_items_guild_idx ON themes_items (guild_id, position)`,
+
+      // Which dashboard feature pages a server's Mods (not just Admins) are allowed into —
+      // opt-in per feature, toggled from a checkbox on that feature's own dashboard page
+      // (see src/dashboard/modAccess.js and routes/modAccessRoutes.js). A row's mere
+      // presence means "allowed"; no row means the default (Admin-only). The feature's
+      // on/off toggle and base config (channel/role/schedule) stay Admin-only regardless —
+      // enforced in code (requireDashboardAccess), not tracked here.
+      `CREATE TABLE IF NOT EXISTS dashboard_mod_access (
+        guild_id TEXT NOT NULL,
+        feature_key TEXT NOT NULL,
+        PRIMARY KEY (guild_id, feature_key)
+      )`,
     ],
     'write'
   );

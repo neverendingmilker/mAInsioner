@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const goosepizzaManager = require('../../features/goosepizza/goosepizzaManager');
 
 const router = express.Router();
@@ -60,7 +59,6 @@ async function renderGoosepizzaPage(req, res, guild) {
   res.render('goosepizza', {
     title: 'GoosePizza',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('goosepizza'),
     enabled,
     triggers: triggerCards,
     textChannels,

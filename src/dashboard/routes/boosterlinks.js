@@ -1,6 +1,5 @@
 const express = require('express');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const boosterLinkManager = require('../../features/boosterlinks/boosterLinkManager');
 
 const router = express.Router();
@@ -70,7 +69,6 @@ async function renderBoosterlinksPage(req, res, guild) {
   res.render('boosterlinks', {
     title: 'Booster Links',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('boosterlink'),
     enabled,
     links: linkCards,
     exemptRoles,

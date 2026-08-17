@@ -1,13 +1,34 @@
-<%# Shared on/off control for a feature page's header. Locals: `enabled` (bool),
-    `toggleAction` (the feature's own POST /<feature>/toggle route — already expects
-    `enabled` as the literal string "true"/"false", so the radios' values match as-is). %>
-<form method="POST" action="<%= toggleAction %>" class="feature-toggle">
-  <label class="radio-option">
-    <input type="radio" name="enabled" value="true" <%= enabled ? 'checked' : '' %> onchange="this.form.submit()" />
-    Attivo
-  </label>
-  <label class="radio-option">
-    <input type="radio" name="enabled" value="false" <%= !enabled ? 'checked' : '' %> onchange="this.form.submit()" />
-    Disattivo
-  </label>
-</form>
+<%# Shared on/off control for a feature page's header, plus (Admin-only) the Mod-access
+    checkbox. Wrapped in one div so `.page-header`'s flex layout (h1 vs. everything else)
+    still only ever sees two children, regardless of whether the second form below renders.
+    Locals: `enabled` (bool), `toggleAction` (the feature's own POST /<feature>/toggle
+    route — already expects `enabled` as the literal string "true"/"false", so the radios'
+    values match as-is). %>
+<div class="feature-toggle-group">
+  <form method="POST" action="<%= toggleAction %>" class="feature-toggle">
+    <label class="radio-option">
+      <input type="radio" name="enabled" value="true" <%= enabled ? 'checked' : '' %> onchange="this.form.submit()" />
+      Attivo
+    </label>
+    <label class="radio-option">
+      <input type="radio" name="enabled" value="false" <%= !enabled ? 'checked' : '' %> onchange="this.form.submit()" />
+      Disattivo
+    </label>
+  </form>
+
+  <%# Admin-only: whether this feature's page is also opened to the server's Mod role.
+      Set globally by requireDashboardAccess (middleware/requireAdmin.js), not passed by
+      each route — `role`/`currentFeatureKey`/`modAccessEnabled` are all res.locals
+      already. Mods themselves never see this (their `role` is 'mod'), so they can't grant
+      themselves more access. Toggling it doesn't affect what a Mod can do INSIDE an
+      already-allowed feature — that's always full parity with Admin — only whether they
+      can open this page at all. %>
+  <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
+    <form method="POST" action="/mod-access/<%= currentFeatureKey %>/toggle" class="mod-access-toggle">
+      <label class="checkbox-label">
+        <input type="checkbox" name="allowed" value="true" <%= modAccessEnabled ? 'checked' : '' %> onchange="this.form.submit()" />
+        Consenti anche ai Mod
+      </label>
+    </form>
+  <% } %>
+</div>

@@ -1,6 +1,5 @@
 const express = require('express');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const roleLinkManager = require('../../features/rolelinks/roleLinkManager');
 
 const router = express.Router();
@@ -51,7 +50,6 @@ async function renderRoleLinkPage(req, res, guild) {
   res.render('rolelink', {
     title: 'Role Links',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('rolelink'),
     enabled,
     links,
     roles: assignableRoles(guild),

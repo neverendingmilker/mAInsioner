@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const themesManager = require('../../features/themes/themesManager');
 
 const router = express.Router();
@@ -53,7 +52,6 @@ async function renderThemesPage(req, res, guild) {
   res.render('themes', {
     title: 'Themes',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('themes'),
     enabled,
     config: {
       channelId: config.channel_id,

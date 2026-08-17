@@ -1,6 +1,5 @@
 const express = require('express');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const serverBackupManager = require('../../features/serverbackup/serverBackupManager');
 
 const router = express.Router();
@@ -59,7 +58,6 @@ async function renderServerbackupPage(req, res, guild) {
   res.render('serverbackup', {
     title: 'Server Backup',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('serverbackup'),
     enabled,
     snapshots: snapshotCards,
     scopes: serverBackupManager.SCOPES,
@@ -176,7 +174,6 @@ router.get('/serverbackup/:id/restore', async (req, res, next) => {
       res.render('serverbackupRestore', {
         title: 'Ripristina backup',
         guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-        features: getSidebarFeatures('serverbackup'),
         snapshotId: id,
         selectedScope,
         scopes: serverBackupManager.SCOPES,

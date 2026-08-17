@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const reactionLimitManager = require('../../features/reactionlimit/reactionLimitManager');
 
 const router = express.Router();
@@ -49,7 +48,6 @@ async function renderReactionLimitPage(req, res, guild) {
   res.render('reactionlimit', {
     title: 'Reaction Limit',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('reactionlimit'),
     enabled,
     channels,
     textChannels,

@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const qotdManager = require('../../features/qotd/qotdManager');
 
 const router = express.Router();
@@ -53,7 +52,6 @@ async function renderQotdPage(req, res, guild) {
   res.render('qotd', {
     title: 'Question of the Day',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('qotd'),
     enabled,
     config: {
       channelId: config.channel_id,

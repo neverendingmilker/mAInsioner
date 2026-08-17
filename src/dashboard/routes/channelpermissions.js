@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType, PermissionFlagsBits, OverwriteType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 
 const router = express.Router();
 
@@ -203,7 +202,6 @@ router.get('/channelpermissions', async (req, res, next) => {
     res.render('channelpermissions', {
       title: 'Permessi per canale',
       guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-      features: getSidebarFeatures(null),
       channelGroups,
       selectedChannelId: channel ? channel.id : null,
       targets,

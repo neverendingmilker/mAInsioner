@@ -6,7 +6,7 @@
     <% if (guild.iconURL) { %><img src="<%= guild.iconURL %>" alt="" class="guild-icon" /><% } %>
     <span class="guild-name"><%= guild.name %></span>
   </div>
-  <% if (typeof adminGuilds !== 'undefined' && adminGuilds.length > 1) { %>
+  <% if (typeof guildAccess !== 'undefined' && guildAccess.length > 1) { %>
     <a class="change-server" href="/select-server">Cambia server</a>
   <% } %>
   <% } %>

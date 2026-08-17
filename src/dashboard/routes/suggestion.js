@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType, PermissionFlagsBits } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const suggestionManager = require('../../features/suggestion/suggestionManager');
 
 const router = express.Router();
@@ -52,7 +51,6 @@ async function renderSuggestionPage(req, res, guild) {
   res.render('suggestion', {
     title: 'Suggestions',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('suggestion'),
     enabled,
     channelId,
     textChannels,

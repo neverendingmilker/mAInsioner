@@ -274,9 +274,58 @@ a {
   margin: 0;
 }
 
+.feature-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .feature-toggle {
   display: flex;
   gap: 16px;
+}
+
+.mod-access-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.mod-access-toggle .checkbox-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.mod-access-toggle .checkbox-label input {
+  width: auto;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.role-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.role-badge-admin {
+  background: rgba(88, 101, 242, 0.18);
+  border: 1px solid var(--accent);
+  color: #b3baf7;
+}
+
+.role-badge-mod {
+  background: rgba(59, 165, 92, 0.15);
+  border: 1px solid #3ba55c;
+  color: #7ee2a0;
 }
 
 .radio-option {

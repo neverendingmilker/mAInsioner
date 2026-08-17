@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const autoresponderManager = require('../../features/autoresponder/autoresponderManager');
 
 const router = express.Router();
@@ -53,7 +52,6 @@ async function renderAutoresponderPage(req, res, guild) {
   res.render('autoresponder', {
     title: 'Autoresponder',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('autoresponder'),
     enabled,
     channels,
     textChannels,

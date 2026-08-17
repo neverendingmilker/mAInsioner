@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const inviteTrackerManager = require('../../features/invitetracker/inviteTrackerManager');
 const { extractInviteCode } = require('../../commands/invitetracker/handlers/expiryHelpers');
 
@@ -68,7 +67,6 @@ async function renderInvitetrackerPage(req, res, guild) {
   res.render('invitetracker', {
     title: 'Invite Tracker',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('invitetracker'),
     enabled,
     defaultChannelId,
     textChannels,

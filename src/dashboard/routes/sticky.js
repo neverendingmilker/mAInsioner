@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType, PermissionFlagsBits } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const stickyManager = require('../../features/sticky/stickyManager');
 const { parseDurationToSeconds, formatSeconds } = require('../../utils/duration');
 
@@ -51,7 +50,6 @@ async function renderStickyPage(req, res, guild) {
   res.render('sticky', {
     title: 'Sticky Messages',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('sticky'),
     enabled,
     stickies,
     textChannels,

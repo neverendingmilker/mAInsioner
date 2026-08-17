@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const honeypotManager = require('../../features/honeypot/honeypotManager');
 
 const router = express.Router();
@@ -71,7 +70,6 @@ async function renderHoneypotPage(req, res, guild) {
   res.render('honeypot', {
     title: 'Honeypot',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('honeypot'),
     enabled,
     channels,
     textChannels,

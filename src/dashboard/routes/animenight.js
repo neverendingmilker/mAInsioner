@@ -1,6 +1,5 @@
 const express = require('express');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const animeNightManager = require('../../features/animenight/animeNightManager');
 
 const router = express.Router();
@@ -41,7 +40,6 @@ router.get('/animenight', async (req, res, next) => {
     res.render('animenight', {
       title: 'Anime Night',
       guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-      features: getSidebarFeatures('animenight'),
       enabled,
       sessions: [...sessions].reverse(), // most recent session first
     });

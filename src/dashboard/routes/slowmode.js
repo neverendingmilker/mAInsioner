@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const slowModeManager = require('../../features/slowmode/slowModeManager');
 const { formatSeconds } = require('../../utils/duration');
 
@@ -53,7 +52,6 @@ async function renderSlowmodePage(req, res, guild) {
   res.render('slowmode', {
     title: 'Slowmode',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('slowmode'),
     enabled,
     channels,
     textChannels,

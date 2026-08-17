@@ -27,13 +27,34 @@ const FEATURE_PAGES = {
 
 // FEATURES is already alphabetical by key at the source — reused as-is so the sidebar can
 // never drift out of sync with /disablefeature's own list.
-function getSidebarFeatures(activeKey) {
-  return Object.entries(FEATURES).map(([key, f]) => ({
-    key,
-    label: f.label,
-    href: FEATURE_PAGES[key] || null,
-    active: key === activeKey,
-  }));
+// `allowedKeys` is only meaningful for Mod sessions: a Set of feature keys an Admin has
+// explicitly shared with Mods (see modAccess.js). Admins pass nothing (unrestricted, and
+// features without a page yet still show as "coming soon"); for a Mod, anything without a
+// page OR not in `allowedKeys` is left out of their sidebar entirely rather than shown
+// disabled — no point advertising features they can't open anyway.
+function getSidebarFeatures(activeKey, allowedKeys) {
+  return Object.entries(FEATURES)
+    .filter(([key]) => !allowedKeys || (Boolean(FEATURE_PAGES[key]) && allowedKeys.has(key)))
+    .map(([key, f]) => ({
+      key,
+      label: f.label,
+      href: FEATURE_PAGES[key] || null,
+      active: key === activeKey,
+    }));
+}
+
+// First path segment ("/qotd/items/42/edit" -> "/qotd") — every dashboard route lives
+// under its feature's own top-level path, so this is enough to identify which feature (or
+// tool page) a request belongs to without each route having to declare it explicitly.
+function topLevelPath(path) {
+  return `/${(path || '').split('/')[1] || ''}`;
+}
+
+// Reverse of FEATURE_PAGES: which feature key (if any) a request path belongs to. Used by
+// requireDashboardAccess to decide whether a Mod is allowed onto this page at all.
+function getFeatureKeyForPath(path) {
+  const seg = topLevelPath(path);
+  return Object.keys(FEATURE_PAGES).find((key) => FEATURE_PAGES[key] === seg) || null;
 }
 
 // Live diagnostic pages, distinct from FEATURES: no enable/disable state, no manager —
@@ -58,4 +79,21 @@ function getSidebarToolsForPath(path) {
   return getSidebarTools(match ? match.key : null);
 }
 
-module.exports = { FEATURE_PAGES, getSidebarFeatures, getSidebarTools, getSidebarToolsForPath };
+// Same idea as getFeatureKeyForPath, for TOOL_PAGES — matches by top-level path segment
+// (not exact equality like getSidebarToolsForPath above) so it also catches a tool's own
+// sub-routes (e.g. "/channelpermissions/:channelId/:overwriteId/save"). Tools are never
+// shared with Mods (no per-feature checkbox for them — see requireDashboardAccess).
+function getToolKeyForPath(path) {
+  const seg = topLevelPath(path);
+  const match = TOOL_PAGES.find((t) => t.href === seg);
+  return match ? match.key : null;
+}
+
+module.exports = {
+  FEATURE_PAGES,
+  getSidebarFeatures,
+  getSidebarTools,
+  getSidebarToolsForPath,
+  getFeatureKeyForPath,
+  getToolKeyForPath,
+};

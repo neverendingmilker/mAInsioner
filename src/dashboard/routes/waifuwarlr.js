@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const waifuWarLRManager = require('../../features/waifuwarlr/waifuWarLRManager');
 
 const router = express.Router();
@@ -49,7 +48,6 @@ async function renderWaifuwarlrPage(req, res, guild) {
   res.render('waifuwarlr', {
     title: 'WaifuWar LR',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('waifuwarlr'),
     enabled,
     channels: channelCards,
     textChannels,

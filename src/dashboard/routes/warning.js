@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const warningManager = require('../../features/warning/warningManager');
 
 const router = express.Router();
@@ -98,7 +97,6 @@ async function renderWarningPage(req, res, guild) {
   res.render('warning', {
     title: 'Warnings',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('warning'),
     enabled,
     config: {
       role1Id: config?.role_1_id ?? null,

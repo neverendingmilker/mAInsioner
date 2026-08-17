@@ -3,8 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const config = require('../config/config');
 const { SqlSessionStore } = require('./sessionStore');
-const { requireAdmin } = require('./middleware/requireAdmin');
-const { getSidebarToolsForPath } = require('./sidebarData');
+const { requireDashboardAccess } = require('./middleware/requireAdmin');
 const authRoutes = require('./routes/auth');
 const overviewRoutes = require('./routes/overview');
 const honeypotRoutes = require('./routes/honeypot');
@@ -28,13 +27,16 @@ const roleauditRoutes = require('./routes/roleaudit');
 const channelpermissionsRoutes = require('./routes/channelpermissions');
 const qotdRoutes = require('./routes/qotd');
 const themesRoutes = require('./routes/themes');
+const modAccessRoutes = require('./routes/modAccessRoutes');
 
-// Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator in
-// at least one server the bot is in — which one they're managing is then picked via
-// /select-server and stored per-session (see guild.js + middleware/requireAdmin.js).
-// Runs in the same process/port as the bot itself — this *is* what satisfies Render's
-// "Web Service needs an open HTTP port" requirement now (previously a bare status page,
-// see git history).
+// Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator OR
+// the server's configured Mod role in at least one server the bot is in — which one
+// they're managing is then picked via /select-server and stored per-session (see guild.js
+// + middleware/requireAdmin.js's requireDashboardAccess). A Mod session only reaches
+// whichever feature pages an Admin has explicitly opted into sharing (see modAccess.js) —
+// Admins always see/reach everything. Runs in the same process/port as the bot itself —
+// this *is* what satisfies Render's "Web Service needs an open HTTP port" requirement now
+// (previously a bare status page, see git history).
 function start(client) {
   if (!config.dashboard.clientSecret || !config.dashboard.sessionSecret) {
     console.error('❌ DISCORD_CLIENT_SECRET and SESSION_SECRET must be set to run the dashboard.');
@@ -79,23 +81,25 @@ function start(client) {
   app.use((req, res, next) => {
     req.client = client;
     res.locals.user = req.session.user || null;
-    // Every server this user is an admin in (computed once at login) — the sidebar uses
-    // this to decide whether to show a "cambia server" link at all.
-    res.locals.adminGuilds = req.session.adminGuilds || [];
+    // Every server this user is Admin or Mod in (computed once at login) — the sidebar
+    // uses this to decide whether to show a "cambia server" link at all.
+    res.locals.guildAccess = req.session.guildAccess || [];
     // One-shot success/error banner for the page a POST redirects back to (e.g. "Trappola
     // creata."). Cheap alternative to a flash-message library: stash it on the session
     // right before redirecting, read-and-clear it here on the very next request.
     res.locals.flash = req.session.flash || null;
     delete req.session.flash;
-    // Set globally (not per-route like getSidebarFeatures) so the "Strumenti" nav section
-    // and its active-link highlighting show up on every page, not just on /roleaudit.
-    res.locals.tools = getSidebarToolsForPath(req.path);
     next();
   });
 
   app.use(authRoutes);
   app.use(
-    requireAdmin,
+    // requireDashboardAccess also sets res.locals.tools/features/role/currentFeatureKey/
+    // modAccessEnabled for every route below it, role-aware (a Mod's `tools` is always
+    // empty and `features` only lists whatever's been shared with them) — no individual
+    // route below needs to compute or pass any of that itself.
+    requireDashboardAccess,
+    modAccessRoutes,
     overviewRoutes,
     honeypotRoutes,
     birthdayRoutes,

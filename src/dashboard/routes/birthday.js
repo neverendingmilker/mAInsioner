@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const birthdayManager = require('../../features/birthday/birthdayManager');
 const { celebrateBirthdayIfDue, celebrateDueTodayForGuild } = require('../../features/birthday/birthdayScheduler');
 const { formatSeconds } = require('../../utils/duration');
@@ -81,7 +80,6 @@ async function renderBirthdayPage(req, res, guild) {
   res.render('birthday', {
     title: 'Birthday',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('birthday'),
     enabled,
     config: {
       roleId: config.birthday_role_id,

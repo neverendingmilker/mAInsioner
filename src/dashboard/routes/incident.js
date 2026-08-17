@@ -1,7 +1,6 @@
 const express = require('express');
 const { ChannelType } = require('discord.js');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const incidentManager = require('../../features/incident/incidentManager');
 
 const router = express.Router();
@@ -37,7 +36,6 @@ async function renderIncidentPage(req, res, guild) {
   res.render('incident', {
     title: 'Incident Counter',
     guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-    features: getSidebarFeatures('incident'),
     enabled,
     count: config.count,
     channelId: config.channel_id,

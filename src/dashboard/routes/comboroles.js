@@ -1,6 +1,5 @@
 const express = require('express');
 const { resolveDashboardGuild } = require('../guild');
-const { getSidebarFeatures } = require('../sidebarData');
 const comboRolesManager = require('../../features/comboroles/comboRolesManager');
 
 const router = express.Router();
@@ -57,7 +56,6 @@ router.get('/comboroles', async (req, res, next) => {
     res.render('comboroles', {
       title: 'Combined Role Search',
       guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
-      features: getSidebarFeatures('comboroles'),
       enabled,
       roles,
       selectedRequired,
