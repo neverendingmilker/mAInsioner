@@ -7,6 +7,7 @@
   --text-dim: #9aa1af;
   --accent: #5865f2;
   --danger: #ed4245;
+  --success: #3ba55c;
 }
 
 * {
@@ -246,8 +247,10 @@ a {
 }
 
 .card-grid-target--valid {
-  background: rgba(59, 165, 92, 0.18);
-  border: 2px solid #3ba55c;
+  /* Same 15% intensity as every other subtle-green background (badge-mod, flash-success,
+     badge-og-fren) — was 0.18 (unlike --invalid below, matched to --danger at 0.15). */
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  border: 2px solid var(--success);
 }
 
 .card-grid-target--invalid {
@@ -454,8 +457,8 @@ a {
 }
 
 .role-badge-mod {
-  background: rgba(59, 165, 92, 0.15);
-  border: 1px solid #3ba55c;
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  border: 1px solid var(--success);
   color: #7ee2a0;
 }
 
@@ -540,8 +543,8 @@ a {
 }
 
 .flash-success {
-  background: rgba(59, 165, 92, 0.15);
-  border: 1px solid #3ba55c;
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  border: 1px solid var(--success);
   color: #7ee2a0;
 }
 
@@ -911,8 +914,8 @@ a {
 }
 
 .badge-og-fren {
-  background: rgba(59, 165, 92, 0.15);
-  border: 1px solid #3ba55c;
+  background: color-mix(in srgb, var(--success) 15%, transparent);
+  border: 1px solid var(--success);
   color: #7ee2a0;
 }
 
@@ -1121,9 +1124,11 @@ a {
 }
 
 .perm-tristate label.opt-allow:has(input:checked) {
-  background: rgba(59, 165, 92, 0.18);
-  border-color: #3ba55c;
-  color: #3ba55c;
+  /* 18% here (not the usual 15%) to match opt-deny's own alpha just above — a deliberately
+     matched pair, same visual intensity for both ends of the tri-state toggle. */
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+  border-color: var(--success);
+  color: var(--success);
 }
 
 .perm-tristate label.opt-neutral:has(input:checked) {
