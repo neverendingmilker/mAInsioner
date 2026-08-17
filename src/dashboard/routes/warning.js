@@ -191,16 +191,21 @@ router.post('/warning/config', async (req, res, next) => {
   }
 });
 
-// Raw user ID, not a member picker — same as /warn, which deliberately accepts IDs of
-// people no longer in the server (the warning is still logged, just without a role change).
-router.post('/warning/warn', async (req, res, next) => {
+// One form, one endpoint, for both "assegna warning" and "assegna verbale" — `type` picks
+// which of warningManager's two entry points to call. The ID field doubles as a search box
+// via the <datalist> the view renders from `members` (typing a name filters the browser's
+// own suggestion list; picking one fills the field with that member's ID) but still accepts
+// any freely-typed ID, which matters for `warning` (targets who've left the server are still
+// valid — see warnUser) even though `verbal` requires a live member below.
+router.post('/warning/assign', async (req, res, next) => {
   try {
     const guild = requireGuild(req, res);
     if (!guild) return;
 
+    const type = req.body.type === 'verbal' ? 'verbal' : 'warning';
     const targetUserId = req.body.targetUserId?.trim();
     if (!targetUserId || !USER_ID_RE.test(targetUserId)) {
-      req.session.flash = { type: 'error', message: 'ID utente non valido — deve essere un ID Discord numerico.' };
+      req.session.flash = { type: 'error', message: 'Utente non valido — digita il nome per cercarlo nell\'elenco, oppure incolla un ID Discord.' };
       res.redirect('/warning');
       return;
     }
@@ -208,47 +213,25 @@ router.post('/warning/warn', async (req, res, next) => {
     const dateInput = req.body.date ? isoToDMY(req.body.date) : undefined;
 
     try {
-      const result = await warningManager.warnUser(guild, targetUserId, req.body.reason, req.session.user.id, dateInput);
-      const outcomeLabel =
-        result.outcome === 'assigned'
-          ? `assegnato il ruolo ${result.assignedRole?.name}.`
-          : result.outcome === 'alreadyMaxed'
-            ? 'ha già entrambi i ruoli — valutare un ban.'
-            : 'non è più nel server, il warning è stato comunque registrato.';
-      req.session.flash = { type: 'success', message: `Warning registrato — ${outcomeLabel}` };
-    } catch (err) {
-      if (err instanceof warningManager.ValidationError) {
-        req.session.flash = { type: 'error', message: err.message };
+      if (type === 'verbal') {
+        const member = guild.members.cache.get(targetUserId);
+        if (!member) {
+          req.session.flash = { type: 'error', message: 'Utente non valido per un verbale — deve essere ancora nel server (un warning normale funziona anche con l\'ID di chi è uscito).' };
+          res.redirect('/warning');
+          return;
+        }
+        await warningManager.giveVerbal(guild, member.id, req.body.reason, req.session.user.id, dateInput);
+        req.session.flash = { type: 'success', message: `Verbale registrato per ${member.user.tag}.` };
       } else {
-        throw err;
+        const result = await warningManager.warnUser(guild, targetUserId, req.body.reason, req.session.user.id, dateInput);
+        const outcomeLabel =
+          result.outcome === 'assigned'
+            ? `assegnato il ruolo ${result.assignedRole?.name}.`
+            : result.outcome === 'alreadyMaxed'
+              ? 'ha già entrambi i ruoli — valutare un ban.'
+              : 'non è più nel server, il warning è stato comunque registrato.';
+        req.session.flash = { type: 'success', message: `Warning registrato — ${outcomeLabel}` };
       }
-    }
-    res.redirect('/warning');
-  } catch (err) {
-    next(err);
-  }
-});
-
-// A member picker here (not raw ID), same as /verbal's User option — giveVerbal never
-// requires the target to currently be a member, but there's no reason to allow a stale ID
-// on this form when a live member list is right there.
-router.post('/warning/verbal', async (req, res, next) => {
-  try {
-    const guild = requireGuild(req, res);
-    if (!guild) return;
-
-    const member = guild.members.cache.get(req.body.targetUserId);
-    if (!member) {
-      req.session.flash = { type: 'error', message: 'Utente non valido — riprova.' };
-      res.redirect('/warning');
-      return;
-    }
-
-    const dateInput = req.body.date ? isoToDMY(req.body.date) : undefined;
-
-    try {
-      await warningManager.giveVerbal(guild, member.id, req.body.reason, req.session.user.id, dateInput);
-      req.session.flash = { type: 'success', message: `Verbale registrato per ${member.user.tag}.` };
     } catch (err) {
       if (err instanceof warningManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };

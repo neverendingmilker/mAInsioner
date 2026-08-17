@@ -46,12 +46,27 @@
     </section>
 
     <section class="panel" data-card-id="assegna-warning">
-      <h2>Assegna warning</h2>
-      <p class="hint">Accetta anche l'ID di chi ha lasciato il server — il warning viene registrato comunque, senza assegnare ruoli.</p>
-      <form method="POST" action="/warning/warn" class="form">
+      <h2>Assegna warning/verbale</h2>
+      <p class="hint">Warning: assegna un ruolo secondo la scala configurata, e accetta anche l'ID di chi ha lasciato il server (registrato comunque, senza ruolo). Verbale: solo una nota nel canale warning, nessun ruolo — richiede che l'utente sia ancora nel server.</p>
+      <form method="POST" action="/warning/assign" class="form">
+        <div>
+          <label class="checkbox-label">
+            <input type="radio" name="type" value="warning" checked />
+            Warning normale
+          </label>
+          <label class="checkbox-label">
+            <input type="radio" name="type" value="verbal" />
+            Verbale
+          </label>
+        </div>
         <label>
-          ID utente Discord
-          <input type="text" name="targetUserId" pattern="\d{17,20}" required placeholder="es. 123456789012345678" />
+          Utente (ID Discord, oppure digita il nome per cercarlo)
+          <input type="text" name="targetUserId" list="warning-members-list" pattern="\d{17,20}" required placeholder="es. 123456789012345678 o inizia a digitare il nome" />
+          <datalist id="warning-members-list">
+            <% members.forEach((m) => { %>
+              <option value="<%= m.id %>"><%= m.label %></option>
+            <% }) %>
+          </datalist>
         </label>
         <label>
           Motivo
@@ -61,37 +76,8 @@
           Data (vuoto = oggi)
           <input type="date" name="date" />
         </label>
-        <button type="submit" class="btn-primary">Assegna warning</button>
+        <button type="submit" class="btn-primary">Assegna</button>
       </form>
-    </section>
-
-    <section class="panel" data-card-id="assegna-verbale">
-      <h2>Assegna verbale</h2>
-      <p class="hint">Non assegna nessun ruolo, solo una nota nel canale warning.</p>
-      <% if (members.length === 0) { %>
-        <p class="hint">Nessun membro disponibile.</p>
-      <% } else { %>
-        <form method="POST" action="/warning/verbal" class="form">
-          <label>
-            Utente
-            <select name="targetUserId" required>
-              <option value="" disabled selected>Scegli un membro…</option>
-              <% members.forEach((m) => { %>
-                <option value="<%= m.id %>"><%= m.label %></option>
-              <% }) %>
-            </select>
-          </label>
-          <label>
-            Motivo
-            <textarea name="reason" rows="2" maxlength="300" required></textarea>
-          </label>
-          <label>
-            Data (vuoto = oggi)
-            <input type="date" name="date" />
-          </label>
-          <button type="submit" class="btn-primary">Assegna verbale</button>
-        </form>
-      <% } %>
     </section>
 
     <section class="panel" data-card-id="i-miei-warning-verbali-modificabili">
