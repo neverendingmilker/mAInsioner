@@ -30,6 +30,7 @@ const themesRoutes = require('./routes/themes');
 const modAccessRoutes = require('./routes/modAccessRoutes');
 const cardOrderRoutes = require('./routes/cardOrderRoutes');
 const featureLockRoutes = require('./routes/featureLockRoutes');
+const cardLayoutRoutes = require('./routes/cardLayoutRoutes');
 
 // Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator OR
 // the server's configured Mod role in at least one server the bot is in — which one
@@ -104,6 +105,7 @@ function start(client) {
     modAccessRoutes,
     cardOrderRoutes,
     featureLockRoutes,
+    cardLayoutRoutes,
     overviewRoutes,
     honeypotRoutes,
     birthdayRoutes,

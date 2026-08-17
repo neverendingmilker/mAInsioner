@@ -532,6 +532,21 @@ async function createTables() {
         feature_key TEXT NOT NULL,
         PRIMARY KEY (guild_id, feature_key)
       )`,
+
+      // Saved width split for a two-column card layout, per guild AND per feature —
+      // Admin-only to change (drag the resize handle, see routes/cardLayoutRoutes.js),
+      // applied for everyone who can open that page (Admin and Mod alike), same convention
+      // as dashboard_card_order. `col1_fraction` is the left column's share of the row
+      // (0 < fraction < 1, clamped server-side); the right column just gets the rest.
+      // Piloted on Anime Night only for now (see animenight.ejs / public/cardResize.js) —
+      // other feature pages don't render the two-column markup at all, so a missing row
+      // (the default, via getColumnFraction's 0.5 fallback) never matters for them.
+      `CREATE TABLE IF NOT EXISTS dashboard_card_layout (
+        guild_id TEXT NOT NULL,
+        feature_key TEXT NOT NULL,
+        col1_fraction REAL NOT NULL DEFAULT 0.5,
+        PRIMARY KEY (guild_id, feature_key)
+      )`,
     ],
     'write'
   );

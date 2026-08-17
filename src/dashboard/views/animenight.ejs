@@ -9,7 +9,17 @@
 
     <%- include('partials/flash') %>
 
-    <div class="card-list" id="card-list">
+    <%# EXPERIMENTAL two-column layout, piloted here only (see public/style.css's
+        .card-list.two-col and public/cardResize.js) — cardLayoutFraction/role/
+        currentFeatureKey are res.locals set by middleware/requireAdmin.js, same as inside
+        partials/featureToggle.ejs. Inline style sets the initial split server-side so the
+        page never flashes the wrong ratio before cardResize.js runs. %>
+    <div
+      class="card-list two-col"
+      id="card-list"
+      data-col1-fraction="<%= cardLayoutFraction %>"
+      style="--col1-fr: <%= cardLayoutFraction %>fr; --col2-fr: <%= 1 - cardLayoutFraction %>fr;"
+    >
 <section class="panel" data-card-id="sessioni">
       <h2>Sessioni (<%= sessions.length %>)</h2>
       <% if (sessions.length === 0) { %>
@@ -61,7 +71,20 @@
       </form>
       <p class="hint">Se la data coincide con una sessione già esistente, i titoli si aggiungono a quella invece di crearne una nuova.</p>
     </section>
+
+<%# Explicitly grid-placed (middle column) — deliberately the LAST child here, after both
+    panels, so cardReorder.js's drag logic (which only ever repositions the two .panel
+    elements relative to each other) can never end up moving this out of the middle column.
+    Admin-only, same convention as the other card-list controls — Mods still see the saved
+    split (inline style above) but not the interactive handle. %>
+<% if (typeof role !== 'undefined' && role === 'admin') { %>
+  <div id="card-resize-handle" class="card-resize-handle" title="Trascina per ridimensionare le colonne"></div>
+  <form id="card-layout-form" method="POST" action="/card-layout/<%= currentFeatureKey %>/resize" style="display:none;">
+    <input type="hidden" id="card-layout-fraction-input" name="fraction" value="" />
+  </form>
+<% } %>
 </div>
+<script src="/cardResize.js"></script>
   </main>
 </div>
 <%- include('partials/footer') %>

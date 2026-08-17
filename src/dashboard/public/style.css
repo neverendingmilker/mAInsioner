@@ -131,6 +131,45 @@ a {
   opacity: 0.4;
 }
 
+/* EXPERIMENTAL: two-column layout for a feature page's cards, piloted on Anime Night only
+   (public/cardResize.js, animenight.ejs) — every other page's .card-list stays the regular
+   single-column flex layout above. The two .panel children get NO explicit grid-column
+   (auto-placed into whatever cells are left, in DOM order — column 1 then column 3), while
+   #card-resize-handle IS explicitly placed in the middle column, so drag-reordering the two
+   panels (see .card-drag-handle above) and dragging this resize handle never interfere with
+   each other. --col1-fr/--col2-fr are set inline from the saved fraction (server-rendered,
+   avoids a flash of the wrong split before JS runs) and updated live during a drag. */
+.card-list.two-col {
+  display: grid;
+  grid-template-columns: var(--col1-fr, 1fr) 8px var(--col2-fr, 1fr);
+  gap: 0;
+}
+
+.card-resize-handle {
+  grid-column: 2;
+  grid-row: 1;
+  width: 8px;
+  cursor: col-resize;
+  position: relative;
+}
+
+.card-resize-handle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: var(--border);
+  border-radius: 999px;
+  transition: background 0.15s ease;
+}
+
+.card-resize-handle:hover::before,
+.card-resize-handle.resizing::before {
+  background: var(--accent);
+}
+
 .sidebar-footer {
   display: flex;
   align-items: center;
