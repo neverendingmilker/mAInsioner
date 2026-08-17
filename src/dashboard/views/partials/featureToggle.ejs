@@ -25,9 +25,10 @@
       can open this page at all. %>
   <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
     <form method="POST" action="/mod-access/<%= currentFeatureKey %>/toggle" class="mod-access-toggle">
-      <label class="checkbox-label">
+      <label class="switch">
         <input type="checkbox" name="allowed" value="true" <%= modAccessEnabled ? 'checked' : '' %> onchange="this.form.submit()" />
-        Consenti anche ai Mod
+        <span class="switch-slider"></span>
+        <span class="switch-label"><%= modAccessEnabled ? 'Consentito ai Mod' : 'Solo Admin' %></span>
       </label>
     </form>
   <% } %>
