@@ -1,0 +1,29 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Highlight</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/highlight/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="impostazioni-universali">
+      <h2>Impostazioni universali</h2>
+      <p class="hint">
+        Highlight è una feature personale: ogni utente gestisce da solo, su Discord con <code>/highlight</code>,
+        le proprie parole/frasi, la modalità canali (escludi/solo questi) e la lista utenti ignorati — nessuno,
+        nemmeno un Admin o un Mod, può vedere o modificare la lista di qualcun altro da qui.
+      </p>
+      <p class="hint">
+        L'unica impostazione che riguarda l'intero server è l'attivazione qui sopra: disattivandola, la feature
+        smette di controllare i messaggi e inviare notifiche per tutti gli utenti del server, ma le loro parole
+        salvate restano intatte e tornano subito attive alla riaccensione.
+      </p>
+    </section>
+</div>
+  </main>
+</div>
+<%- include('partials/footer') %>

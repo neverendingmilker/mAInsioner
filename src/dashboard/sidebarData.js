@@ -11,6 +11,7 @@ const FEATURE_PAGES = {
   bumpreminder: '/bumpreminder',
   comboroles: '/comboroles',
   goosepizza: '/goosepizza',
+  highlight: '/highlight',
   honeypot: '/honeypot',
   incident: '/incident',
   invitetracker: '/invitetracker',
