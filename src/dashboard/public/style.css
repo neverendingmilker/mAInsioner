@@ -113,22 +113,6 @@ a {
   margin-top: 0;
 }
 
-.card-lock-btn {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  font-size: 13px;
-  line-height: 1;
-  padding: 2px 4px;
-  border-radius: 4px;
-}
-
-.card-lock-btn:hover {
-  color: var(--text);
-  background: var(--panel-alt);
-}
-
 .card-list .panel:has(.card-drag-handle) {
   padding-left: 44px;
 }

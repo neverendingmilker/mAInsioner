@@ -1,15 +1,15 @@
 // Vanilla-JS drag-and-drop reordering for the "cards" (panel sections) on a feature page,
-// no dependencies — same technique as qotdReorder.js/themesReorder.js, plus a lock button
-// gating whether dragging is possible at all (off by default, so browsing a feature page
-// never risks an accidental reorder), and the saved order is applied to the DOM on every
-// load (for Admin and Mod alike) even when the lock button itself isn't rendered (Mods
-// never see it — see partials/featureToggle.ejs).
+// no dependencies — same technique as qotdReorder.js/themesReorder.js, plus a "Riordina
+// card" switch gating whether dragging is possible at all (off by default, so browsing a
+// feature page never risks an accidental reorder), and the saved order is applied to the
+// DOM on every load (for Admin and Mod alike) even when the switch itself isn't rendered
+// (Mods never see it — see partials/featureToggle.ejs).
 (function () {
   // Included from partials/featureToggle.ejs, which every view renders near the TOP of the
   // page (inside .page-header) — well before the #card-list markup further down. Without
   // waiting for DOMContentLoaded, this script would run immediately on <script> parse, find
-  // no #card-list yet, and bail out silently (the bug that shipped initially: the lock
-  // button existed in the DOM but nothing was ever wired up to it).
+  // no #card-list yet, and bail out silently (the bug that shipped initially: the switch
+  // existed in the DOM but nothing was ever wired up to it).
   document.addEventListener('DOMContentLoaded', init);
 
   function init() {
@@ -40,16 +40,16 @@
       }
     }
 
-    var lockBtn = document.getElementById('card-lock-btn');
+    var lockSwitch = document.getElementById('card-lock-btn');
     var form = document.getElementById('card-reorder-form');
     var orderInput = document.getElementById('card-order-input');
-    if (!lockBtn || !form || !orderInput) return; // Mod session: order applied above, nothing draggable to wire up.
+    if (!lockSwitch || !form || !orderInput) return; // Mod session: order applied above, nothing draggable to wire up.
 
     var dragged = null;
     var unlocked = false;
-    // Set on any drop while unlocked, so the lock button only actually POSTs (and reloads
-    // the page) if something was really moved — re-locking without having dragged anything
-    // is a no-op, not a wasted round-trip.
+    // Set on any drop while unlocked, so re-locking the switch only actually POSTs (and
+    // reloads the page) if something was really moved — flipping it back off without
+    // having dragged anything is a no-op, not a wasted round-trip.
     var moved = false;
 
     function currentOrder() {
@@ -101,8 +101,8 @@
         card.classList.remove('card-dragging');
         dragged = null;
         // Just marks the order dirty — does NOT save. Saving (and the page reload that
-        // comes with it) only happens when the user re-locks via the button below, so
-        // moving several cards in a row doesn't re-lock/reload after every single drop.
+        // comes with it) only happens when the user flips the switch back off, so moving
+        // several cards in a row doesn't re-lock/reload after every single drop.
         moved = true;
       });
 
@@ -115,33 +115,33 @@
       });
     }
 
-    lockBtn.addEventListener('click', function () {
-      // Entering edit mode: just unlock, nothing to save yet.
-      if (!unlocked) {
+    // Plain client-side mode toggle, same fixed-label convention as the Solo Admin/
+    // Modificabile switches above — but unlike those, this one is NOT wired to submit its
+    // own form on every change (there's no persisted "is this feature in reorder mode"
+    // boolean to save). It only ever touches the server when flipped back OFF after
+    // something was actually dragged, via the hidden #card-reorder-form.
+    lockSwitch.addEventListener('change', function () {
+      // Switched ON: enter edit mode, nothing to save yet.
+      if (lockSwitch.checked) {
         unlocked = true;
         moved = false;
         setDraggable(true);
         list.classList.add('reorder-mode');
         var cards = list.querySelectorAll('.panel[data-card-id]');
         for (var i = 0; i < cards.length; i++) addHandle(cards[i]);
-        lockBtn.textContent = '🔓 Blocca posizione card';
-        lockBtn.title = 'Salva e blocca la posizione delle card';
         return;
       }
 
-      // Re-locking: this is the only moment a new order gets saved, and only if something
-      // was actually dragged — the user decides when to persist by clicking this button
-      // again, dragging never saves on its own.
+      // Switched OFF: this is the only moment a new order gets saved, and only if
+      // something was actually dragged — the user decides when to persist by flipping the
+      // switch back off themselves, dragging never saves on its own.
       unlocked = false;
       setDraggable(false);
       list.classList.remove('reorder-mode');
       removeHandles();
       if (moved) {
-        submitNewOrder(); // POSTs and reloads the page — no need to reset button text here.
-        return;
+        submitNewOrder(); // POSTs and reloads the page.
       }
-      lockBtn.textContent = '🔒 Riordina card';
-      lockBtn.title = 'Sblocca per riordinare le card';
     });
   }
 })();

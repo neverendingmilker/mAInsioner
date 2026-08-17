@@ -1,5 +1,5 @@
 <%# Shared on/off control for a feature page's header, plus (Admin-only) the Mod-access
-    checkbox, the "blocca modifiche" lock, and the card-reorder lock button. Wrapped in
+    switch, the "blocca modifiche" switch, and the card-reorder switch. Wrapped in
     one div so `.page-header`'s flex layout (h1 vs. everything else) still only ever sees
     two children, regardless of how many of the pieces below actually render.
     Locals: `enabled` (bool), `toggleAction` (the feature's own POST /<feature>/toggle
@@ -58,14 +58,24 @@
 
   <%# Card-reorder support: `cardOrder` (the saved drag order for this page's panels) is
       always set by requireDashboardAccess, for both Admin and Mod, so the reorder applies
-      for anyone viewing the page — only the lock button + drag handles that let you
-      CHANGE it are Admin-only. See public/cardReorder.js and each view's `<div
-      class="card-list" id="card-list">` wrapping its `.panel[data-card-id]` sections. %>
+      for anyone viewing the page — only this switch + the drag handles it reveals are
+      Admin-only. See public/cardReorder.js and each view's `<div class="card-list"
+      id="card-list">` wrapping its `.panel[data-card-id]` sections. Unlike the three
+      switches above, this one is NOT wired to submit-on-change: it's a pure client-side
+      mode toggle (unlocked = draggable, handles visible) handled entirely by
+      cardReorder.js, which decides on its own whether re-locking needs to POST the hidden
+      #card-reorder-form below (only if something was actually dragged — see that file).
+      Label is always "Riordina card", same fixed-label convention as Solo Admin/
+      Modificabile above. %>
   <% if (typeof cardOrder !== 'undefined') { %>
     <script id="card-order-data" type="application/json"><%- JSON.stringify(cardOrder) %></script>
   <% } %>
   <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
-    <button type="button" id="card-lock-btn" class="card-lock-btn" data-locked="true" title="Sblocca per riordinare le card">🔒 Riordina card</button>
+    <label class="switch">
+      <input type="checkbox" id="card-lock-btn" />
+      <span class="switch-slider"></span>
+      <span class="switch-label">Riordina card</span>
+    </label>
     <form id="card-reorder-form" method="POST" action="/card-order/<%= currentFeatureKey %>/reorder" style="display:none;">
       <input type="hidden" id="card-order-input" name="order" value="" />
     </form>
