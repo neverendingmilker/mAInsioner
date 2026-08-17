@@ -2,6 +2,7 @@ const express = require('express');
 const { requireGuild } = require('../guild');
 const boosterLinkManager = require('../../features/boosterlinks/boosterLinkManager');
 const { getModRoleId } = require('../../utils/modRole');
+const { pickedValues } = require('../../utils/multiSelect');
 
 const router = express.Router();
 
@@ -179,11 +180,8 @@ router.post('/boosterlinks/exempt/add', async (req, res, next) => {
     if (!guild) return;
 
     // The picker is a multi-select (see boosterlinks.ejs) so more than one role can be
-    // exempted in a single submit. A single selection still posts as one plain string
-    // rather than a 1-item array — same normalization every other multi-value form field
-    // in this codebase needs from Express's urlencoded body parser.
-    const rawIds = req.body.roleIds;
-    const ids = Array.isArray(rawIds) ? rawIds : rawIds ? [rawIds] : [];
+    // exempted in a single submit — see utils/multiSelect.js for why this needs normalizing.
+    const ids = pickedValues(req.body.roleIds);
     const roles = ids.map((id) => guild.roles.cache.get(id)).filter(Boolean);
 
     if (roles.length === 0) {

@@ -2,6 +2,7 @@ const express = require('express');
 const { ChannelType } = require('discord.js');
 const { requireGuild } = require('../guild');
 const goosepizzaManager = require('../../features/goosepizza/goosepizzaManager');
+const { pickedValues } = require('../../utils/multiSelect');
 
 const router = express.Router();
 
@@ -15,11 +16,8 @@ function channelLabel(guild, channelId) {
   return channel ? `#${channel.name}` : `(canale eliminato: ${channelId})`;
 }
 
-// req.body.channelIds is undefined (nothing checked), a string (one checkbox checked)
-// or an array (several) depending on how many checkboxes were ticked — express doesn't
-// normalize this on its own.
 function pickedChannelIds(body) {
-  return [].concat(body.channelIds || []);
+  return pickedValues(body.channelIds);
 }
 
 async function renderGoosepizzaPage(req, res, guild) {
