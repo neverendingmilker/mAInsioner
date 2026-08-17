@@ -92,17 +92,6 @@
     <% } %>
   </div>
 
-  <%# Lets you drop an empty, draggable/resizable placeholder into the grid while
-      reordering — since repositionAll() in cardReorder.js packs cards densely (shortest
-      column first, no gaps), an intentional blank cell in the middle of a row/column needs
-      an actual element reserving that space, same trick real masonry layouts use for
-      spacers. Admin-only and reorder-mode-only, same gating as the Reorder switch itself —
-      hidden by default here and shown/hidden by cardReorder.js in lockstep with it (not
-      CSS-only, since it lives outside #card-list and needs to react to the same toggle). %>
-  <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
-    <button type="button" id="card-add-empty-slot-btn" class="btn-secondary-sm" style="display: none;" title="Aggiunge uno slot vuoto trascinabile, per lasciare un buco nella griglia">+ Slot vuoto</button>
-  <% } %>
-
   <%# Column count (1, 2, or 3) for this page's card grid — same browser-local localStorage
       idea as Reorder above, but NOT Admin-only: it's just a personal viewing preference,
       doesn't change what anyone else sees, so a Mod gets it too. cardReorder.js reads/
