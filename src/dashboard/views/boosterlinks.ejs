@@ -20,30 +20,34 @@
             <div class="config-card-header">
               <span class="config-name"><%= l.userLabel %></span>
               <span class="config-meta"><%= l.roleLabel %><%= l.isBooster ? '' : ' — non sta più boostando' %></span>
-              <form method="POST" action="/boosterlinks/remove" onsubmit="return confirm('Smettere di tracciare questo ruolo? Il ruolo non verrà rimosso dall\'utente.');">
-                <input type="hidden" name="userId" value="<%= l.userId %>" />
-                <input type="hidden" name="roleId" value="<%= l.roleId %>" />
-                <button type="submit" class="btn-danger-sm">Rimuovi</button>
-              </form>
-            </div>
-            <% if (roles.length > 0) { %>
-              <details class="config-edit">
-                <summary>Modifica</summary>
-                <form method="POST" action="/boosterlinks/edit" class="form">
+              <div class="card-actions">
+                <% if (roles.length > 0) { %>
+                  <details>
+                    <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                    <div class="card-edit-popover">
+                      <form method="POST" action="/boosterlinks/edit" class="form">
+                        <input type="hidden" name="userId" value="<%= l.userId %>" />
+                        <input type="hidden" name="oldRoleId" value="<%= l.roleId %>" />
+                        <label>
+                          Nuovo ruolo da tracciare al posto di quello attuale
+                          <select name="newRoleId" required>
+                            <% roles.forEach((r) => { %>
+                              <option value="<%= r.id %>" <%= r.id === l.roleId ? 'selected' : '' %>><%= r.name %></option>
+                            <% }) %>
+                          </select>
+                        </label>
+                        <button type="submit" class="btn-primary-sm">Salva</button>
+                      </form>
+                    </div>
+                  </details>
+                <% } %>
+                <form method="POST" action="/boosterlinks/remove" onsubmit="return confirm('Smettere di tracciare questo ruolo? Il ruolo non verrà rimosso dall\'utente.');">
                   <input type="hidden" name="userId" value="<%= l.userId %>" />
-                  <input type="hidden" name="oldRoleId" value="<%= l.roleId %>" />
-                  <label>
-                    Nuovo ruolo da tracciare al posto di quello attuale
-                    <select name="newRoleId" required>
-                      <% roles.forEach((r) => { %>
-                        <option value="<%= r.id %>" <%= r.id === l.roleId ? 'selected' : '' %>><%= r.name %></option>
-                      <% }) %>
-                    </select>
-                  </label>
-                  <button type="submit" class="btn-primary-sm">Salva</button>
+                  <input type="hidden" name="roleId" value="<%= l.roleId %>" />
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
                 </form>
-              </details>
-            <% } %>
+              </div>
+            </div>
           </div>
         <% }) %>
       <% } %>
@@ -89,9 +93,9 @@
           <div class="config-card">
             <div class="config-card-header">
               <span class="config-name"><%= r.name %></span>
-              <form method="POST" action="/boosterlinks/exempt/remove" onsubmit="return confirm('Rimuovere questo ruolo dagli esenti?');">
+              <form method="POST" action="/boosterlinks/exempt/remove" onsubmit="return confirm('Rimuovere questo ruolo dagli esenti?');" class="card-actions">
                 <input type="hidden" name="roleId" value="<%= r.id %>" />
-                <button type="submit" class="btn-danger-sm">Rimuovi</button>
+                <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
               </form>
             </div>
           </div>

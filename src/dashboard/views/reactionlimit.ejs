@@ -22,26 +22,30 @@
               <span class="config-meta">
                 max <%= c.reactionLimit %>/thread<%= c.ignoreFirstPost ? ' (post iniziale escluso)' : '' %>
               </span>
-              <form method="POST" action="/reactionlimit/remove" onsubmit="return confirm('Rimuovere il limite da questo canale?');">
-                <input type="hidden" name="channelId" value="<%= c.channelId %>" />
-                <button type="submit" class="btn-danger-sm">Rimuovi</button>
-              </form>
+              <div class="card-actions">
+                <details>
+                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <div class="card-edit-popover">
+                    <form method="POST" action="/reactionlimit/add" class="form">
+                      <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                      <label>
+                        Reazioni massime per persona, per thread
+                        <input type="number" name="reactionLimit" min="1" max="100" value="<%= c.reactionLimit %>" required />
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" name="ignoreFirstPost" <%= c.ignoreFirstPost ? 'checked' : '' %> />
+                        Non contare le reazioni sul messaggio iniziale del thread
+                      </label>
+                      <button type="submit" class="btn-primary-sm">Salva</button>
+                    </form>
+                  </div>
+                </details>
+                <form method="POST" action="/reactionlimit/remove" onsubmit="return confirm('Rimuovere il limite da questo canale?');">
+                  <input type="hidden" name="channelId" value="<%= c.channelId %>" />
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                </form>
+              </div>
             </div>
-            <details class="config-edit">
-              <summary>Modifica</summary>
-              <form method="POST" action="/reactionlimit/add" class="form">
-                <input type="hidden" name="channelId" value="<%= c.channelId %>" />
-                <label>
-                  Reazioni massime per persona, per thread
-                  <input type="number" name="reactionLimit" min="1" max="100" value="<%= c.reactionLimit %>" required />
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" name="ignoreFirstPost" <%= c.ignoreFirstPost ? 'checked' : '' %> />
-                  Non contare le reazioni sul messaggio iniziale del thread
-                </label>
-                <button type="submit" class="btn-primary-sm">Salva</button>
-              </form>
-            </details>
           </div>
         <% }) %>
       <% } %>

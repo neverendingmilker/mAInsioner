@@ -104,21 +104,25 @@
           <div class="config-card">
             <div class="config-card-header">
               <span class="config-name"><%= w.label %></span>
+              <div class="card-actions">
+                <details>
+                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <div class="card-edit-popover">
+                    <form method="POST" action="/warning/<%= w.id %>/edit" class="form">
+                      <label>
+                        Motivo
+                        <textarea name="reason" rows="2" maxlength="300" required><%= w.reason %></textarea>
+                      </label>
+                      <label>
+                        Data
+                        <input type="date" name="date" value="<%= w.dateIso %>" />
+                      </label>
+                      <button type="submit" class="btn-primary-sm">Salva</button>
+                    </form>
+                  </div>
+                </details>
+              </div>
             </div>
-            <details class="config-edit">
-              <summary>Modifica</summary>
-              <form method="POST" action="/warning/<%= w.id %>/edit" class="form">
-                <label>
-                  Motivo
-                  <textarea name="reason" rows="2" maxlength="300" required><%= w.reason %></textarea>
-                </label>
-                <label>
-                  Data
-                  <input type="date" name="date" value="<%= w.dateIso %>" />
-                </label>
-                <button type="submit" class="btn-primary-sm">Salva</button>
-              </form>
-            </details>
           </div>
         <% }) %>
       <% } %>

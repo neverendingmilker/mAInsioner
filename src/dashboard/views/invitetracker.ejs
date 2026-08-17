@@ -55,9 +55,9 @@
               <span class="config-meta">
                 <%= a.assignedLabel %> — <%= a.uses ?? 0 %>/<%= a.maxUses ?? '∞' %> utilizzi<%= a.expiresLabel ? `, scade ${a.expiresLabel}` : '' %>
               </span>
-              <form method="POST" action="/invitetracker/revoke" onsubmit="return confirm('Revocare questo invito?');">
+              <form method="POST" action="/invitetracker/revoke" onsubmit="return confirm('Revocare questo invito?');" class="card-actions">
                 <input type="hidden" name="code" value="<%= a.code %>" />
-                <button type="submit" class="btn-danger-sm">Revoca</button>
+                <button type="submit" class="btn-icon-sm btn-icon-danger" title="Revoca">✕</button>
               </form>
             </div>
           </div>

@@ -53,34 +53,39 @@
                 <span class="birthday-user"><%= e.userLabel %></span>
                 <span class="birthday-date"><%= e.day %>/<%= e.month %><% if (e.year) { %>/<%= e.year %><% } %></span>
                 <span class="birthday-countdown"><%= e.daysUntilLabel %></span>
-              </div>
-              <details class="birthday-edit">
-                <summary>Modifica</summary>
-                <% if (e.memberPresent) { %>
-                  <form method="POST" action="/birthday/add" class="form">
+                <div class="card-actions">
+                  <% if (e.memberPresent) { %>
+                    <details>
+                      <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                      <div class="card-edit-popover">
+                        <form method="POST" action="/birthday/add" class="form">
+                          <input type="hidden" name="userId" value="<%= e.userId %>" />
+                          <label>
+                            Giorno
+                            <input type="number" name="day" min="1" max="31" value="<%= e.day %>" required />
+                          </label>
+                          <label>
+                            Mese
+                            <input type="number" name="month" min="1" max="12" value="<%= e.month %>" required />
+                          </label>
+                          <label>
+                            Anno (opzionale)
+                            <input type="number" name="year" min="1900" max="<%= new Date().getFullYear() %>" value="<%= e.year || '' %>" />
+                          </label>
+                          <button type="submit" class="btn-primary-sm">Salva</button>
+                        </form>
+                      </div>
+                    </details>
+                  <% } %>
+                  <form method="POST" action="/birthday/remove" onsubmit="return confirm('Rimuovere questo compleanno?');">
                     <input type="hidden" name="userId" value="<%= e.userId %>" />
-                    <label>
-                      Giorno
-                      <input type="number" name="day" min="1" max="31" value="<%= e.day %>" required />
-                    </label>
-                    <label>
-                      Mese
-                      <input type="number" name="month" min="1" max="12" value="<%= e.month %>" required />
-                    </label>
-                    <label>
-                      Anno (opzionale)
-                      <input type="number" name="year" min="1900" max="<%= new Date().getFullYear() %>" value="<%= e.year || '' %>" />
-                    </label>
-                    <button type="submit" class="btn-primary-sm">Salva</button>
+                    <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
                   </form>
-                <% } else { %>
-                  <p class="hint">Questo utente non è più nel server — la data non è modificabile, ma puoi comunque rimuovere la voce.</p>
-                <% } %>
-                <form method="POST" action="/birthday/remove" class="birthday-remove-form" onsubmit="return confirm('Rimuovere questo compleanno?');">
-                  <input type="hidden" name="userId" value="<%= e.userId %>" />
-                  <button type="submit" class="btn-danger-sm">Rimuovi</button>
-                </form>
-              </details>
+                </div>
+              </div>
+              <% if (!e.memberPresent) { %>
+                <p class="config-card-subtext">Questo utente non è più nel server — la data non è modificabile, ma puoi comunque rimuovere la voce.</p>
+              <% } %>
             </div>
           <% }) %>
         <% }) %>

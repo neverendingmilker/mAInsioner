@@ -19,40 +19,44 @@
           <div class="config-card">
             <div class="config-card-header">
               <span class="config-name"><%= l.roleAName %> <%= l.bidirectional ? '↔' : '→' %> <%= l.roleBName %></span>
-              <form method="POST" action="/rolelink/remove" onsubmit="return confirm('Rimuovere questo collegamento?');">
-                <input type="hidden" name="roleAId" value="<%= l.roleAId %>" />
-                <input type="hidden" name="roleBId" value="<%= l.roleBId %>" />
-                <button type="submit" class="btn-danger-sm">Rimuovi</button>
-              </form>
+              <div class="card-actions">
+                <details>
+                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <div class="card-edit-popover">
+                    <form method="POST" action="/rolelink/edit" class="form">
+                      <input type="hidden" name="currentRoleAId" value="<%= l.roleAId %>" />
+                      <input type="hidden" name="currentRoleBId" value="<%= l.roleBId %>" />
+                      <label>
+                        Ruolo 1 (quando viene tolto…)
+                        <select name="roleAId" required>
+                          <% roles.forEach((r) => { %>
+                            <option value="<%= r.id %>" <%= r.id === l.roleAId ? 'selected' : '' %>><%= r.name %></option>
+                          <% }) %>
+                        </select>
+                      </label>
+                      <label>
+                        …viene tolto anche Ruolo 2
+                        <select name="roleBId" required>
+                          <% roles.forEach((r) => { %>
+                            <option value="<%= r.id %>" <%= r.id === l.roleBId ? 'selected' : '' %>><%= r.name %></option>
+                          <% }) %>
+                        </select>
+                      </label>
+                      <label class="checkbox-label">
+                        <input type="checkbox" name="bidirectional" <%= l.bidirectional ? 'checked' : '' %> />
+                        Vale anche al contrario (perdere Ruolo 2 toglie anche Ruolo 1)
+                      </label>
+                      <button type="submit" class="btn-primary-sm">Salva</button>
+                    </form>
+                  </div>
+                </details>
+                <form method="POST" action="/rolelink/remove" onsubmit="return confirm('Rimuovere questo collegamento?');">
+                  <input type="hidden" name="roleAId" value="<%= l.roleAId %>" />
+                  <input type="hidden" name="roleBId" value="<%= l.roleBId %>" />
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                </form>
+              </div>
             </div>
-            <details class="config-edit">
-              <summary>Modifica</summary>
-              <form method="POST" action="/rolelink/edit" class="form">
-                <input type="hidden" name="currentRoleAId" value="<%= l.roleAId %>" />
-                <input type="hidden" name="currentRoleBId" value="<%= l.roleBId %>" />
-                <label>
-                  Ruolo 1 (quando viene tolto…)
-                  <select name="roleAId" required>
-                    <% roles.forEach((r) => { %>
-                      <option value="<%= r.id %>" <%= r.id === l.roleAId ? 'selected' : '' %>><%= r.name %></option>
-                    <% }) %>
-                  </select>
-                </label>
-                <label>
-                  …viene tolto anche Ruolo 2
-                  <select name="roleBId" required>
-                    <% roles.forEach((r) => { %>
-                      <option value="<%= r.id %>" <%= r.id === l.roleBId ? 'selected' : '' %>><%= r.name %></option>
-                    <% }) %>
-                  </select>
-                </label>
-                <label class="checkbox-label">
-                  <input type="checkbox" name="bidirectional" <%= l.bidirectional ? 'checked' : '' %> />
-                  Vale anche al contrario (perdere Ruolo 2 toglie anche Ruolo 1)
-                </label>
-                <button type="submit" class="btn-primary-sm">Salva</button>
-              </form>
-            </details>
           </div>
         <% }) %>
       <% } %>
