@@ -62,23 +62,25 @@
       </form>
     <% } %>
 
-    <%# Card-reorder support: `cardOrder` (the saved drag order for this page's panels) is
-        always set by requireDashboardAccess, for both Admin and Mod, so the reorder
-        applies for anyone viewing the page — only this button + the drag handles it
-        reveals are Admin-only. See public/cardReorder.js and each view's `<div
-        class="card-list" id="card-list">` wrapping its `.panel[data-card-id]` sections.
-        Unlike the three items above, this one is NOT wired to submit-on-change: it's a
-        pure client-side mode toggle (unlocked = draggable, handles visible) handled
-        entirely by cardReorder.js, which decides on its own whether re-locking needs to
-        POST the hidden #card-reorder-form below (only if something was actually dragged —
-        see that file). Label is always "Riordina card". %>
+    <%# Card-reorder + card-resize support: `cardOrder` (drag order) and `cardSizes` (grid
+        column/row span) are always set by requireDashboardAccess, for both Admin and Mod,
+        so both apply for anyone viewing the page — only this button + the drag handles/
+        resize grips it reveals are Admin-only. See public/cardReorder.js and each view's
+        `<div class="card-list" id="card-list">` wrapping its `.panel[data-card-id]`
+        sections — the standard for every feature page, current and future. Unlike the
+        three items above, this one is NOT wired to submit-on-change: it's a pure
+        client-side mode toggle (unlocked = draggable + resizable) handled entirely by
+        cardReorder.js, which decides on its own whether re-locking needs to POST the
+        hidden #card-reorder-form below (only if something was actually dragged or resized
+        — see that file). Label is always "Riordina card". %>
     <% if (typeof cardOrder !== 'undefined') { %>
       <script id="card-order-data" type="application/json"><%- JSON.stringify(cardOrder) %></script>
     <% } %>
-    <%# Saved per-card width/height (two-column pages only, Anime Night for now — an empty
-        object everywhere else, harmless). Applied on load and re-saved alongside order in
-        the same #card-reorder-form/POST — see cardReorder.js's freezeSizesForResize and
-        the "sizes" field handling in routes/cardOrderRoutes.js. %>
+    <%# Saved per-card CSS Grid span, keyed by data-card-id — an empty object on a page
+        nobody has resized yet, harmless (every card just keeps its default full-width
+        span). Applied on load and re-saved alongside order in the same
+        #card-reorder-form/POST — see cardReorder.js and the "sizes" field handling in
+        routes/cardOrderRoutes.js. %>
     <% if (typeof cardSizes !== 'undefined') { %>
       <script id="card-size-data" type="application/json"><%- JSON.stringify(cardSizes) %></script>
     <% } %>

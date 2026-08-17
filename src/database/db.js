@@ -533,13 +533,15 @@ async function createTables() {
         PRIMARY KEY (guild_id, feature_key)
       )`,
 
-      // Saved per-card width/height for a two-column card layout's native browser resize
-      // (see public/cardReorder.js's freezeSizesForResize and public/style.css's
-      // .card-list.two-col.reorder-mode .panel) — Admin-only to change, shown as-is to
-      // everyone (Admin and Mod alike), same convention as dashboard_card_order. Piloted on
-      // Anime Night only for now. `sizes_json` is a JSON object keyed by that page's
-      // `data-card-id` values, e.g. {"sessioni": {"width": 281, "height": 368}}; a card id
-      // missing from it just keeps its default ~50% flex size.
+      // Saved per-card CSS Grid span (column + row) for every feature page's card list (see
+      // public/cardReorder.js and public/style.css's `.card-list`) — Admin-only to change,
+      // shown as-is to everyone (Admin and Mod alike), same convention as
+      // dashboard_card_order. Standard for every feature page, current and future.
+      // `sizes_json` is a JSON object keyed by that page's `data-card-id` values, e.g.
+      // {"sessioni": {"colSpan": 1, "rowSpan": 2}}; a card id missing from it just keeps its
+      // default full-width single-row span. NOTE: this used to store pixel {width, height}
+      // from a two-column-only pilot on Anime Night — see the DELETE in migrate() below,
+      // which clears out that now-meaningless old shape the one time this ships.
       `CREATE TABLE IF NOT EXISTS dashboard_card_size (
         guild_id TEXT NOT NULL,
         feature_key TEXT NOT NULL,
@@ -905,6 +907,15 @@ async function migrate() {
   // divider between two fixed columns. Drops the now-unused table for any install that had
   // already picked it up; the new approach doesn't persist card sizes at all (yet).
   await client.execute('DROP TABLE IF EXISTS dashboard_card_layout');
+
+  // dashboard_card_size's per-card resize grew from a two-column-only pixel {width, height}
+  // pilot (Anime Night) into the standard grid {colSpan, rowSpan} system for every feature
+  // page. A row saved under the old shape is meaningless under the new one (a saved pixel
+  // width like 281 would otherwise get clamped into a nonsensical colSpan), so clear out
+  // any row still holding it — detected by content (the old shape's "width" key can't
+  // appear in the new one), not a one-shot version flag, so this stays safe to run on every
+  // boot: once every old-shaped row is gone the query matches nothing and it's a no-op.
+  await client.execute('DELETE FROM dashboard_card_size WHERE sizes_json LIKE \'%"width"%\'');
 }
 
 const ready = createTables()

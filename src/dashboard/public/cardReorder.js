@@ -1,9 +1,12 @@
-// Vanilla-JS drag-and-drop reordering for the "cards" (panel sections) on a feature page,
-// no dependencies — same technique as qotdReorder.js/themesReorder.js, plus a "Riordina
-// card" switch gating whether dragging is possible at all (off by default, so browsing a
-// feature page never risks an accidental reorder), and the saved order is applied to the
-// DOM on every load (for Admin and Mod alike) even when the switch itself isn't rendered
-// (Mods never see it — see partials/featureToggle.ejs).
+// Vanilla-JS drag-and-drop reordering AND drag-to-resize for the "cards" (panel sections)
+// on a feature page, no dependencies — same drag-reorder technique as
+// qotdReorder.js/themesReorder.js, plus a "Riordina card" switch gating whether either is
+// possible at all (off by default, so browsing a feature page never risks an accidental
+// change), and the saved order/sizes are applied to the DOM on every load (for Admin and
+// Mod alike) even when the switch itself isn't rendered (Mods never see it — see
+// partials/featureToggle.ejs). This is the standard for every feature page's #card-list,
+// current and future — nothing here is Anime-Night-specific (it was only ever piloted
+// there before being made the default for every page).
 (function () {
   // Included from partials/featureToggle.ejs, which every view renders near the TOP of the
   // page (inside .page-header) — well before the #card-list markup further down. Without
@@ -11,6 +14,20 @@
   // no #card-list yet, and bail out silently (the bug that shipped initially: the switch
   // existed in the DOM but nothing was ever wired up to it).
   document.addEventListener('DOMContentLoaded', init);
+
+  // Must match public/style.css's `.card-list { grid-template-columns: repeat(3, 1fr) }`
+  // and `grid-auto-rows: minmax(140px, auto)` — used only to translate a resize drag's
+  // pixel delta into a column/row count, not to size anything itself (the grid's own CSS
+  // does that). A row can render taller than this if its content needs it to, so the row
+  // math below is a snapping approximation, not a pixel-exact measurement.
+  var COLS = 3;
+  var ROW_UNIT = 140;
+  var GAP = 24;
+  var MAX_ROW_SPAN = 6;
+
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
 
   function init() {
     var list = document.getElementById('card-list');
@@ -40,10 +57,10 @@
       }
     }
 
-    // Apply saved per-card sizes (two-column pages only, see public/style.css's .two-col) —
-    // for Admin and Mod alike, same as the order above. Takes each card out of flex's
-    // auto-sizing the same way freezeSizesForResize does below, so a saved size actually
-    // sticks instead of being immediately overridden by the default ~50% flex-basis.
+    // Apply saved per-card grid spans — for Admin and Mod alike, same as the order above.
+    // Every card defaults to span 3/1 (full width, one row — see style.css) purely from
+    // CSS, so a page nobody has ever resized needs no JS here at all; this only overrides
+    // cards that have an explicit saved span.
     var sizeDataEl = document.getElementById('card-size-data');
     var savedSizes = {};
     if (sizeDataEl) {
@@ -54,16 +71,12 @@
         savedSizes = {};
       }
     }
-    if (list.classList.contains('two-col')) {
-      var cardsForSize = list.querySelectorAll('.panel[data-card-id]');
-      for (var s = 0; s < cardsForSize.length; s++) {
-        var cid = cardsForSize[s].getAttribute('data-card-id');
-        var sz = savedSizes[cid];
-        if (sz && typeof sz.width === 'number' && typeof sz.height === 'number') {
-          cardsForSize[s].style.flex = 'none';
-          cardsForSize[s].style.width = sz.width + 'px';
-          cardsForSize[s].style.height = sz.height + 'px';
-        }
+    var cardsForSize = list.querySelectorAll('.panel[data-card-id]');
+    for (var s = 0; s < cardsForSize.length; s++) {
+      var cid = cardsForSize[s].getAttribute('data-card-id');
+      var sz = savedSizes[cid];
+      if (sz && typeof sz.colSpan === 'number' && typeof sz.rowSpan === 'number') {
+        applySpan(cardsForSize[s], sz.colSpan, sz.rowSpan);
       }
     }
 
@@ -79,10 +92,9 @@
     // reloads the page) if something was really moved — flipping it back off without
     // having dragged anything is a no-op, not a wasted round-trip.
     var moved = false;
-    // Snapshot of every card's pixel size taken the moment reorder mode turns on (see
-    // freezeSizesForResize), compared against the current sizes when it turns back off —
-    // same "only save if something actually changed" behavior as `moved` above, but for
-    // resize instead of drag.
+    // Snapshot of every card's column/row span taken the moment reorder mode turns on,
+    // compared against the current spans when it turns back off — same "only save if
+    // something actually changed" behavior as `moved` above, but for resize instead of drag.
     var sizesAtLockStart = {};
 
     function currentOrder() {
@@ -92,13 +104,27 @@
       return ids.join(',');
     }
 
+    function readSpan(card) {
+      return {
+        colSpan: parseInt(card.getAttribute('data-col-span') || '3', 10),
+        rowSpan: parseInt(card.getAttribute('data-row-span') || '1', 10),
+      };
+    }
+
+    function applySpan(card, colSpan, rowSpan) {
+      colSpan = clamp(Math.round(colSpan), 1, COLS);
+      rowSpan = clamp(Math.round(rowSpan), 1, MAX_ROW_SPAN);
+      card.style.gridColumn = 'span ' + colSpan;
+      card.style.gridRow = 'span ' + rowSpan;
+      card.setAttribute('data-col-span', String(colSpan));
+      card.setAttribute('data-row-span', String(rowSpan));
+    }
+
     function currentSizes() {
       var result = {};
-      if (!list.classList.contains('two-col')) return result;
       var cards = list.querySelectorAll('.panel[data-card-id]');
       for (var i = 0; i < cards.length; i++) {
-        var rect = cards[i].getBoundingClientRect();
-        result[cards[i].getAttribute('data-card-id')] = { width: Math.round(rect.width), height: Math.round(rect.height) };
+        result[cards[i].getAttribute('data-card-id')] = readSpan(cards[i]);
       }
       return result;
     }
@@ -128,24 +154,55 @@
       for (var i = 0; i < handles.length; i++) handles[i].parentNode.removeChild(handles[i]);
     }
 
-    // Two-column pages only (public/style.css's .card-list.two-col): while cards are laid
-    // out with a flex-basis percentage (the default ~50/50 split), the browser's native
-    // resize handle (CSS `resize: both`, turned on for .reorder-mode .panel) sets an inline
-    // pixel width that flex-grow/flex-shrink then fights and overrides on every layout pass
-    // — so width resize silently does nothing. Snapshotting each card's current pixel size
-    // into an inline width/height and switching to `flex: none` the moment reorder mode
-    // turns on removes it from the flex sizing algorithm entirely, so the resize handle's
-    // own inline width sticks. Left in place after re-locking (deliberately — there's no
-    // "reset to default size" control; whatever size the card ends at gets saved).
-    function freezeSizesForResize() {
-      if (!list.classList.contains('two-col')) return;
-      var cardsToFreeze = list.querySelectorAll('.panel[data-card-id]');
-      for (var i = 0; i < cardsToFreeze.length; i++) {
-        var rect = cardsToFreeze[i].getBoundingClientRect();
-        cardsToFreeze[i].style.flex = 'none';
-        cardsToFreeze[i].style.width = rect.width + 'px';
-        cardsToFreeze[i].style.height = rect.height + 'px';
+    function addResizeGrip(card) {
+      if (card.querySelector('.card-resize-grip')) return;
+      var grip = document.createElement('span');
+      grip.className = 'card-resize-grip';
+      grip.title = 'Trascina per ridimensionare (colonne/righe)';
+      grip.addEventListener('mousedown', function (e) {
+        if (!unlocked) return;
+        e.preventDefault();
+        e.stopPropagation();
+        startCardResize(card, e);
+      });
+      card.appendChild(grip);
+    }
+
+    function removeResizeGrips() {
+      var grips = list.querySelectorAll('.card-resize-grip');
+      for (var i = 0; i < grips.length; i++) grips[i].parentNode.removeChild(grips[i]);
+    }
+
+    // Grid spans (integers) don't respond to the native CSS `resize` property, so dragging
+    // the grip is handled entirely here: track the mouse, convert how far it's moved into a
+    // column/row count using the grid's own current column width (ROW_UNIT for rows, since
+    // rows are auto-sized to content and have no single fixed pixel height to measure), and
+    // snap the card's span to that as you go — same interaction shape as a native resize
+    // handle, just quantized to whole grid cells instead of following the cursor 1:1.
+    function startCardResize(card, startEvent) {
+      var startX = startEvent.clientX;
+      var startY = startEvent.clientY;
+      var start = readSpan(card);
+      var listRect = list.getBoundingClientRect();
+      var colWidth = (listRect.width - GAP * (COLS - 1)) / COLS;
+      card.classList.add('card-resizing');
+
+      function onMove(e) {
+        var dx = e.clientX - startX;
+        var dy = e.clientY - startY;
+        var deltaCols = Math.round(dx / (colWidth + GAP));
+        var deltaRows = Math.round(dy / (ROW_UNIT + GAP));
+        applySpan(card, start.colSpan + deltaCols, start.rowSpan + deltaRows);
       }
+
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        card.classList.remove('card-resizing');
+      }
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
     }
 
     var initialCards = list.querySelectorAll('.panel[data-card-id]');
@@ -184,7 +241,7 @@
     // Modificabile switches above — but unlike those, this one is NOT wired to submit its
     // own form on every change (there's no persisted "is this feature in reorder mode"
     // boolean to save). It only ever touches the server when flipped back OFF after
-    // something was actually dragged, via the hidden #card-reorder-form.
+    // something was actually dragged or resized, via the hidden #card-reorder-form.
     lockSwitch.addEventListener('change', function () {
       // Switched ON: enter edit mode, nothing to save yet.
       if (lockSwitch.checked) {
@@ -192,10 +249,12 @@
         moved = false;
         setDraggable(true);
         list.classList.add('reorder-mode');
-        freezeSizesForResize();
         sizesAtLockStart = currentSizes();
         var cards = list.querySelectorAll('.panel[data-card-id]');
-        for (var i = 0; i < cards.length; i++) addHandle(cards[i]);
+        for (var i = 0; i < cards.length; i++) {
+          addHandle(cards[i]);
+          addResizeGrip(cards[i]);
+        }
         return;
       }
 
@@ -206,6 +265,7 @@
       setDraggable(false);
       list.classList.remove('reorder-mode');
       removeHandles();
+      removeResizeGrips();
       var resized = JSON.stringify(currentSizes()) !== JSON.stringify(sizesAtLockStart);
       if (moved || resized) {
         submitNewOrder(); // POSTs and reloads the page.

@@ -9,13 +9,7 @@
 
     <%- include('partials/flash') %>
 
-    <%# EXPERIMENTAL two-column layout, piloted here only (see public/style.css's
-        .card-list.two-col). The two cards sit side by side via flex-wrap (no JS needed for
-        that part); while "Riordina card" is on (cardReorder.js adds .reorder-mode to this
-        same #card-list), each card also gets a native browser resize grip — drag its
-        bottom-right corner to resize both width and height. Sizes are NOT persisted yet
-        (they reset on reload) — see git history / README if that gets added later. %>
-    <div class="card-list two-col" id="card-list">
+    <div class="card-list" id="card-list">
 <section class="panel" data-card-id="sessioni">
       <h2>Sessioni (<%= sessions.length %>)</h2>
       <% if (sessions.length === 0) { %>

@@ -1,12 +1,18 @@
 const db = require('../database/db');
 
-// Per-guild, per-feature saved width/height for each card's native browser resize on a
-// two-column feature page — Admin-only to change (see routes/cardOrderRoutes.js, which
-// saves this alongside card order in the same request), applied for everyone who can open
-// that feature page (Admin and Mod alike, see middleware/requireAdmin.js). One row per
-// guild+feature, `sizes` a plain object keyed by that page's `data-card-id` values, e.g.
-// { sessioni: { width: 281, height: 368 } }. Piloted on Anime Night only for now — see
-// public/cardReorder.js and animenight.ejs.
+// Per-guild, per-feature saved grid position size for each card on a feature page — Admin-
+// only to change (see routes/cardOrderRoutes.js, which saves this alongside card order in
+// the same request), applied for everyone who can open that feature page (Admin and Mod
+// alike, see middleware/requireAdmin.js). One row per guild+feature, `sizes` a plain object
+// keyed by that page's `data-card-id` values, each a CSS Grid span, e.g.
+// { sessioni: { colSpan: 1, rowSpan: 2 } } — colSpan out of the grid's fixed 3 columns,
+// rowSpan in row units (see public/style.css's `.card-list` and public/cardReorder.js's
+// COLS/ROW_UNIT/MAX_ROW_SPAN, which this clamps against). Standard for every feature page's
+// card list, current and future — see public/cardReorder.js and any view's
+// `#card-list`/`.panel[data-card-id]` markup.
+
+const MAX_COL_SPAN = 3;
+const MAX_ROW_SPAN = 6;
 
 function sanitizeSizes(sizes) {
   if (!sizes || typeof sizes !== 'object') return {};
@@ -14,12 +20,10 @@ function sanitizeSizes(sizes) {
   for (const [cardId, size] of Object.entries(sizes)) {
     if (typeof cardId !== 'string' || !cardId) continue;
     if (!size || typeof size !== 'object') continue;
-    const width = Number(size.width);
-    const height = Number(size.height);
-    if (!Number.isFinite(width) || !Number.isFinite(height)) continue;
-    // Sane floor so a stray 0/negative value (or a wildly huge one from a bad client)
-    // never produces an unusable or absurd card.
-    clean[cardId] = { width: Math.min(4000, Math.max(120, width)), height: Math.min(4000, Math.max(80, height)) };
+    const colSpan = Math.round(Number(size.colSpan));
+    const rowSpan = Math.round(Number(size.rowSpan));
+    if (!Number.isFinite(colSpan) || !Number.isFinite(rowSpan)) continue;
+    clean[cardId] = { colSpan: Math.min(MAX_COL_SPAN, Math.max(1, colSpan)), rowSpan: Math.min(MAX_ROW_SPAN, Math.max(1, rowSpan)) };
   }
   return clean;
 }

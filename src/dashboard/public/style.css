@@ -99,11 +99,33 @@ a {
   opacity: 0.5;
 }
 
-/* --- Card reorder: drag-and-drop for the panel sections inside a feature page --- */
+/* --- Card layout: drag-to-reorder + drag-to-resize for the panel sections inside a
+   feature page, the standard for every current AND future feature page (any view with
+   `<div class="card-list" id="card-list">` wrapping `.panel[data-card-id]` sections gets
+   both automatically — see public/cardReorder.js).
+
+   A CSS Grid, up to 3 columns, `grid-auto-rows: minmax(CARD_ROW_UNIT, auto)` (the px value
+   must match cardReorder.js's ROW_UNIT constant, used for resize-drag snapping — a row is
+   never shorter than that, but grows for taller content). Every panel defaults to
+   `grid-column: span 3` (full width) + `grid-row: span 1`, i.e. the plain single-column
+   stack every page already had — resizing is opt-in per card, nothing changes until an
+   Admin actually drags a grip. `min-width: 0` is needed on grid items or a panel with wide
+   content (a table, a long input) refuses to shrink below its content size and blows out a
+   narrower column.
+
+   Shrinking a card's column span to less than 3 is what puts it side-by-side with its
+   neighbors — three cards each at span 1 sit in one row and, because grid items stretch to
+   fill their row by default, end up the same height with zero extra CSS. Growing a card's
+   row span makes it as tall as however many rows it now covers, which is what lets e.g. one
+   span-2 card sit next to two stacked span-1 cards and come out exactly as tall as the two
+   of them combined — the grid sizes the rows to fit both column's content and simply adds
+   them up for the spanning card. */
 
 .card-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: minmax(140px, auto);
+  grid-auto-flow: row dense;
   gap: 24px;
   margin-top: 24px;
 }
@@ -111,6 +133,9 @@ a {
 .card-list .panel {
   position: relative;
   margin-top: 0;
+  min-width: 0;
+  grid-column: span 3;
+  grid-row: span 1;
 }
 
 .card-list .panel:has(.card-drag-handle) {
@@ -131,31 +156,42 @@ a {
   opacity: 0.4;
 }
 
-/* EXPERIMENTAL: two-column layout for a feature page's cards, piloted on Anime Night only
-   (animenight.ejs) — every other page's .card-list stays the regular single-column flex
-   layout above. The two .panel children just sit side by side via flex-wrap, each
-   defaulting to roughly half the row; no JS needed for that part. Cards are only
-   individually resizable (native browser resize, no custom drag code) while "Riordina
-   card" is on — cardReorder.js already adds/removes .reorder-mode on this same #card-list
-   when that switch is toggled, so reuse the same state instead of introducing a second one.
-   Sizes reset on reload — nothing persists them (yet). */
-.card-list.two-col {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: flex-start;
+/* Bottom-right resize grip — only visible while "Riordina card" is on (cardReorder.js
+   toggles .reorder-mode on #card-list, same state the drag handles above use). Dragging it
+   is handled entirely in JS (grid spans don't respond to the native CSS `resize` property),
+   snapping to whole columns/rows as you move rather than following the cursor pixel-for-
+   pixel — see startCardResize in cardReorder.js. */
+.card-resize-grip {
+  display: none;
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  user-select: none;
+  z-index: 1;
 }
 
-.card-list.two-col .panel {
-  flex: 1 1 calc(50% - 12px);
-  min-width: 260px;
+.card-resize-grip::before {
+  content: '';
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-dim);
+  border-bottom: 2px solid var(--text-dim);
 }
 
-.card-list.two-col.reorder-mode .panel {
-  resize: both;
-  overflow: auto;
-  max-width: 100%;
-  min-height: 120px;
+.card-list.reorder-mode .card-resize-grip {
+  display: block;
+}
+
+.card-list .panel.card-resizing {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  z-index: 2;
 }
 
 .sidebar-footer {
