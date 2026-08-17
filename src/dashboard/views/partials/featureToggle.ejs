@@ -20,7 +20,7 @@
     <form method="POST" action="<%= toggleAction %>" class="btn-group-form">
       <label class="btn-group-item">
         <input type="checkbox" name="enabled" value="true" <%= enabled ? 'checked' : '' %> onchange="this.form.submit()" />
-        <span>Active</span>
+        <span>Attivo</span>
       </label>
     </form>
 
@@ -38,7 +38,7 @@
       <form method="POST" action="/mod-access/<%= currentFeatureKey %>/toggle" class="btn-group-form">
         <label class="btn-group-item">
           <input type="checkbox" name="soloAdmin" value="true" <%= modAccessEnabled ? '' : 'checked' %> onchange="this.form.submit()" />
-          <span>Admin only</span>
+          <span>Solo Admin</span>
         </label>
       </form>
     <% } %>
@@ -60,13 +60,13 @@
       <form method="POST" action="/feature-lock/<%= currentFeatureKey %>/toggle" class="btn-group-form">
         <label class="btn-group-item">
           <input type="checkbox" name="editable" value="true" <%= typeof featureLocked !== 'undefined' && featureLocked ? '' : 'checked' %> onchange="this.form.submit()" />
-          <span>Edit</span>
+          <span>Modifica</span>
         </label>
       </form>
     <% } else if (typeof role !== 'undefined' && role === 'mod' && typeof featureLocked !== 'undefined') { %>
       <label class="btn-group-item btn-group-item-readonly" title="Solo un Admin può cambiarlo">
         <input type="checkbox" <%= featureLocked ? '' : 'checked' %> disabled />
-        <span>Edit</span>
+        <span>Modifica</span>
       </label>
     <% } %>
 
@@ -87,7 +87,7 @@
     <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
       <label class="btn-group-item">
         <input type="checkbox" id="card-lock-btn" data-feature-key="<%= currentFeatureKey %>" />
-        <span>Reorder</span>
+        <span>Riordina</span>
       </label>
     <% } %>
   </div>
@@ -104,15 +104,15 @@
     <div class="btn-group" id="card-cols-group">
       <label class="btn-group-item">
         <input type="radio" name="card-cols" value="1" />
-        <span>1 Col</span>
+        <span>1 Colonna</span>
       </label>
       <label class="btn-group-item">
         <input type="radio" name="card-cols" value="2" />
-        <span>2 Cols</span>
+        <span>2 Colonne</span>
       </label>
       <label class="btn-group-item">
         <input type="radio" name="card-cols" value="3" />
-        <span>3 Cols</span>
+        <span>3 Colonne</span>
       </label>
     </div>
   <% } %>
