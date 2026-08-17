@@ -399,6 +399,61 @@ a {
   min-width: 52px;
 }
 
+/* EXPERIMENTAL: segmented button-group skin for the feature-page header controls, tried
+   for now only on Anime Night (partials/featureToggleGrouped.ejs) instead of the regular
+   .switch look every other feature page still uses. Each item is still a real (hidden)
+   checkbox underneath — active/colored state is driven purely by :has(input:checked), no
+   JS or server-computed class needed. */
+.btn-group {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.btn-group-form {
+  display: contents;
+}
+
+.btn-group-item {
+  display: flex;
+  align-items: center;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: var(--panel-alt);
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-group-item:last-child {
+  border-right: none;
+}
+
+.btn-group-item input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.btn-group-item:hover {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.btn-group-item:has(input:checked) {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-group-item:has(input:checked):hover {
+  background: var(--accent);
+}
+
 .flash {
   margin-top: 16px;
   padding: 10px 14px;
@@ -781,6 +836,15 @@ a {
 }
 
 .config-meta {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* Secondary text under a .config-card-header (e.g. Anime Night's list of titles for a
+   session) — NOT the shared .hint class, which carries a 28px top margin meant for
+   standalone help text under a form and left a big empty-looking gap here. */
+.config-card-subtext {
+  margin: 4px 0 0;
   color: var(--text-dim);
   font-size: 13px;
 }
