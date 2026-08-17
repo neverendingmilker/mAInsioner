@@ -2,7 +2,6 @@ const { getSidebarFeatures, getSidebarToolsForPath, getFeatureKeyForPath, getToo
 const modAccess = require('../modAccess');
 const cardOrder = require('../cardOrder');
 const featureLock = require('../featureLock');
-const cardLayout = require('../cardLayout');
 
 // Gates every dashboard page behind: Discord login, being an Administrator OR the
 // configured Mod role in at least one server the bot is in (both checked once at login,
@@ -75,7 +74,6 @@ async function requireDashboardAccess(req, res, next) {
     try {
       res.locals.modAccessEnabled = featureKey ? await modAccess.isFeatureModAccessible(req.session.guildId, featureKey) : false;
       res.locals.cardOrder = featureKey ? await cardOrder.getOrder(req.session.guildId, featureKey) : [];
-      res.locals.cardLayoutFraction = featureKey ? await cardLayout.getColumnFraction(req.session.guildId, featureKey) : cardLayout.DEFAULT_FRACTION;
     } catch (err) {
       return next(err);
     }
@@ -89,7 +87,6 @@ async function requireDashboardAccess(req, res, next) {
   res.locals.modAccessEnabled = false;
   res.locals.featureLocked = locked;
   res.locals.cardOrder = [];
-  res.locals.cardLayoutFraction = cardLayout.DEFAULT_FRACTION;
 
   try {
     const allowedKeys = await modAccess.listModAccessibleFeatureKeys(req.session.guildId);
@@ -113,7 +110,6 @@ async function requireDashboardAccess(req, res, next) {
         });
       }
       res.locals.cardOrder = await cardOrder.getOrder(req.session.guildId, featureKey);
-      res.locals.cardLayoutFraction = await cardLayout.getColumnFraction(req.session.guildId, featureKey);
     }
 
     next();

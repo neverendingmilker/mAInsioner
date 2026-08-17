@@ -132,42 +132,30 @@ a {
 }
 
 /* EXPERIMENTAL: two-column layout for a feature page's cards, piloted on Anime Night only
-   (public/cardResize.js, animenight.ejs) — every other page's .card-list stays the regular
-   single-column flex layout above. The two .panel children get NO explicit grid-column
-   (auto-placed into whatever cells are left, in DOM order — column 1 then column 3), while
-   #card-resize-handle IS explicitly placed in the middle column, so drag-reordering the two
-   panels (see .card-drag-handle above) and dragging this resize handle never interfere with
-   each other. --col1-fr/--col2-fr are set inline from the saved fraction (server-rendered,
-   avoids a flash of the wrong split before JS runs) and updated live during a drag. */
+   (animenight.ejs) — every other page's .card-list stays the regular single-column flex
+   layout above. The two .panel children just sit side by side via flex-wrap, each
+   defaulting to roughly half the row; no JS needed for that part. Cards are only
+   individually resizable (native browser resize, no custom drag code) while "Riordina
+   card" is on — cardReorder.js already adds/removes .reorder-mode on this same #card-list
+   when that switch is toggled, so reuse the same state instead of introducing a second one.
+   Sizes reset on reload — nothing persists them (yet). */
 .card-list.two-col {
-  display: grid;
-  grid-template-columns: var(--col1-fr, 1fr) 8px var(--col2-fr, 1fr);
-  gap: 0;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
 
-.card-resize-handle {
-  grid-column: 2;
-  grid-row: 1;
-  width: 8px;
-  cursor: col-resize;
-  position: relative;
+.card-list.two-col .panel {
+  flex: 1 1 calc(50% - 12px);
+  min-width: 260px;
 }
 
-.card-resize-handle::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 3px;
-  width: 2px;
-  background: var(--border);
-  border-radius: 999px;
-  transition: background 0.15s ease;
-}
-
-.card-resize-handle:hover::before,
-.card-resize-handle.resizing::before {
-  background: var(--accent);
+.card-list.two-col.reorder-mode .panel {
+  resize: both;
+  overflow: auto;
+  max-width: 100%;
+  min-height: 120px;
 }
 
 .sidebar-footer {

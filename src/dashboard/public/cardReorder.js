@@ -83,6 +83,26 @@
       for (var i = 0; i < handles.length; i++) handles[i].parentNode.removeChild(handles[i]);
     }
 
+    // Two-column pages only (public/style.css's .card-list.two-col): while cards are laid
+    // out with a flex-basis percentage (the default ~50/50 split), the browser's native
+    // resize handle (CSS `resize: both`, turned on for .reorder-mode .panel) sets an inline
+    // pixel width that flex-grow/flex-shrink then fights and overrides on every layout pass
+    // — so width resize silently does nothing. Snapshotting each card's current pixel size
+    // into an inline width/height and switching to `flex: none` the moment reorder mode
+    // turns on removes it from the flex sizing algorithm entirely, so the resize handle's
+    // own inline width sticks. Left in place after re-locking (deliberately — there's no
+    // persisted "reset the size" trigger since sizes aren't saved to the server at all).
+    function freezeSizesForResize() {
+      if (!list.classList.contains('two-col')) return;
+      var cardsToFreeze = list.querySelectorAll('.panel[data-card-id]');
+      for (var i = 0; i < cardsToFreeze.length; i++) {
+        var rect = cardsToFreeze[i].getBoundingClientRect();
+        cardsToFreeze[i].style.flex = 'none';
+        cardsToFreeze[i].style.width = rect.width + 'px';
+        cardsToFreeze[i].style.height = rect.height + 'px';
+      }
+    }
+
     var initialCards = list.querySelectorAll('.panel[data-card-id]');
     for (var k = 0; k < initialCards.length; k++) attachHandlers(initialCards[k]);
 
@@ -127,6 +147,7 @@
         moved = false;
         setDraggable(true);
         list.classList.add('reorder-mode');
+        freezeSizesForResize();
         var cards = list.querySelectorAll('.panel[data-card-id]');
         for (var i = 0; i < cards.length; i++) addHandle(cards[i]);
         return;
