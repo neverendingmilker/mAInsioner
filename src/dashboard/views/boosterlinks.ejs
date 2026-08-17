@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="ruoli-collegati">
       <h2>Ruoli collegati (<%= links.length %>)</h2>
       <% if (links.length === 0) { %>
         <p class="hint">Nessun ruolo personalizzato collegato a un booster.</p>
@@ -48,7 +49,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="aggiungi-collegamento">
       <h2>Aggiungi collegamento</h2>
       <% if (members.length === 0 || roles.length === 0) { %>
         <p class="hint">Servono almeno un membro e un ruolo assegnabile.</p>
@@ -78,7 +79,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="ruoli-esenti">
       <h2>Ruoli esenti (<%= exemptRoles.length %>)</h2>
       <p class="hint">I membri con uno qualsiasi di questi ruoli non vengono mai toccati dalla rimozione automatica, indipendentemente dal boost.</p>
       <% if (exemptRoles.length === 0) { %>
@@ -111,6 +112,7 @@
         </form>
       <% } %>
     </section>
+</div>
   </main>
 </div>
 <%- include('partials/footer') %>

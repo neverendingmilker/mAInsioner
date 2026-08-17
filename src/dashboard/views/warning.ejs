@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="configurazione">
       <h2>Configurazione</h2>
       <form method="POST" action="/warning/config" class="form">
         <label>
@@ -44,7 +45,7 @@
       <p class="hint">I due ruoli vanno specificati insieme (o nessuno dei due). Il canale è indipendente.</p>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="assegna-warning">
       <h2>Assegna warning</h2>
       <p class="hint">Accetta anche l'ID di chi ha lasciato il server — il warning viene registrato comunque, senza assegnare ruoli.</p>
       <form method="POST" action="/warning/warn" class="form">
@@ -64,7 +65,7 @@
       </form>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="assegna-verbale">
       <h2>Assegna verbale</h2>
       <p class="hint">Non assegna nessun ruolo, solo una nota nel canale warning.</p>
       <% if (members.length === 0) { %>
@@ -93,7 +94,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="i-miei-warning-verbali-modificabili">
       <h2>I miei warning/verbali modificabili (<%= editableRows.length %>)</h2>
       <p class="hint">Puoi modificare solo quelli che hai emesso tu.</p>
       <% if (editableRows.length === 0) { %>
@@ -123,7 +124,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="elenco-recente">
       <h2>Elenco recente (<%= recentWarnings.length %><%= recentWarningsTruncated ? '+' : '' %>)</h2>
       <% if (recentWarnings.length === 0) { %>
         <p class="hint">Nessun warning registrato ancora.</p>
@@ -148,6 +149,7 @@
         <% } %>
       <% } %>
     </section>
+</div>
   </main>
 </div>
 <%- include('partials/footer') %>

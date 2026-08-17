@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="sessioni">
       <h2>Sessioni (<%= sessions.length %>)</h2>
       <% if (sessions.length === 0) { %>
         <p class="hint">Nessuna sessione registrata.</p>
@@ -45,7 +46,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="aggiungi-anime">
       <h2>Aggiungi anime</h2>
       <form method="POST" action="/animenight/add" class="form">
         <label>
@@ -60,6 +61,7 @@
       </form>
       <p class="hint">Se la data coincide con una sessione già esistente, i titoli si aggiungono a quella invece di crearne una nuova.</p>
     </section>
+</div>
   </main>
 </div>
 <%- include('partials/footer') %>

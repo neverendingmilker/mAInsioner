@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="canali-con-messaggio-persistente">
       <h2>Canali con messaggio persistente (<%= stickies.length %>)</h2>
       <% if (stickies.length === 0) { %>
         <p class="hint">Nessun canale configurato.</p>
@@ -45,7 +46,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="aggiungi-messaggio-persistente">
       <h2>Aggiungi messaggio persistente</h2>
       <% if (textChannels.length === 0) { %>
         <p class="hint">Nessun canale testuale disponibile.</p>
@@ -73,6 +74,7 @@
         <p class="hint">Applicarlo a un singolo thread invece che a un canale intero resta possibile solo via <code>/sticky add</code> su Discord.</p>
       <% } %>
     </section>
+</div>
   </main>
 </div>
 <%- include('partials/footer') %>

@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="backup-di-questo-server">
       <h2>Backup di questo server (<%= snapshots.length %>)</h2>
       <p class="hint">Un backup può essere ripristinato più volte senza rischi: non cancella né sovrascrive nulla di già esistente, crea solo quello che manca (abbinato per nome).</p>
       <% if (snapshots.length === 0) { %>
@@ -33,7 +34,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="crea-nuovo-backup">
       <h2>Crea nuovo backup</h2>
       <form method="POST" action="/serverbackup/create" class="form">
         <label>
@@ -52,6 +53,7 @@
       </form>
       <p class="hint">"all" = tutto (ruoli, canali, ruoli membri, emoji/sticker/soundboard). Con "assets" può richiedere un po' di tempo se il server ne ha molti — scarica ogni file uno alla volta.</p>
     </section>
+</div>
   </main>
 </div>
 <%- include('partials/footer') %>

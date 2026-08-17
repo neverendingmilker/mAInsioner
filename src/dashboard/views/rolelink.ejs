@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="collegamenti">
       <h2>Collegamenti (<%= links.length %>)</h2>
       <% if (links.length === 0) { %>
         <p class="hint">Nessun collegamento configurato.</p>
@@ -57,7 +58,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="aggiungi-collegamento">
       <h2>Aggiungi collegamento</h2>
       <% if (roles.length < 2) { %>
         <p class="hint">Servono almeno due ruoli assegnabili nel server per creare un collegamento.</p>
@@ -90,6 +91,7 @@
         <p class="hint">Per collegare Ruolo 1 a più ruoli in un colpo solo, usa <code>/rolelink add</code> su Discord.</p>
       <% } %>
     </section>
+</div>
   </main>
 </div>
 <%- include('partials/footer') %>

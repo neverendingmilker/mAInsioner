@@ -75,9 +75,11 @@ Server-rendered (Express + EJS) web dashboard, running in the **same process and
   - **WaifuWar LR** — toggle, list/add/remove channels set up for reaction codes, and per-channel digit→emoji mappings (add/overwrite several at once by comma-separating both, remove one at a time). Posting an image then a digits-only message still only works live on Discord (that part reads real messages/attachments as they're posted) — the dashboard only manages the channel list and the mapping, not the runtime behavior itself.
   - **Warnings** — toggle, configure the two escalation roles and the posting channel, issue a warning (by raw user ID, so it still works for someone who's left) with automatic role escalation or a role-less verbal note, a recent activity table, and a "your own warnings" section to edit the reason/date of whatever you personally issued (matches `/warning edit`'s own-issuer-only rule). There's still no way to delete a warning — that's true of the Discord commands too, not a dashboard limitation.
 
-Every feature page's on/off control is a toggle switch in the top-right corner, submitting the instant you flip it — `src/dashboard/views/partials/featureToggle.ejs`, shared by every page so far.
+Every feature page's header shares the same three controls (`src/dashboard/views/partials/featureToggle.ejs`), Admin-only where noted:
 
-The sidebar's Feature list can be reordered by drag-and-drop; a lock button in its header toggles between browsing normally and rearranging the list. The custom order (per server, Admin-only to change) is saved on the dashboard and applies to everyone who can see that sidebar, Admin and Mod alike — any feature never explicitly moved just falls back to its default alphabetical position.
+- **On/off** — a toggle switch, submitting the instant you flip it.
+- **Blocca modifiche** (Admin-only) — freezes that feature's own add/edit/remove/reorder forms without touching the on/off switch or base config (channel/role/schedule); a locked feature keeps doing whatever it already does (QOTD keeps posting, Honeypot keeps trapping), only the dashboard's CRUD forms for its list are blocked, for Admin and Mod alike, until an Admin unlocks it again.
+- **🔒 Riordina card** (Admin-only) — the panel sections on that page ("cards") can be reordered by drag-and-drop; the button toggles between browsing normally and rearranging them. The custom order is per server AND per feature, Admin-only to change, and applies to everyone who can open that page, Admin and Mod alike — any card never explicitly moved just keeps its default position.
 
 ## Available commands
 

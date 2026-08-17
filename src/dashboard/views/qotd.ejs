@@ -15,7 +15,8 @@
       </div>
     <% } %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="configurazione">
       <h2>Configurazione</h2>
       <form method="POST" action="/qotd/config" class="form">
         <label>
@@ -66,7 +67,7 @@
       </form>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="domande-in-coda-da-postare">
       <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
         <h2>Domande in coda (<%= totalQuestions %>, <%= remaining %> da postare)</h2>
         <% if (questionRows.length > 0) { %>
@@ -116,7 +117,7 @@
       </form>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="aggiungi-domanda-manualmente">
       <h2>Aggiungi domanda manualmente</h2>
       <form method="POST" action="/qotd/questions/add" class="form">
         <label>
@@ -126,6 +127,7 @@
         <button type="submit" class="btn-primary">Aggiungi</button>
       </form>
     </section>
+</div>
   </main>
 </div>
 <script src="/qotdReorder.js"></script>

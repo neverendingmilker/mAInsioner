@@ -507,15 +507,30 @@ async function createTables() {
         PRIMARY KEY (guild_id, feature_key)
       )`,
 
-      // Custom drag-and-drop order for the sidebar's feature list, per guild — Admin-only to
-      // edit (see routes/sidebarOrderRoutes.js), shown as-is to everyone (Admin and Mod
-      // alike) who can see that sidebar. `order_json` is a JSON array of feature keys; any
-      // FEATURES key not present in it (a brand-new feature, or one never explicitly moved)
-      // just falls back to the default alphabetical position, appended after the ones that
-      // were explicitly ordered — see sidebarData.js's getSidebarFeatures.
-      `CREATE TABLE IF NOT EXISTS dashboard_sidebar_order (
-        guild_id TEXT PRIMARY KEY,
-        order_json TEXT NOT NULL DEFAULT '[]'
+      // Custom drag-and-drop order for the "cards" (panel sections) inside a single feature
+      // page, per guild AND per feature — Admin-only to edit (see routes/cardOrderRoutes.js),
+      // shown as-is to everyone (Admin and Mod alike) who can open that feature page.
+      // `order_json` is a JSON array of that page's card ids (see each view's
+      // `data-card-id` attributes); any card id not present in it (a brand-new card, or one
+      // never explicitly moved) just falls back to its default position in the view's own
+      // markup, appended after the ones that were explicitly ordered.
+      `CREATE TABLE IF NOT EXISTS dashboard_card_order (
+        guild_id TEXT NOT NULL,
+        feature_key TEXT NOT NULL,
+        order_json TEXT NOT NULL DEFAULT '[]',
+        PRIMARY KEY (guild_id, feature_key)
+      )`,
+
+      // Freezes a feature's own add/edit/remove/reorder forms (its list of items) without
+      // touching the feature's on/off state or its base config (channel/role/schedule) —
+      // e.g. QOTD keeps posting on schedule while locked, only the dashboard's own CRUD
+      // forms for the question queue are blocked. Same "row presence = true" convention as
+      // dashboard_mod_access. Admin-only to toggle (see routes/featureLockRoutes.js),
+      // enforced for both Admin and Mod sessions in requireDashboardAccess.
+      `CREATE TABLE IF NOT EXISTS dashboard_feature_lock (
+        guild_id TEXT NOT NULL,
+        feature_key TEXT NOT NULL,
+        PRIMARY KEY (guild_id, feature_key)
       )`,
     ],
     'write'
@@ -863,6 +878,12 @@ async function migrate() {
   if (themesConfigColumnNames.includes('sheet_column')) {
     await client.execute('ALTER TABLE themes_config DROP COLUMN sheet_column');
   }
+
+  // Dashboard sidebar reordering was replaced, in the same session it was added, with
+  // per-feature card reordering instead (see dashboard_card_order above) — the user wanted
+  // to reorder the panels *inside* a feature page, not the sidebar's list of features.
+  // Drops the now-unused table for any install that had already picked it up.
+  await client.execute('DROP TABLE IF EXISTS dashboard_sidebar_order');
 }
 
 const ready = createTables()

@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="trigger">
       <h2>Trigger (<%= triggers.length %>)</h2>
       <% if (triggers.length === 0) { %>
         <p class="hint">Nessun trigger configurato.</p>
@@ -66,7 +67,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="aggiungi-trigger">
       <h2>Aggiungi trigger</h2>
       <% if (textChannels.length === 0) { %>
         <p class="hint">Nessun canale disponibile.</p>
@@ -106,6 +107,7 @@
         </form>
       <% } %>
     </section>
+</div>
   </main>
 </div>
 <%- include('partials/footer') %>

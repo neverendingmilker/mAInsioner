@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="canali-trappola">
       <h2>Canali trappola (<%= channels.length %>)</h2>
       <% if (channels.length === 0) { %>
         <p class="hint">Nessun canale configurato.</p>
@@ -65,7 +66,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="aggiungi-trappola">
       <h2>Aggiungi trappola</h2>
       <% if (textChannels.length === 0) { %>
         <p class="hint">Nessun canale testuale disponibile.</p>
@@ -101,7 +102,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="log-kick-totali">
       <h2>Log kick — <%= kickTotal %> totali</h2>
       <% if (recentKicks.length === 0) { %>
         <p class="hint">Nessun kick registrato.</p>
@@ -123,6 +124,7 @@
         </table>
       <% } %>
     </section>
+</div>
   </main>
 </div>
 <script type="application/json" id="honeypot-guild-emojis"><%- JSON.stringify(guildEmojis) %></script>

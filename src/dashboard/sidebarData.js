@@ -32,12 +32,8 @@ const FEATURE_PAGES = {
 // features without a page yet still show as "coming soon"); for a Mod, anything without a
 // page OR not in `allowedKeys` is left out of their sidebar entirely rather than shown
 // disabled — no point advertising features they can't open anyway.
-// `customOrder` (see sidebarOrder.js) is an optional array of feature keys reflecting a
-// drag-and-drop reorder an Admin saved for this guild — entries it lists come first, in
-// that order; anything else (a brand-new feature, or one never explicitly moved) keeps
-// its default alphabetical position, appended after.
-function getSidebarFeatures(activeKey, allowedKeys, customOrder) {
-  const features = Object.entries(FEATURES)
+function getSidebarFeatures(activeKey, allowedKeys) {
+  return Object.entries(FEATURES)
     .filter(([key]) => !allowedKeys || (Boolean(FEATURE_PAGES[key]) && allowedKeys.has(key)))
     .map(([key, f]) => ({
       key,
@@ -45,14 +41,6 @@ function getSidebarFeatures(activeKey, allowedKeys, customOrder) {
       href: FEATURE_PAGES[key] || null,
       active: key === activeKey,
     }));
-
-  if (!customOrder || customOrder.length === 0) return features;
-
-  const byKey = new Map(features.map((f) => [f.key, f]));
-  const ordered = customOrder.map((key) => byKey.get(key)).filter(Boolean);
-  const orderedKeys = new Set(ordered.map((f) => f.key));
-  const rest = features.filter((f) => !orderedKeys.has(f.key));
-  return [...ordered, ...rest];
 }
 
 // First path segment ("/qotd/items/42/edit" -> "/qotd") — every dashboard route lives

@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+    <section class="panel" data-card-id="cerca-membri">
       <h2>Cerca membri</h2>
       <p class="hint">Trova chi ha TUTTI i ruoli richiesti, escludendo chi ha anche uno dei ruoli "BUT". Lascia vuoti i campi che non ti servono.</p>
       <form method="GET" action="/comboroles" class="form">
@@ -41,7 +42,7 @@
     </section>
 
     <% if (results) { %>
-      <section class="panel">
+      <section class="panel" data-card-id="risultati">
         <h2>Risultati (<%= results.total %>)</h2>
         <% if (results.total === 0) { %>
           <p class="hint">Nessun membro corrisponde ai criteri scelti.</p>
@@ -62,6 +63,7 @@
         <% } %>
       </section>
     <% } %>
+    </div>
   </main>
 </div>
 <%- include('partials/footer') %>

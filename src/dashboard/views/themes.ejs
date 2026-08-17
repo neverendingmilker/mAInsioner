@@ -15,7 +15,8 @@
       </div>
     <% } %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="configurazione">
       <h2>Configurazione</h2>
       <form method="POST" action="/themes/config" class="form">
         <label>
@@ -66,7 +67,7 @@
       </form>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="temi-in-coda-da-postare">
       <h2>Temi in coda (<%= totalThemes %>, <%= remaining %> da postare)</h2>
       <p class="hint">Trascina un tema per cambiarne l'ordine — l'ordine è anche l'ordine di posting.</p>
 
@@ -109,7 +110,7 @@
       </form>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="aggiungi-tema-manualmente">
       <h2>Aggiungi tema manualmente</h2>
       <form method="POST" action="/themes/items/add" class="form">
         <label>
@@ -119,6 +120,7 @@
         <button type="submit" class="btn-primary">Aggiungi</button>
       </form>
     </section>
+</div>
   </main>
 </div>
 <script src="/themesReorder.js"></script>

@@ -1,6 +1,7 @@
-const { getSidebarFeatures, getSidebarToolsForPath, getFeatureKeyForPath, getToolKeyForPath } = require('../sidebarData');
+const { getSidebarFeatures, getSidebarToolsForPath, getFeatureKeyForPath, getToolKeyForPath, FEATURE_PAGES } = require('../sidebarData');
 const modAccess = require('../modAccess');
-const sidebarOrder = require('../sidebarOrder');
+const cardOrder = require('../cardOrder');
+const featureLock = require('../featureLock');
 
 // Gates every dashboard page behind: Discord login, being an Administrator OR the
 // configured Mod role in at least one server the bot is in (both checked once at login,
@@ -19,6 +20,15 @@ const sidebarOrder = require('../sidebarOrder');
 // Discord. Everything else on an allowed feature page (add/edit/remove/etc.) works exactly
 // like it does for an Admin — the restriction is about WHICH features a Mod can open, not
 // what they can do once inside one.
+//
+// Separately (and regardless of role, see featureLock.js), a feature can be "locked" —
+// its list of items can't be added/edited/removed/reordered by anyone, Admin or Mod,
+// until an Admin unlocks it again from the feature's own page. This is deliberately NOT
+// the same as the feature's on/off toggle: a locked feature keeps doing whatever it
+// already does (QOTD keeps posting, Honeypot keeps trapping) — locking only freezes the
+// dashboard's own add/edit/remove/reorder forms for that feature's list, same
+// toggle/config/channel exclusion as the Mod restriction above (so base config and the
+// feature's own on/off switch always stay reachable, locked or not).
 async function requireDashboardAccess(req, res, next) {
   if (!req.session.user) {
     req.session.returnTo = req.originalUrl;
@@ -41,13 +51,29 @@ async function requireDashboardAccess(req, res, next) {
 
   const featureKey = getFeatureKeyForPath(req.path);
 
+  let locked;
+  try {
+    locked = featureKey ? await featureLock.isFeatureLocked(req.session.guildId, featureKey) : false;
+  } catch (err) {
+    return next(err);
+  }
+
+  if (featureKey && locked && req.method === 'POST' && !/\/(toggle|config|channel)$/.test(req.path)) {
+    req.session.flash = {
+      type: 'error',
+      message: 'Questa feature è bloccata — le modifiche alla lista sono disattivate. Un Admin può sbloccarla dalla pagina della feature.',
+    };
+    return res.redirect(req.get('Referer') || FEATURE_PAGES[featureKey] || '/');
+  }
+
   if (current.role === 'admin') {
     res.locals.tools = getSidebarToolsForPath(req.path);
+    res.locals.features = getSidebarFeatures(featureKey);
+    res.locals.currentFeatureKey = featureKey;
+    res.locals.featureLocked = locked;
     try {
-      const customOrder = await sidebarOrder.getOrder(req.session.guildId);
-      res.locals.features = getSidebarFeatures(featureKey, undefined, customOrder);
-      res.locals.currentFeatureKey = featureKey;
       res.locals.modAccessEnabled = featureKey ? await modAccess.isFeatureModAccessible(req.session.guildId, featureKey) : false;
+      res.locals.cardOrder = featureKey ? await cardOrder.getOrder(req.session.guildId, featureKey) : [];
     } catch (err) {
       return next(err);
     }
@@ -59,12 +85,13 @@ async function requireDashboardAccess(req, res, next) {
   res.locals.tools = [];
   res.locals.currentFeatureKey = null;
   res.locals.modAccessEnabled = false;
+  res.locals.featureLocked = locked;
+  res.locals.cardOrder = [];
 
   try {
     const allowedKeys = await modAccess.listModAccessibleFeatureKeys(req.session.guildId);
     req.modAccessibleKeys = allowedKeys;
-    const customOrder = await sidebarOrder.getOrder(req.session.guildId);
-    res.locals.features = getSidebarFeatures(featureKey, allowedKeys, customOrder);
+    res.locals.features = getSidebarFeatures(featureKey, allowedKeys);
 
     if (getToolKeyForPath(req.path)) {
       return res.status(403).render('403', { title: 'Accesso negato', message: 'Questa sezione è riservata agli Admin.' });
@@ -82,6 +109,7 @@ async function requireDashboardAccess(req, res, next) {
           message: "Solo un Admin può accendere/spegnere una feature o cambiarne la configurazione di base (canale/ruolo/programma).",
         });
       }
+      res.locals.cardOrder = await cardOrder.getOrder(req.session.guildId, featureKey);
     }
 
     next();

@@ -1,6 +1,7 @@
 <%# Shared on/off control for a feature page's header, plus (Admin-only) the Mod-access
-    checkbox. Wrapped in one div so `.page-header`'s flex layout (h1 vs. everything else)
-    still only ever sees two children, regardless of whether the second form below renders.
+    checkbox, the "blocca modifiche" lock, and the card-reorder lock button. Wrapped in
+    one div so `.page-header`'s flex layout (h1 vs. everything else) still only ever sees
+    two children, regardless of how many of the pieces below actually render.
     Locals: `enabled` (bool), `toggleAction` (the feature's own POST /<feature>/toggle
     route — already expects `enabled` as the literal string "true"/"false"). A single
     checkbox works here without a hidden fallback field: every route already reads
@@ -30,4 +31,37 @@
       </label>
     </form>
   <% } %>
+
+  <%# Admin-only: freezes this feature's own add/edit/remove/reorder forms (its list of
+      items) without touching the on/off switch above or base config (channel/role/
+      schedule) — the feature keeps doing whatever it already does (e.g. QOTD keeps
+      posting on schedule) while locked, only the dashboard's own CRUD forms are blocked
+      (enforced centrally in requireDashboardAccess, for Admin and Mod alike). Posts to a
+      route generic across every feature page — `featureLocked` local set by the same
+      middleware. %>
+  <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
+    <form method="POST" action="/feature-lock/<%= currentFeatureKey %>/toggle" class="feature-lock-toggle">
+      <label class="switch">
+        <input type="checkbox" name="locked" value="true" <%= typeof featureLocked !== 'undefined' && featureLocked ? 'checked' : '' %> onchange="this.form.submit()" />
+        <span class="switch-slider"></span>
+        <span class="switch-label"><%= typeof featureLocked !== 'undefined' && featureLocked ? 'Bloccato' : 'Modificabile' %></span>
+      </label>
+    </form>
+  <% } %>
+
+  <%# Card-reorder support: `cardOrder` (the saved drag order for this page's panels) is
+      always set by requireDashboardAccess, for both Admin and Mod, so the reorder applies
+      for anyone viewing the page — only the lock button + drag handles that let you
+      CHANGE it are Admin-only. See public/cardReorder.js and each view's `<div
+      class="card-list" id="card-list">` wrapping its `.panel[data-card-id]` sections. %>
+  <% if (typeof cardOrder !== 'undefined') { %>
+    <script id="card-order-data" type="application/json"><%- JSON.stringify(cardOrder) %></script>
+  <% } %>
+  <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
+    <button type="button" id="card-lock-btn" class="card-lock-btn" data-locked="true" title="Sblocca per riordinare le card">🔒 Riordina card</button>
+    <form id="card-reorder-form" method="POST" action="/card-order/<%= currentFeatureKey %>/reorder" style="display:none;">
+      <input type="hidden" id="card-order-input" name="order" value="" />
+    </form>
+  <% } %>
 </div>
+<script src="/cardReorder.js"></script>

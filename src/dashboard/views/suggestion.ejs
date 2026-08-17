@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="canale-suggerimenti">
       <h2>Canale suggerimenti</h2>
       <form method="POST" action="/suggestion/channel" class="form">
         <label>
@@ -25,7 +26,7 @@
       </form>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="in-attesa">
       <h2>In attesa (<%= suggestions.length %>)</h2>
       <% if (suggestions.length === 0) { %>
         <p class="hint">Nessun suggerimento in attesa.</p>
@@ -60,6 +61,7 @@
         <% }) %>
       <% } %>
     </section>
+</div>
   </main>
 </div>
 <%- include('partials/footer') %>

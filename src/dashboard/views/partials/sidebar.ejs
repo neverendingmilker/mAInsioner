@@ -11,32 +11,16 @@
   <% } %>
   <% } %>
 
-  <% const canReorderSidebar = typeof role !== 'undefined' && role === 'admin'; %>
   <nav class="nav">
     <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'overview' ? 'active' : '' %>" href="/">Overview</a>
-    <div class="nav-section-header">
-      <div class="nav-section">Feature</div>
-      <% if (canReorderSidebar) { %>
-        <button type="button" id="sidebar-lock-btn" class="sidebar-lock-btn" data-locked="true" title="Sblocca per riordinare le sezioni">🔒</button>
+    <div class="nav-section">Feature</div>
+    <% features.forEach((f) => { %>
+      <% if (f.href) { %>
+        <a class="nav-link <%= f.active ? 'active' : '' %>" href="<%= f.href %>"><%= f.label %></a>
+      <% } else { %>
+        <div class="nav-link disabled" title="Presto disponibile"><%= f.label %></div>
       <% } %>
-    </div>
-    <div class="nav-feature-list" id="sidebar-feature-list">
-      <% features.forEach((f) => { %>
-        <div class="nav-item" data-key="<%= f.key %>">
-          <% if (canReorderSidebar) { %><span class="nav-drag-handle" title="Trascina per riordinare">⠿</span><% } %>
-          <% if (f.href) { %>
-            <a class="nav-link <%= f.active ? 'active' : '' %>" href="<%= f.href %>"><%= f.label %></a>
-          <% } else { %>
-            <div class="nav-link disabled" title="Presto disponibile"><%= f.label %></div>
-          <% } %>
-        </div>
-      <% }) %>
-    </div>
-    <% if (canReorderSidebar) { %>
-      <form id="sidebar-reorder-form" method="POST" action="/sidebar-order/reorder" style="display:none;">
-        <input type="hidden" id="sidebar-order-input" name="order" value="" />
-      </form>
-    <% } %>
+    <% }) %>
     <% if (typeof tools !== 'undefined' && tools.length > 0) { %>
       <div class="nav-section">Strumenti</div>
       <% tools.forEach((t) => { %>
@@ -51,4 +35,3 @@
     <a class="logout" href="/logout">Esci</a>
   </div>
 </aside>
-<% if (canReorderSidebar) { %><script src="/sidebarReorder.js"></script><% } %>

@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="canali-configurati">
       <h2>Canali configurati (<%= channels.length %>)</h2>
       <p class="hint">In ogni canale: posta un'immagine, poi un messaggio di soli numeri (max 9 cifre) per applicare le reazioni mappate qui sotto — il messaggio con i numeri viene poi cancellato.</p>
       <% if (channels.length === 0) { %>
@@ -71,7 +72,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="aggiungi-canale">
       <h2>Aggiungi canale</h2>
       <% if (textChannels.length === 0) { %>
         <p class="hint">Nessun canale disponibile.</p>
@@ -90,6 +91,7 @@
         </form>
       <% } %>
     </section>
+</div>
   </main>
 </div>
 <%- include('partials/footer') %>

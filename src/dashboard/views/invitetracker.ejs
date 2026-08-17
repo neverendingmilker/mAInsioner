@@ -9,7 +9,8 @@
 
     <%- include('partials/flash') %>
 
-    <section class="panel">
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="canale-predefinito">
       <h2>Canale predefinito</h2>
       <p class="hint">Dove si aprono i nuovi inviti creati da qui (assegnare un codice già esistente non lo usa).</p>
       <form method="POST" action="/invitetracker/channel" class="form">
@@ -26,7 +27,7 @@
       </form>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="classifica-top-10">
       <h2>Classifica (top 10)</h2>
       <% if (leaderboard.length === 0) { %>
         <p class="hint">Nessun invito tracciato ancora.</p>
@@ -42,7 +43,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="inviti-assegnati">
       <h2>Inviti assegnati (<%= assignedInvites.length %>)</h2>
       <% if (assignedInvites.length === 0) { %>
         <p class="hint">Nessun invito assegnato — oppure manca il permesso "Gestisci server" al bot.</p>
@@ -64,7 +65,7 @@
       <% } %>
     </section>
 
-    <section class="panel">
+    <section class="panel" data-card-id="crea-o-assegna-un-invito">
       <h2>Crea o assegna un invito</h2>
       <% if (members.length === 0) { %>
         <p class="hint">Nessun membro disponibile.</p>
@@ -95,6 +96,7 @@
         </form>
       <% } %>
     </section>
+</div>
   </main>
 </div>
 <%- include('partials/footer') %>

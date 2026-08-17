@@ -99,21 +99,21 @@ a {
   opacity: 0.5;
 }
 
-.nav-section-header {
+/* --- Card reorder: drag-and-drop for the panel sections inside a feature page --- */
+
+.card-list {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 16px;
-  margin-bottom: 4px;
-  padding: 0 10px;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
 }
 
-.nav-section-header .nav-section {
-  margin: 0;
-  padding: 0;
+.card-list .panel {
+  position: relative;
+  margin-top: 0;
 }
 
-.sidebar-lock-btn {
+.card-lock-btn {
   background: none;
   border: none;
   color: var(--text-dim);
@@ -124,47 +124,22 @@ a {
   border-radius: 4px;
 }
 
-.sidebar-lock-btn:hover {
+.card-lock-btn:hover {
   color: var(--text);
   background: var(--panel-alt);
 }
 
-.nav-feature-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.nav-item .nav-link {
-  flex: 1;
-  min-width: 0;
-}
-
-.nav-drag-handle {
-  display: none;
+.card-drag-handle {
+  position: absolute;
+  top: 14px;
+  right: 14px;
   color: var(--text-dim);
-  font-size: 14px;
-  flex-shrink: 0;
+  font-size: 16px;
   user-select: none;
   cursor: grab;
-  padding: 0 2px;
 }
 
-.nav-feature-list.reorder-mode .nav-drag-handle {
-  display: inline-block;
-}
-
-.nav-feature-list.reorder-mode .nav-item {
-  cursor: grab;
-}
-
-.nav-item.nav-dragging {
+.card-list .panel.card-dragging {
   opacity: 0.4;
 }
 
@@ -346,7 +321,8 @@ a {
 .feature-toggle-group {
   display: flex;
   align-items: center;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 12px 20px;
 }
 
 .feature-toggle {
