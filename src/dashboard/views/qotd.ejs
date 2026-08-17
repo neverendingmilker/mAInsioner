@@ -71,9 +71,10 @@
       <h2>Importa da Google Sheet</h2>
       <p class="hint">
         Pubblica il foglio come CSV (nel foglio: File → Condividi → Pubblica sul web → formato CSV) e incolla qui il link.
-        Ogni sincronizzazione salta la prima riga (trattata come intestazione) e per ogni riga successiva prende il testo
-        più lungo tra tutte le colonne (di solito è la domanda, più lunga di eventuali colonne di numero/categoria/data) e
-        lo aggiunge in coda se non già presente — puoi risincronizzare quante volte vuoi senza creare doppioni.
+        Ogni sincronizzazione salta la prima riga (trattata come intestazione) e per ogni riga successiva sceglie la
+        colonna giusta da sola: preferisce una cella che finisce con "?" (è quasi sempre la domanda), altrimenti prende
+        la cella più lunga tra tutte le colonne — e la aggiunge in coda se non già presente. Puoi risincronizzare
+        quante volte vuoi senza creare doppioni.
       </p>
       <form method="POST" action="/qotd/sync" class="form">
         <label>

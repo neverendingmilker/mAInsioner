@@ -143,6 +143,20 @@ async function setSheetUrl(guildId, url) {
   return trimmed;
 }
 
+// Picks whichever cell in a sheet row actually holds the question, without assuming a
+// fixed column (sheets often have it alongside a row number, category, or timestamp
+// column). A question reads as a question — prefer a cell ending in "?", the strongest
+// signal available; if the longest of those has a tie, or no cell ends in "?" at all
+// (e.g. imperative-style prompts), fall back to the longest cell overall, since metadata
+// columns are still reliably shorter than real question text either way.
+function pickQuestionCell(row) {
+  const cells = row.map((cell) => (cell || '').trim()).filter((v) => v.length > 0);
+  if (cells.length === 0) return '';
+  const questionCells = cells.filter((v) => v.endsWith('?'));
+  const pool = questionCells.length > 0 ? questionCells : cells;
+  return pool.reduce((longest, v) => (v.length > longest.length ? v : longest), '');
+}
+
 // Fetches the CSV, skips rows already present (exact text match, case-insensitive) so
 // syncing repeatedly doesn't create duplicates, and appends the rest at the end of the
 // queue (in sheet order).
@@ -160,13 +174,7 @@ async function syncFromSheet(guildId, url) {
   const text = await response.text();
   const rows = parseCsv(text);
   const dataRows = rows.slice(1); // first row is always treated as a header
-  // The question text isn't reliably in column A — sheets often have it alongside a row
-  // number, category, or timestamp column. Instead of assuming a fixed column, take the
-  // longest cell in each row: the actual question is virtually always much longer than
-  // any surrounding metadata, which is what was being picked up as "junk" before this fix.
-  const candidates = dataRows
-    .map((r) => r.reduce((longest, cell) => (((cell || '').trim().length > longest.length) ? (cell || '').trim() : longest), ''))
-    .filter((v) => v.length > 0);
+  const candidates = dataRows.map(pickQuestionCell).filter((v) => v.length > 0);
 
   const existing = new Set((await repo.listQuestions(guildId)).map((q) => q.question.trim().toLowerCase()));
   const seenInBatch = new Set();
