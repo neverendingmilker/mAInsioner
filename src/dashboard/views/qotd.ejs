@@ -92,7 +92,14 @@
     </section>
 
     <section class="panel">
-      <h2>Domande in coda (<%= totalQuestions %>, <%= remaining %> da postare)</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <h2>Domande in coda (<%= totalQuestions %>, <%= remaining %> da postare)</h2>
+        <% if (questionRows.length > 0) { %>
+          <form method="POST" action="/qotd/questions/clear" onsubmit="return confirm('Svuotare tutta la coda? Verranno rimosse tutte le <%= totalQuestions %> domande, azione non reversibile.');">
+            <button type="submit" class="btn-danger-sm">Svuota coda</button>
+          </form>
+        <% } %>
+      </div>
       <p class="hint">Trascina una domanda per cambiarne l'ordine — l'ordine è anche l'ordine di posting.</p>
 
       <% if (questionRows.length === 0) { %>

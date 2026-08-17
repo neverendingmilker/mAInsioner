@@ -225,6 +225,19 @@ router.post('/qotd/questions/:id/remove', async (req, res, next) => {
   }
 });
 
+router.post('/qotd/questions/clear', async (req, res, next) => {
+  try {
+    const guild = requireGuild(req, res);
+    if (!guild) return;
+
+    await qotdManager.clearQuestions(guild.id);
+    req.session.flash = { type: 'success', message: 'Coda svuotata — tutte le domande sono state rimosse.' };
+    res.redirect('/qotd');
+  } catch (err) {
+    next(err);
+  }
+});
+
 // `order` è una lista di ID separati da virgola, popolata dal trascinamento lato client
 // (public/qotdReorder.js) prima dell'invio automatico del form.
 router.post('/qotd/questions/reorder', async (req, res, next) => {

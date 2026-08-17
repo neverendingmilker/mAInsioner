@@ -83,6 +83,10 @@ async function removeQuestion(guildId, id) {
   await repo.removeQuestion(guildId, id);
 }
 
+async function clearQuestions(guildId) {
+  await repo.clearQuestions(guildId);
+}
+
 async function reorderQuestions(guildId, orderedIds) {
   await repo.reorderQuestions(guildId, orderedIds);
 }
@@ -337,6 +341,7 @@ module.exports = {
   addQuestion,
   editQuestion,
   removeQuestion,
+  clearQuestions,
   reorderQuestions,
   setSheetUrl,
   setSheetColumn,
