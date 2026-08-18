@@ -183,7 +183,7 @@ Auto-increments daily via a scheduled job; the sign image is rendered with `@nap
 - `create_self` `Everyone` — makes your own invite into the configured channel with default settings (unlimited uses, never expires); no options at all, no `user` to mix up: a separate command rather than a permission branch inside `create`, so it's clear upfront rather than something you find out from an error. Limited to one active self-made invite at a time — a second attempt is rejected until the first is `revoke`d. Also needs **Create Invite** for yourself in the configured channel (not just the bot's), so it can't be used as a backdoor into a channel you couldn't normally invite people to. For custom limits/expiry, or crediting an invite you already made elsewhere, ask a Mod to do it for you with `create`.
 - `leaderboard` `Everyone` — top inviters, "still here now" vs "total ever joined".
 - `list` `Mod` — every currently assigned invite (code, who it's credited to, uses, expiry) in one place — an overview, as opposed to `user`'s one-person view.
-- `revoke code:<...>` `Everyone` — deletes a previously assigned invite (autocomplete over active ones). Mods/Admin can revoke anyone's; everyone else only their own (the undo for `create_self`'s one-at-a-time limit).
+- `revoke code:<...>` `Mod` (Everyone for your own) — deletes a previously assigned invite (autocomplete over active ones). Mods/Admin can revoke anyone's; everyone else only their own (the undo for `create_self`'s one-at-a-time limit).
 - `user [user]` `Everyone` — same stats for one person (defaults to yourself), plus any active invite links credited to them.
 - `disable` `Admin` — turns the feature on/off.
 
