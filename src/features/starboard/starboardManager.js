@@ -575,36 +575,56 @@ function timestampToSnowflake(timestampMs) {
 }
 
 // Fetches up to `limit` messages in `channel`, newest first, paginating through
-// Discord's 100-per-call cap. Stops early (without throwing) if it runs out of history
-// or loses read access partway through.
+// Discord's 100-per-call cap — one page (at most 100 messages) at a time, handed to
+// `onBatch` as soon as it's fetched, instead of being accumulated into one big array
+// first. A date-bounded lookback (`sinceTimestamp` set, see runLookback below) has no
+// upper bound on `limit` by design, and a heavily-active channel can easily have
+// hundreds of thousands of messages in range — holding all of them as live discord.js
+// Message objects at once is exactly what was blowing the heap (see the "Ineffective
+// mark-compacts... out of memory" crash this fixes). Streaming keeps memory bounded to
+// one page regardless of how large the scan is. `cache: false` on the fetch call is the
+// other half of the fix: without it, discord.js's own per-channel message cache would
+// keep every one of those messages around indefinitely after this function returns, even
+// though a lookback scan has no further use for them once processed.
+// Stops early (without throwing) if it runs out of history or loses read access partway
+// through. Returns how many messages were actually handed to `onBatch`.
 // - `sinceTimestamp` (optional): stop once a message older than this instant is reached,
 //   excluding it and anything older from the result.
 // - `untilTimestampExclusive` (optional): start from just before this instant instead of
 //   from the most recent message, so the scan only covers a specific window.
-async function fetchMessagesUntil(channel, { limit, sinceTimestamp, untilTimestampExclusive }) {
-  const collected = [];
+async function fetchMessagesUntil(channel, { limit, sinceTimestamp, untilTimestampExclusive, onBatch }) {
   let before = untilTimestampExclusive !== undefined ? timestampToSnowflake(untilTimestampExclusive) : undefined;
+  let collectedCount = 0;
 
-  while (collected.length < limit) {
-    const pageSize = Math.min(MESSAGE_FETCH_PAGE_SIZE, limit - collected.length);
-    const batch = await channel.messages.fetch({ limit: pageSize, before }).catch(() => null);
+  while (collectedCount < limit) {
+    const pageSize = Math.min(MESSAGE_FETCH_PAGE_SIZE, limit - collectedCount);
+    const batch = await channel.messages.fetch({ limit: pageSize, before, cache: false }).catch(() => null);
     if (!batch || batch.size === 0) break;
 
+    const pageMessages = [];
     let reachedCutoff = false;
     for (const message of batch.values()) {
       if (sinceTimestamp !== undefined && message.createdTimestamp < sinceTimestamp) {
         reachedCutoff = true;
         break; // batch is newest-first, so everything from here on is even older
       }
-      collected.push(message);
-      if (collected.length >= limit) break;
+      pageMessages.push(message);
+      if (collectedCount + pageMessages.length >= limit) break;
     }
+
+    // Each page comes back newest-first; reversing just this page (rather than the whole
+    // scan) keeps messages within it processed oldest-to-newest — so starboard posts
+    // still appear in send order for anyone watching the post channel — without needing
+    // every page in memory at once to reverse the full sequence.
+    pageMessages.reverse();
+    await onBatch(pageMessages);
+    collectedCount += pageMessages.length;
 
     before = batch.last().id;
     if (batch.size < pageSize || reachedCutoff) break;
   }
 
-  return collected;
+  return collectedCount;
 }
 
 // Parses "DD/MM/YY" or "DD/MM/YYYY" into midnight of that date, in the bot's configured
@@ -652,27 +672,30 @@ function parseUntilDate(input) {
 // Scans a single channel and applies the lookback logic to every (non-bot) message in
 // it, accumulating into `stats`. Shared by every channel a lookback covers.
 async function scanChannelForLookback(guild, scanBoard, channel, fetchOptions, stats) {
-  // fetchMessagesUntil paginates newest-first (that's how Discord's API and the cutoff
-  // logic work), but the scan itself processes oldest-to-newest — so starboard posts (and
-  // their embeds' timestamps) appear in the same order the messages were actually sent.
-  const messages = await fetchMessagesUntil(channel, fetchOptions);
-  messages.reverse();
+  // fetchMessagesUntil now streams one page at a time (see its own comment) instead of
+  // handing back the whole scan as one array — keeps this bounded to ~100 Message objects
+  // in memory at once no matter how large the channel or the date range is.
+  await fetchMessagesUntil(channel, {
+    ...fetchOptions,
+    onBatch: async (messages) => {
+      for (const message of messages) {
+        if (message.author?.bot) continue;
+        stats.scanned++;
 
-  for (const message of messages) {
-    if (message.author?.bot) continue;
-    stats.scanned++;
-
-    // A single message failing (a transient Discord/Turso hiccup, a message that
-    // vanished mid-scan, ...) must not abort the whole lookback — log it, count it, and
-    // keep going. Without this, one bad message used to silently cut the scan short.
-    try {
-      const result = await countAndSync(guild, scanBoard, message);
-      if (result === 'created') stats.qualified++;
-    } catch (err) {
-      stats.errors++;
-      console.error(`[starboard] Lookback error on message ${message.id} (board "${scanBoard.name}"):`, err);
-    }
-  }
+        // A single message failing (a transient Discord/Turso hiccup, a message that
+        // vanished mid-scan, ...) must not abort the whole lookback — log it, count it,
+        // and keep going. Without this, one bad message used to silently cut the scan
+        // short.
+        try {
+          const result = await countAndSync(guild, scanBoard, message);
+          if (result === 'created') stats.qualified++;
+        } catch (err) {
+          stats.errors++;
+          console.error(`[starboard] Lookback error on message ${message.id} (board "${scanBoard.name}"):`, err);
+        }
+      }
+    },
+  });
 }
 
 // Scans a starboard's watch channel (and, optionally, extra channels) for messages that
