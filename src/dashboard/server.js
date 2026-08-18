@@ -29,6 +29,7 @@ const qotdRoutes = require('./routes/qotd');
 const themesRoutes = require('./routes/themes');
 const bumpreminderRoutes = require('./routes/bumpreminder');
 const highlightRoutes = require('./routes/highlight');
+const starboardRoutes = require('./routes/starboard');
 const modAccessRoutes = require('./routes/modAccessRoutes');
 const featureLockRoutes = require('./routes/featureLockRoutes');
 
@@ -127,7 +128,8 @@ function start(client) {
     qotdRoutes,
     themesRoutes,
     bumpreminderRoutes,
-    highlightRoutes
+    highlightRoutes,
+    starboardRoutes
   );
 
   app.use((req, res) => {

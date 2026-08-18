@@ -20,6 +20,7 @@ const FEATURE_PAGES = {
   rolelink: '/rolelink',
   serverbackup: '/serverbackup',
   slowmode: '/slowmode',
+  starboard: '/starboard',
   sticky: '/sticky',
   suggestion: '/suggestion',
   themes: '/themes',
