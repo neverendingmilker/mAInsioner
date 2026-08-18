@@ -705,7 +705,16 @@ async function scanChannelForLookback(guild, scanBoard, channel, fetchOptions, s
 // `threshold` — that apply only to this scan, without touching the starboard's saved
 // configuration. This backfills a starboard that was just created, or catches up on
 // messages missed while offline, instead of only reacting to things going forward.
-async function runLookback(
+// Does every bit of validation and setup that can throw (board lookup, option
+// validation, channel resolution) BEFORE returning, then hands back a `stats` object
+// that's already fully shaped and a `promise` that keeps mutating it in place as the
+// scan progresses (scanChannelForLookback increments stats.scanned/qualified/errors per
+// message, one page at a time) until it resolves. Callers that just want the final
+// result (e.g. `/starboard lookback`) can simply await the promise, same as calling the
+// old single-function version — but a caller that can't block a response on a
+// potentially long scan (the dashboard) can grab `stats` immediately and poll it for
+// live progress while `promise` keeps running in the background.
+async function startLookback(
   guild,
   name,
   {
@@ -789,6 +798,7 @@ async function runLookback(
   };
 
   const stats = {
+    status: 'running', // 'running' | 'done' | 'error'
     scanned: 0,
     qualified: 0,
     errors: 0,
@@ -799,11 +809,29 @@ async function runLookback(
     threshold: scanBoard.threshold,
   };
 
-  for (const channel of channels) {
-    await scanChannelForLookback(guild, scanBoard, channel, fetchOptions, stats);
-  }
+  const promise = (async () => {
+    try {
+      for (const channel of channels) {
+        await scanChannelForLookback(guild, scanBoard, channel, fetchOptions, stats);
+      }
+      stats.status = 'done';
+      return stats;
+    } catch (err) {
+      stats.status = 'error';
+      stats.errorMessage = err.message;
+      throw err;
+    }
+  })();
 
-  return stats;
+  return { stats, promise };
+}
+
+// Thin wrapper for callers that just want to await the final result, same contract as
+// the original single-function version of this — used by `/starboard lookback`, which
+// has an interaction to hold open (or fall back to a DM) for the whole duration anyway.
+async function runLookback(guild, name, options) {
+  const { promise } = await startLookback(guild, name, options);
+  return promise;
 }
 
 module.exports = {
@@ -827,5 +855,6 @@ module.exports = {
   handleReactionChange,
   handleStarboardPostReactionChange,
   handleMessageDelete,
+  startLookback,
   runLookback,
 };
