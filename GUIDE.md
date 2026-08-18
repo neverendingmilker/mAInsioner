@@ -119,11 +119,11 @@ Tracks who invited who: when someone joins, the bot works out which invite they 
 
 - **`/invites channel`** `Admin` — Sets the single server-wide channel that `create`/`create_self` open new invites into. Invites no longer pick a channel per command — one consistent entry point for the whole server.
 - **`/invites create`** `Mod` — Makes a brand-new invite link into the configured channel and credits it to a specific user, or with `code`, credits an invite you already made elsewhere. No limit on how many, or for who — handy for handing out personal "referral" links, e.g. to a booster or a partner. Optional max uses, and an expiry either as a relative `expires_in_hours` or an exact `expires_at` date/time (up to Discord's own 7-day cap).
-- **`/invites create_self`** — The version of `create` open to everyone, for their own invite only, with no options — always default settings (unlimited uses, never expires) into the configured channel. A separate command rather than a permission check buried inside `create`, so a regular member sees upfront what they can and can't do instead of finding out from an error. Limited to one active self-made invite at a time (a second attempt is rejected until the first is `revoke`d), and needs the "Create Invite" permission themselves in the configured channel — the bot having it isn't enough, so this can't be used as a backdoor into a channel they couldn't normally invite people to. For custom limits/expiry, or crediting an invite already made elsewhere, a Mod can do it for them with `create`.
-- **`/invites leaderboard`** — Top inviters, showing both how many people they brought in that are still here now, and the total ever (including people who later left).
+- **`/invites create_self`** `Everyone` — The version of `create` open to everyone, for their own invite only, with no options — always default settings (unlimited uses, never expires) into the configured channel. A separate command rather than a permission check buried inside `create`, so a regular member sees upfront what they can and can't do instead of finding out from an error. Limited to one active self-made invite at a time (a second attempt is rejected until the first is `revoke`d), and needs the "Create Invite" permission themselves in the configured channel — the bot having it isn't enough, so this can't be used as a backdoor into a channel they couldn't normally invite people to. For custom limits/expiry, or crediting an invite already made elsewhere, a Mod can do it for them with `create`.
+- **`/invites leaderboard`** `Everyone` — Top inviters, showing both how many people they brought in that are still here now, and the total ever (including people who later left).
 - **`/invites list`** `Mod` — Every currently assigned invite in one place: code, who it's credited to, current uses, and expiry. The overview, versus `/invites user`'s one-person view.
-- **`/invites revoke`** — Deletes a previously assigned invite (autocomplete over the active ones). Mods/Admin can revoke anyone's; everyone else only their own — the self-service undo for `create_self`'s one-invite-at-a-time limit.
-- **`/invites user`** — Same stats for one person (defaults to yourself), plus any invite links currently credited to them.
+- **`/invites revoke`** `Everyone` — Deletes a previously assigned invite (autocomplete over the active ones). Mods/Admin can revoke anyone's; everyone else only their own — the self-service undo for `create_self`'s one-invite-at-a-time limit.
+- **`/invites user`** `Everyone` — Same stats for one person (defaults to yourself), plus any invite links currently credited to them.
 - **`/invites disable`** `Admin` — Turns the feature on/off.
 
 Needs the **Manage Server** permission so the bot can see the server's invites, plus **Create Invite** in the channel set via `/invites channel`. `create`/`create_self` fail with a clear error until an Admin has run `/invites channel` at least once (or if the configured channel was later deleted). A `create`d invite is always credited to whoever it was assigned to — Discord itself would otherwise record the bot as the "creator", since the bot is the one making the API call, not the person it's meant for. A normal invite someone makes themselves through Discord is still credited to them, same as before this existed. Also catches joins through the server's vanity URL, if it has one — those aren't tied to a specific inviter, just recorded as "vanity". Joins that can't be attributed at all (Discord Discovery, the widget, or two invites changing at the exact same instant) are still counted overall but recorded with no inviter.
@@ -132,15 +132,15 @@ Needs the **Manage Server** permission so the bot can see the server's invites, 
 
 `Admin`. Sets which role counts as "Mod" everywhere the bot checks for one — every command and feature that says `Mod` in this guide reads this same per-server setting.
 
-- **`/modrole role:<role>`** — sets it.
-- **`/modrole`** (no options) — shows the role currently configured, or tells you none is set yet — until you set one, only Administrators count as Mod on that server.
+- **`/modrole role:<role>`** `Admin` — sets it.
+- **`/modrole`** (no options) `Admin` — shows the role currently configured, or tells you none is set yet — until you set one, only Administrators count as Mod on that server.
 
 ## 🔐 Permission Audits (`/2faroles`, `/modroles`)
 
 Both `Admin`. Two related security-audit commands, always used together:
 
-- **`/2faroles [ignore_bots]`** — lists roles with at least one permission Discord requires 2FA for (server-wide and per-channel overrides).
-- **`/modroles [ignore_bots]`** — broader companion: also flags commonly-assumed "mod" permissions (Audit Log, Nicknames, Expressions, Timeout) that aren't actually 2FA-gated, and catches per-channel overrides granted to individual people, not just roles.
+- **`/2faroles [ignore_bots]`** `Admin` — lists roles with at least one permission Discord requires 2FA for (server-wide and per-channel overrides).
+- **`/modroles [ignore_bots]`** `Admin` — broader companion: also flags commonly-assumed "mod" permissions (Audit Log, Nicknames, Expressions, Timeout) that aren't actually 2FA-gated, and catches per-channel overrides granted to individual people, not just roles.
 
 Both take an optional `ignore_bots:true` to skip bot-owned roles.
 

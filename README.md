@@ -146,24 +146,24 @@ Watches for Disboard's own "Bump done" confirmation and, 2 hours later (Disboard
 
 ### Highlight (`/highlight`)
 Personal keyword watcher — DM'd (with context) when someone says a word/phrase from your own list, anywhere in the server. `disable` is Admin only; everything else is per-user and open to everyone.
-- `add word:<...>` — 2–100 characters, up to 25 words. Matched case-insensitively on word boundaries. Never triggers on your own messages.
-- `remove word:<...>` — autocomplete over your own list.
-- `list` — your words, channel list + mode, ignored users.
-- `ignorechannel channel:<#channel>` — toggles a channel on/off your list.
-- `mode mode:<...>` — switches whether that list means "everywhere except these" (default) or "only these".
-- `ignoreuser user:<@user>` — toggles a user on/off your ignore list.
+- `add word:<...>` `Everyone` — 2–100 characters, up to 25 words. Matched case-insensitively on word boundaries. Never triggers on your own messages.
+- `remove word:<...>` `Everyone` — autocomplete over your own list.
+- `list` `Everyone` — your words, channel list + mode, ignored users.
+- `ignorechannel channel:<#channel>` `Everyone` — toggles a channel on/off your list.
+- `mode mode:<...>` `Everyone` — switches whether that list means "everywhere except these" (default) or "only these".
+- `ignoreuser user:<@user>` `Everyone` — toggles a user on/off your ignore list.
 - `disable` `Admin` — turns the feature on/off.
 
 Notifications: a DM embed with a couple messages of context, the trigger message, matched word(s), and a jump link. Capped at one notification per channel every 5 minutes.
 
 ### Honeypot (`/honeypot`)
 `Admin`. Traps a channel: posts a message with a button, then kicks anyone who isn't Mod/Admin the instant they post there, react to anything there, or click the button. Their post gets deleted too if that's what triggered the kick.
-- `add channel:<#channel> [message] [button_label] [emoji]` — sets up the trap and posts the bait message; `emoji`, if given, makes the bot react to its own message with it as extra bait (not required — any reaction already triggers a kick). That reaction gets removed again after it's used to catch someone.
-- `edit channel:<...> [new_channel] [message] [button_label] [emoji] [remove_emoji]` — updates an existing trap; anything omitted keeps its current value (autocomplete over active traps). `new_channel` moves the trap there (deletes the old bait message, posts a new one); `remove_emoji` clears the reaction emoji instead of setting a new one.
-- `remove channel:<...>` — removes the trap, deletes the bait message if present (autocomplete over active traps).
-- `list` — lists active honeypot channels.
-- `log` — total kick count plus the 10 most recent (who, how, when).
-- `disable` — turns the feature on/off.
+- `add channel:<#channel> [message] [button_label] [emoji]` `Admin` — sets up the trap and posts the bait message; `emoji`, if given, makes the bot react to its own message with it as extra bait (not required — any reaction already triggers a kick). That reaction gets removed again after it's used to catch someone.
+- `edit channel:<...> [new_channel] [message] [button_label] [emoji] [remove_emoji]` `Admin` — updates an existing trap; anything omitted keeps its current value (autocomplete over active traps). `new_channel` moves the trap there (deletes the old bait message, posts a new one); `remove_emoji` clears the reaction emoji instead of setting a new one.
+- `remove channel:<...>` `Admin` — removes the trap, deletes the bait message if present (autocomplete over active traps).
+- `list` `Admin` — lists active honeypot channels.
+- `log` `Admin` — total kick count plus the 10 most recent (who, how, when).
+- `disable` `Admin` — turns the feature on/off.
 
 Needs **Kick Members** server-wide, plus View Channel/Send Messages in the target channel.
 
@@ -180,11 +180,11 @@ Auto-increments daily via a scheduled job; the sign image is rendered with `@nap
 - `channel channel:<#channel>` `Admin` — sets the single server-wide channel that `create`/`create_self` open new invites into (they no longer pick a channel per-invite).
 - `create user:<@user> [max_uses] [expires_in_hours or expires_at]` `Mod` — makes a brand-new invite into the configured channel, credited to `user`, no matter who actually shares/clicks it, with no limit on how many. `expires_at` takes an exact `YYYY-MM-DD HH:mm` (Europe/Rome) instead of a relative `expires_in_hours` — pick one, both are capped at Discord's own 7-day max age.
 - `create user:<@user> code:<invite or link>` `Mod` — instead of making a new one, credits `user` with an invite you already created yourself (max_uses/expiry don't apply — those are fixed at creation and can't be changed after the fact). Only joins from that point on count; past uses aren't retroactive.
-- `create_self` — makes your own invite into the configured channel with default settings (unlimited uses, never expires); no options at all, no `user` to mix up: a separate command rather than a permission branch inside `create`, so it's clear upfront rather than something you find out from an error. Limited to one active self-made invite at a time — a second attempt is rejected until the first is `revoke`d. Also needs **Create Invite** for yourself in the configured channel (not just the bot's), so it can't be used as a backdoor into a channel you couldn't normally invite people to. For custom limits/expiry, or crediting an invite you already made elsewhere, ask a Mod to do it for you with `create`.
-- `leaderboard` — top inviters, "still here now" vs "total ever joined".
+- `create_self` `Everyone` — makes your own invite into the configured channel with default settings (unlimited uses, never expires); no options at all, no `user` to mix up: a separate command rather than a permission branch inside `create`, so it's clear upfront rather than something you find out from an error. Limited to one active self-made invite at a time — a second attempt is rejected until the first is `revoke`d. Also needs **Create Invite** for yourself in the configured channel (not just the bot's), so it can't be used as a backdoor into a channel you couldn't normally invite people to. For custom limits/expiry, or crediting an invite you already made elsewhere, ask a Mod to do it for you with `create`.
+- `leaderboard` `Everyone` — top inviters, "still here now" vs "total ever joined".
 - `list` `Mod` — every currently assigned invite (code, who it's credited to, uses, expiry) in one place — an overview, as opposed to `user`'s one-person view.
-- `revoke code:<...>` — deletes a previously assigned invite (autocomplete over active ones). Mods/Admin can revoke anyone's; everyone else only their own (the undo for `create_self`'s one-at-a-time limit).
-- `user [user]` — same stats for one person (defaults to yourself), plus any active invite links credited to them.
+- `revoke code:<...>` `Everyone` — deletes a previously assigned invite (autocomplete over active ones). Mods/Admin can revoke anyone's; everyone else only their own (the undo for `create_self`'s one-at-a-time limit).
+- `user [user]` `Everyone` — same stats for one person (defaults to yourself), plus any active invite links credited to them.
 - `disable` `Admin` — turns the feature on/off.
 
 Needs **Manage Server** (to see the server's invites) and **Create Invite** in the channel set via `channel`. `create`/`create_self` fail with a clear error until an Admin has run `channel` at least once. Works out which invite was used by diffing use counts on join — a `create`d invite is attributed to whoever it was assigned to; a normal invite someone made themselves is attributed to them, same as before. Also covers the server's vanity URL, if it has one; joins via Discovery/widget, or where two invites changed in the same instant, can't be attributed and are recorded with no inviter.
@@ -196,8 +196,8 @@ Needs **Manage Server** (to see the server's invites) and **Create Invite** in t
 
 Two related security-audit commands, always documented together. Both `Admin`, both take an optional `[ignore_bots]`.
 
-- `/2faroles [ignore_bots]` — lists roles with at least one permission Discord requires 2FA for (server-wide + per-channel overrides). Doesn't check member-specific overrides (see `/modroles`).
-- `/modroles [ignore_bots]` — broader than `/2faroles`: also flags commonly-assumed "mod" permissions that aren't actually 2FA-gated (Audit Log, Nicknames, Expressions, Timeout), and catches per-channel overrides granted to individual people, not just roles.
+- `/2faroles [ignore_bots]` `Admin` — lists roles with at least one permission Discord requires 2FA for (server-wide + per-channel overrides). Doesn't check member-specific overrides (see `/modroles`).
+- `/modroles [ignore_bots]` `Admin` — broader than `/2faroles`: also flags commonly-assumed "mod" permissions that aren't actually 2FA-gated (Audit Log, Nicknames, Expressions, Timeout), and catches per-channel overrides granted to individual people, not just roles.
 
 Both are also on the dashboard (`/roleaudit`, sidebar → "Strumenti") — same live queries against the server's current roles/channels, an `ignore_bots` checkbox instead of a slash option, and results as a page instead of an ephemeral embed. Unlike every other dashboard page, it's not a toggleable feature (no `FEATURES` entry, no on/off state) — it's a read-only tool, so it's not in `sidebarData.js`'s `FEATURE_PAGES` map but in its own separate `TOOL_PAGES`/"Strumenti" section instead.
 
@@ -233,11 +233,11 @@ Losing role1 auto-removes role2 (optionally the reverse too).
 
 ### Server Backup (`/serverbackup`)
 `Admin` only. Snapshots the server's roles (+ which members held which, by ID), categories, channels (names, colors/settings, and permission overwrites), emoji, stickers, and soundboard sounds (actual files, downloaded and stored). Backups aren't tied to one server: any is restorable on any server the bot is in, including an empty one, which is the main way to test a backup safely without touching the real server.
-- `create [label] [what]` — saves a snapshot; `what` picks the scope (`all` default, `roles`, `channels`, or `assets` for emoji/stickers/soundboard).
-- `list` — lists every saved backup, across all servers the bot backs up.
-- `members backup:<...>` — just the member role reassignment part of a restore, nothing else — no role/channel creation attempts, no confirmation prompt. For catching up whoever joined *after* the last restore already ran (they were skipped as "not yet joined" back then); much cheaper than re-running the whole `restore`.
-- `restore backup:<...> [what]` — recreates whatever's missing from a backup (autocomplete over saved ones); matches roles/emoji/stickers/soundboard sounds by name and channels by name+type+category, so it never deletes or overwrites anything already there — safe to run more than once. `what` restores a narrower scope than what was backed up if you want. Role hierarchy is restored best-effort (can't move a role above the bot's own). Needs **Manage Roles**, **Manage Channels**, and/or **Manage Guild Expressions**, depending on scope.
-- `disable` — turns the feature on/off.
+- `create [label] [what]` `Admin` — saves a snapshot; `what` picks the scope (`all` default, `roles`, `channels`, or `assets` for emoji/stickers/soundboard).
+- `list` `Admin` — lists every saved backup, across all servers the bot backs up.
+- `members backup:<...>` `Admin` — just the member role reassignment part of a restore, nothing else — no role/channel creation attempts, no confirmation prompt. For catching up whoever joined *after* the last restore already ran (they were skipped as "not yet joined" back then); much cheaper than re-running the whole `restore`.
+- `restore backup:<...> [what]` `Admin` — recreates whatever's missing from a backup (autocomplete over saved ones); matches roles/emoji/stickers/soundboard sounds by name and channels by name+type+category, so it never deletes or overwrites anything already there — safe to run more than once. `what` restores a narrower scope than what was backed up if you want. Role hierarchy is restored best-effort (can't move a role above the bot's own). Needs **Manage Roles**, **Manage Channels**, and/or **Manage Guild Expressions**, depending on scope.
+- `disable` `Admin` — turns the feature on/off.
 
 Members already present in the target server get their roles reassigned automatically during `restore` (matched by their Discord user ID, additive only — never removes a role). Anyone from the backup who hasn't joined yet is just skipped — use `members` afterward (instead of a full `restore`) to pick up whoever's joined since.
 
