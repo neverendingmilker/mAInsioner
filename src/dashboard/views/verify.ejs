@@ -1,0 +1,184 @@
+<%- include('partials/head') %>
+<div class="layout">
+  <%- include('partials/sidebar') %>
+  <main class="content">
+    <div class="page-header">
+      <h1>Verification</h1>
+      <%- include('partials/featureToggle', { enabled, toggleAction: '/verify/toggle' }) %>
+    </div>
+
+    <%- include('partials/flash') %>
+
+    <div class="card-list" id="card-list">
+<section class="panel" data-card-id="configurazione">
+      <h2>Configurazione</h2>
+      <form method="POST" action="/verify/config" class="form">
+        <label>
+          Ruolo da dare per Sub
+          <select name="subGiveRoleId">
+            <option value="">— nessuno —</option>
+            <% roles.forEach((r) => { %>
+              <option value="<%= r.id %>" <%= r.id === config.subGiveRoleId ? 'selected' : '' %>><%= r.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Ruolo da dare per Domme
+          <select name="dommeGiveRoleId">
+            <option value="">— nessuno —</option>
+            <% roles.forEach((r) => { %>
+              <option value="<%= r.id %>" <%= r.id === config.dommeGiveRoleId ? 'selected' : '' %>><%= r.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Ruolo da dare per Maledom
+          <select name="maledomGiveRoleId">
+            <option value="">— nessuno —</option>
+            <% roles.forEach((r) => { %>
+              <option value="<%= r.id %>" <%= r.id === config.maledomGiveRoleId ? 'selected' : '' %>><%= r.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Ruolo da rimuovere (condiviso tra i tre tipi)
+          <select name="removeRoleId">
+            <option value="">— nessuno —</option>
+            <% roles.forEach((r) => { %>
+              <option value="<%= r.id %>" <%= r.id === config.removeRoleId ? 'selected' : '' %>><%= r.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Canale report verifiche
+          <select name="reportChannelId">
+            <option value="">— nessuno —</option>
+            <% textChannels.forEach((ch) => { %>
+              <option value="<%= ch.id %>" <%= ch.id === config.reportChannelId ? 'selected' : '' %>><%= ch.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Ruolo abilitato (oltre a chi ha "Gestisci ruoli")
+          <select name="allowedRoleId">
+            <option value="">— nessuno —</option>
+            <% roles.forEach((r) => { %>
+              <option value="<%= r.id %>" <%= r.id === config.allowedRoleId ? 'selected' : '' %>><%= r.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <button type="submit" class="btn-primary-sm">Salva</button>
+      </form>
+    </section>
+
+    <section class="panel" data-card-id="ruoli-sub">
+      <h2>Ruoli sub</h2>
+      <p class="hint">Set di ruoli controllato quando si verifica come Sub: se il membro non ne ha nessuno, gli viene assegnato automaticamente il ruolo di default.</p>
+      <form method="POST" action="/verify/subroles/config" class="form">
+        <% if (roles.length > 0) { %>
+          <fieldset>
+            <legend>Ruoli nel set</legend>
+            <% roles.forEach((r) => { %>
+              <label class="checkbox-label">
+                <input type="checkbox" name="subRoleIds" value="<%= r.id %>" <%= subRoleIds.includes(r.id) ? 'checked' : '' %> />
+                <%= r.name %>
+              </label>
+            <% }) %>
+          </fieldset>
+        <% } %>
+        <label>
+          Ruolo di default (assegnato se il membro non ha nessuno dei ruoli sopra)
+          <select name="defaultSubRoleId">
+            <option value="">— nessuno —</option>
+            <% roles.forEach((r) => { %>
+              <option value="<%= r.id %>" <%= r.id === config.defaultSubRoleId ? 'selected' : '' %>><%= r.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <button type="submit" class="btn-primary-sm">Salva</button>
+      </form>
+    </section>
+
+    <section class="panel" data-card-id="verifica-un-utente">
+      <h2>Verifica un utente</h2>
+      <% if (members.length === 0) { %>
+        <p class="hint">Nessun membro disponibile.</p>
+      <% } else { %>
+        <form method="POST" action="/verify/issue" class="form">
+          <label>
+            Utente
+            <select name="userId" required>
+              <option value="" disabled selected>Scegli…</option>
+              <% members.forEach((m) => { %>
+                <option value="<%= m.id %>"><%= m.label %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>
+            Tipo
+            <select name="type" required>
+              <% typeChoices.forEach((t) => { %>
+                <option value="<%= t.value %>"><%= t.label %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label>
+            Verification
+            <textarea name="verification" rows="2" maxlength="500" required></textarea>
+          </label>
+          <label>
+            Social (opzionale per Sub, richiesto in pratica per Domme/Maledom)
+            <input type="text" name="social" maxlength="200" />
+          </label>
+          <button type="submit" class="btn-primary">Verifica</button>
+        </form>
+      <% } %>
+    </section>
+
+    <section class="panel" data-card-id="report-recenti">
+      <h2>Report recenti (<%= recentReports.length %><%= recentReportsTruncated ? '+' : '' %>)</h2>
+      <% if (recentReports.length === 0) { %>
+        <p class="hint">Nessun report registrato ancora.</p>
+      <% } else { %>
+        <% recentReports.forEach((r) => { %>
+          <div class="config-card">
+            <div class="config-card-header">
+              <span class="config-name"><%= r.userLabel %> — <%= r.typeLabel %></span>
+              <span class="config-meta">
+                <%= r.dateLabel %> · verificato da <%= r.moderatorLabel %>
+                <% if (r.social) { %> · <%= r.social %><% } %>
+              </span>
+              <div class="card-actions">
+                <details>
+                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <div class="card-edit-popover">
+                    <form method="POST" action="/verify/<%= r.id %>/edit" class="form">
+                      <label>
+                        Campo
+                        <select name="field" required>
+                          <option value="verification">Verification</option>
+                          <option value="social">Social</option>
+                        </select>
+                      </label>
+                      <label>
+                        Nuovo valore
+                        <textarea name="value" rows="2" maxlength="500" required><%= r.verification %></textarea>
+                      </label>
+                      <button type="submit" class="btn-primary-sm">Salva</button>
+                    </form>
+                  </div>
+                </details>
+              </div>
+            </div>
+            <p class="hint"><%= r.verification %></p>
+          </div>
+        <% }) %>
+        <% if (recentReportsTruncated) { %>
+          <p class="hint">Elenco troncato ai 100 più recenti.</p>
+        <% } %>
+      <% } %>
+    </section>
+</div>
+  </main>
+</div>
+<%- include('partials/footer') %>

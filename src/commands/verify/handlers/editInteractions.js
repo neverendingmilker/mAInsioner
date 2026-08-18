@@ -1,6 +1,5 @@
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 const verifyManager = require('../../../features/verify/verifyManager');
-const { buildReportEmbed } = require('./reportEmbed');
 
 const FIELD_LABELS = {
   verification: 'Verification',
@@ -38,48 +37,28 @@ async function handleEditSelect(interaction) {
 
 // Step 2 (modal submit): update the DB record and edit the original report embed
 // in place — everything else (member, verified on, user id, color) stays the same.
+// The DB update + live-message sync now live in verifyManager.updateReportAndSync
+// (shared with the dashboard's report edit form) — this handler is a thin wrapper
+// that reproduces the exact same two possible replies as before the extraction.
 async function handleEditModalSubmit(interaction) {
   const [, , reportIdStr, field] = interaction.customId.split(':');
   const reportId = Number(reportIdStr);
   const newValue = interaction.fields.getTextInputValue('value');
 
-  const report = await verifyManager.getReportById(reportId);
-  if (!report) {
+  const result = await verifyManager.updateReportAndSync(interaction.guild, reportId, field, newValue);
+
+  if (!result.found) {
     await interaction.reply({ content: '⚠️ This report no longer exists.', ephemeral: true });
     return;
   }
 
-  await verifyManager.updateReportField(reportId, field, newValue);
-
-  const guild = interaction.guild;
-  const channel = guild.channels.cache.get(report.channel_id);
-  const message = channel ? await channel.messages.fetch(report.message_id).catch(() => null) : null;
-
-  if (!message) {
+  if (!result.messageUpdated) {
     await interaction.reply({
       content: '✅ Saved, but I couldn\'t find the original report message to update it (it may have been deleted).',
       ephemeral: true,
     });
     return;
   }
-
-  const targetUser = await interaction.client.users.fetch(report.user_id).catch(() => null);
-  const moderator = report.moderator_id
-    ? await interaction.client.users.fetch(report.moderator_id).catch(() => null)
-    : null;
-
-  const updatedEmbed = buildReportEmbed({
-    type: report.type,
-    userMention: targetUser ? `${targetUser}` : `<@${report.user_id}>`,
-    userAvatarURL: targetUser ? targetUser.displayAvatarURL() : null,
-    userId: report.user_id,
-    verification: field === 'verification' ? newValue : report.verification,
-    social: field === 'social' ? newValue : report.social,
-    verifiedAtSeconds: report.verified_at,
-    moderatorMention: moderator ? `${moderator}` : report.moderator_id ? `<@${report.moderator_id}>` : 'Unknown',
-  });
-
-  await message.edit({ embeds: [updatedEmbed] });
 
   await interaction.reply({
     content: `✅ **${FIELD_LABELS[field]}** updated.`,

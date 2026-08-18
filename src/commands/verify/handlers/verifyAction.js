@@ -1,10 +1,13 @@
-const { PermissionFlagsBits } = require('discord.js');
 const verifyManager = require('../../../features/verify/verifyManager');
-const { buildReportEmbed } = require('./reportEmbed');
 
 // Shared logic behind /verify sub, /verify domme and /verify maledom: assigns the
 // role configured (via /verify config) for that type, and removes the single
-// shared "remove" role if the member currently holds it.
+// shared "remove" role if the member currently holds it. The actual side effects
+// (role assign/remove, cross-type exclusivity, sub-role fallback, report posting) now
+// live in verifyManager.performVerification (shared with the dashboard's "issue
+// verification" form) — this handler keeps its own pre-flight checks (permission,
+// member lookup, give-role existence/hierarchy) unchanged, and reconstructs the exact
+// same reply text as before from the structured result performVerification returns.
 async function handleVerifyType(interaction, type) {
   const label = verifyManager.TYPE_LABELS[type];
   const targetUser = interaction.options.getUser('user');
@@ -59,113 +62,62 @@ async function handleVerifyType(interaction, type) {
     return;
   }
 
+  const verifiedAtSeconds = Math.floor(interaction.createdTimestamp / 1000);
+
+  const result = await verifyManager.performVerification(guild, type, {
+    member,
+    giveRole,
+    config,
+    verification,
+    social,
+    moderatorMention: `${interaction.user}`,
+    moderatorId: interaction.user.id,
+    verifiedAtSeconds,
+  });
+
   const notes = [];
 
-  const alreadyHadIt = member.roles.cache.has(giveRole.id);
-  if (alreadyHadIt) {
-    notes.push(`✅ Already had ${giveRole} (no change needed).`);
-  } else {
-    await member.roles.add(giveRole);
-    notes.push(`✅ Assigned ${giveRole}.`);
-  }
+  notes.push(result.alreadyHadRole ? `✅ Already had ${giveRole} (no change needed).` : `✅ Assigned ${giveRole}.`);
 
   if (removeRoleId) {
-    const removeRole = guild.roles.cache.get(removeRoleId);
-    if (!removeRole) {
+    if (result.removeRole?.missing) {
       notes.push('⚠️ The configured remove role no longer exists on this server.');
-    } else if (member.roles.cache.has(removeRole.id)) {
-      if (botMember.roles.highest.position > removeRole.position) {
-        await member.roles.remove(removeRole);
-        notes.push(`🗑️ Removed ${removeRole}.`);
-      } else {
-        notes.push(`⚠️ Couldn't remove ${removeRole}: my role needs to be moved higher in the server's role list.`);
-      }
+    } else if (result.removeRole?.removed) {
+      notes.push(`🗑️ Removed ${result.removeRole.role}.`);
+    } else if (result.removeRole?.blocked) {
+      notes.push(`⚠️ Couldn't remove ${result.removeRole.role}: my role needs to be moved higher in the server's role list.`);
     }
   }
 
-  // Keep the three verification types mutually exclusive: if the member holds the
-  // "give" role of one of the other two types, strip it now that they're being
-  // verified as this one.
-  for (const otherType of verifyManager.TYPES) {
-    if (otherType === type) continue;
-
-    const otherGiveRoleId = config[`${otherType}_give_role_id`];
-    if (!otherGiveRoleId) continue;
-
-    const otherGiveRole = guild.roles.cache.get(otherGiveRoleId);
-    if (!otherGiveRole || !member.roles.cache.has(otherGiveRole.id)) continue;
-
-    if (botMember.roles.highest.position > otherGiveRole.position) {
-      await member.roles.remove(otherGiveRole);
-      notes.push(`🗑️ Removed ${otherGiveRole}.`);
+  // Keep the three verification types mutually exclusive: performVerification already
+  // stripped the "give" role of any other type the member held — this just reports it,
+  // in the same order (TYPES, excluding this one) as before the extraction.
+  for (const cr of result.crossRemovals) {
+    if (cr.removed) {
+      notes.push(`🗑️ Removed ${cr.role}.`);
     } else {
       notes.push(
-        `⚠️ Couldn't remove ${otherGiveRole} (${verifyManager.TYPE_LABELS[otherType]}): my role needs to be moved higher in the server's role list.`
+        `⚠️ Couldn't remove ${cr.role} (${verifyManager.TYPE_LABELS[cr.type]}): my role needs to be moved higher in the server's role list.`
       );
     }
   }
 
   // Sub-only: if configured, make sure the member holds at least one of the admin's
   // sub roles, backfilling the configured default if they hold none of them.
-  if (type === 'sub') {
-    const subRoleStatus = await verifyManager.assignDefaultSubRoleIfMissing(guild, member);
-    if (subRoleStatus === 'assigned') {
-      const defaultRole = guild.roles.cache.get(config.default_sub_role_id);
-      notes.push(`➕ Had none of the configured sub roles — assigned the default${defaultRole ? ` (${defaultRole})` : ''}.`);
-    }
+  if (result.subRole?.status === 'assigned') {
+    notes.push(
+      `➕ Had none of the configured sub roles — assigned the default${result.subRole.defaultRole ? ` (${result.subRole.defaultRole})` : ''}.`
+    );
   }
 
-  // Post the verification report to the configured channel (if any).
+  // Report of the verification, posted to the configured channel (if any).
   if (config.report_channel_id) {
-    const reportChannel = guild.channels.cache.get(config.report_channel_id);
-    if (!reportChannel) {
+    if (result.report?.channelMissing) {
       notes.push('⚠️ The configured report channel no longer exists. Set a new one with `/verify config`.');
-    } else {
-      const canSend = botMember && reportChannel.permissionsFor(botMember)?.has(PermissionFlagsBits.SendMessages);
-      if (!canSend) {
-        notes.push(`⚠️ Couldn't post the report in ${reportChannel}: I don't have "Send Messages" permission there.`);
-      } else {
-        // If this user already has a report (from a previous verification), delete
-        // the old message and DB row first, so they end up with just one report.
-        const existingReport = await verifyManager.getLastReportForUser(interaction.guildId, targetUser.id);
-        if (existingReport) {
-          const oldChannel = guild.channels.cache.get(existingReport.channel_id);
-          if (oldChannel) {
-            const oldMessage = await oldChannel.messages.fetch(existingReport.message_id).catch(() => null);
-            if (oldMessage) {
-              await oldMessage.delete().catch(() => null);
-            }
-          }
-          await verifyManager.deleteReport(existingReport.id);
-        }
-
-        const verifiedAtSeconds = Math.floor(interaction.createdTimestamp / 1000);
-        const reportEmbed = buildReportEmbed({
-          type,
-          userMention: `${targetUser}`,
-          userAvatarURL: targetUser.displayAvatarURL(),
-          userId: targetUser.id,
-          verification,
-          social,
-          verifiedAtSeconds,
-          moderatorMention: `${interaction.user}`,
-        });
-
-        const reportMessage = await reportChannel.send({ content: `${targetUser}`, embeds: [reportEmbed] });
-        notes.push(`📋 Report posted in ${reportChannel}.`);
-
-        await verifyManager.recordReport({
-          guild_id: interaction.guildId,
-          user_id: targetUser.id,
-          type,
-          channel_id: reportChannel.id,
-          message_id: reportMessage.id,
-          verification,
-          social,
-          verified_at: verifiedAtSeconds,
-          moderator_id: interaction.user.id,
-        });
-      }
+    } else if (result.report?.noPermission) {
+      notes.push(`⚠️ Couldn't post the report in ${result.report.channel}: I don't have "Send Messages" permission there.`);
+    } else if (result.report?.posted) {
+      notes.push(`📋 Report posted in ${result.report.channel}.`);
     }
   }
 

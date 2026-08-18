@@ -139,6 +139,17 @@ async function getLastReportForUser(guildId, userId) {
   return result.rows[0] ? parseReportRow(result.rows[0]) : null;
 }
 
+// All reports for a guild, most recent first — used by the dashboard's recent-reports
+// list (same "recent activity, capped" convention as Warnings' getAllWarnings).
+async function getAllReportsInGuild(guildId, limit = 100) {
+  await db.ready;
+  const result = await db.client.execute({
+    sql: 'SELECT * FROM verify_reports WHERE guild_id = ? ORDER BY id DESC LIMIT ?',
+    args: [guildId, limit],
+  });
+  return result.rows.map(parseReportRow);
+}
+
 async function getReportById(id) {
   await db.ready;
   const result = await db.client.execute({
@@ -194,6 +205,7 @@ module.exports = {
   insertReport,
   getLastReportForUser,
   getReportById,
+  getAllReportsInGuild,
   updateReportField,
   deleteReport,
 };

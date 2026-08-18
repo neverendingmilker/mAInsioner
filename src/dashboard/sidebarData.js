@@ -24,6 +24,7 @@ const FEATURE_PAGES = {
   sticky: '/sticky',
   suggestion: '/suggestion',
   themes: '/themes',
+  verify: '/verify',
   waifuwarlr: '/waifuwarlr',
   warning: '/warning',
 };

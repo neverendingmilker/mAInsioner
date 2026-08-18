@@ -1,33 +1,5 @@
-const { EmbedBuilder } = require('discord.js');
-const verifyManager = require('../../../features/verify/verifyManager');
-
-// Shared embed layout for verification reports — used both when a report is first
-// posted (verifyAction.js) and when it's edited afterwards (edit flow).
-function buildReportEmbed({
-  type,
-  userMention,
-  userAvatarURL,
-  userId,
-  verification,
-  social,
-  verifiedAtSeconds,
-  moderatorMention,
-}) {
-  return new EmbedBuilder()
-    .setColor(verifyManager.TYPE_COLORS[type])
-    .setThumbnail(userAvatarURL || null)
-    .setDescription(
-      [
-        `**Member:** ${userMention}`,
-        `**Verification:** ${verification}`,
-        social ? `**Social:** ${social}` : null,
-        `**User ID:** ${userId}`,
-        `**Verified on:** <t:${verifiedAtSeconds}:F>`,
-        `**Verified by:** ${moderatorMention}`,
-      ]
-        .filter(Boolean)
-        .join('\n')
-    );
-}
-
-module.exports = { buildReportEmbed };
+// The actual implementation now lives in the features layer (src/features/verify/
+// reportEmbed.js), so verifyManager can build/re-build the same embed for both the
+// Discord command and the dashboard. This file just re-exports it, so any existing
+// require('./reportEmbed') in this folder keeps working unchanged.
+module.exports = require('../../../features/verify/reportEmbed');

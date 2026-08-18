@@ -30,6 +30,7 @@ const themesRoutes = require('./routes/themes');
 const bumpreminderRoutes = require('./routes/bumpreminder');
 const highlightRoutes = require('./routes/highlight');
 const starboardRoutes = require('./routes/starboard');
+const verifyRoutes = require('./routes/verify');
 const modAccessRoutes = require('./routes/modAccessRoutes');
 const featureLockRoutes = require('./routes/featureLockRoutes');
 const selfPing = require('./selfPing');
@@ -130,7 +131,8 @@ function start(client) {
     themesRoutes,
     bumpreminderRoutes,
     highlightRoutes,
-    starboardRoutes
+    starboardRoutes,
+    verifyRoutes
   );
 
   app.use((req, res) => {

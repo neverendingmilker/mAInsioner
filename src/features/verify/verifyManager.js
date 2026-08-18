@@ -1,5 +1,7 @@
+const { PermissionFlagsBits } = require('discord.js');
 const repo = require('./verifyRepository');
 const { isMod } = require('../../utils/modRole');
+const { buildReportEmbed } = require('./reportEmbed');
 
 class ValidationError extends Error {}
 
@@ -138,6 +140,196 @@ async function updateReportField(id, field, value) {
   await repo.updateReportField(id, field, value);
 }
 
+// Most recent reports for a guild, regardless of type — used by the dashboard's
+// recent-reports list (mirrors Warnings' equivalent query/truncation convention).
+async function getAllReportsInGuild(guildId, limit) {
+  return repo.getAllReportsInGuild(guildId, limit);
+}
+
+// --- Shared side-effect logic behind /verify sub, /verify domme, /verify maledom AND
+// the dashboard's "issue verification" form. This function only DOES things (assigns/
+// removes roles, posts the report) and returns a structured result describing what
+// happened — it never builds any user-facing text itself. That's deliberate: the
+// Discord command (verifyAction.js) reconstructs its existing reply text verbatim from
+// this result (so its output stays byte-identical to before this was extracted), while
+// the dashboard route renders its own flash/UI from the same facts. Pre-flight
+// validation (role configured? role still exists? bot role hierarchy high enough?) is
+// intentionally NOT done here — it stays in each caller, since the Discord command's
+// early-exit messages use role mentions that only make sense in a Discord reply, and
+// the dashboard needs its own plain-text equivalents; both callers already have
+// `config` and can do these three checks themselves before calling this.
+//
+// `member` must be a real GuildMember (role assignment requires membership) and
+// `giveRole` must already be a resolved, assignable Role — both validated by the
+// caller. Returns:
+//   { label, giveRole, alreadyHadRole, removeRole, crossRemovals, subRole, report }
+async function performVerification(
+  guild,
+  type,
+  { member, giveRole, config, verification, social, moderatorMention, moderatorId, verifiedAtSeconds }
+) {
+  const botMember = guild.members.me;
+
+  const result = {
+    label: TYPE_LABELS[type],
+    giveRole,
+    alreadyHadRole: false,
+    removeRole: null, // { missing: true } | { role, removed: true } | { role, blocked: true } | null
+    crossRemovals: [], // [{ type, role, removed?: true, blocked?: true }]
+    subRole: null, // { status, defaultRole? } — only set for type === 'sub'
+    report: null, // { channelMissing } | { noPermission, channel } | { posted, channel, message, oldReportDeleted }
+  };
+
+  result.alreadyHadRole = member.roles.cache.has(giveRole.id);
+  if (result.alreadyHadRole) {
+    // no-op: member already has it
+  } else {
+    await member.roles.add(giveRole);
+  }
+
+  const removeRoleId = config.remove_role_id;
+  if (removeRoleId) {
+    const removeRole = guild.roles.cache.get(removeRoleId);
+    if (!removeRole) {
+      result.removeRole = { missing: true };
+    } else if (member.roles.cache.has(removeRole.id)) {
+      if (botMember.roles.highest.position > removeRole.position) {
+        await member.roles.remove(removeRole);
+        result.removeRole = { role: removeRole, removed: true };
+      } else {
+        result.removeRole = { role: removeRole, blocked: true };
+      }
+    }
+  }
+
+  // Keep the three verification types mutually exclusive: if the member holds the
+  // "give" role of one of the other two types, strip it now that they're being
+  // verified as this one.
+  for (const otherType of TYPES) {
+    if (otherType === type) continue;
+
+    const otherGiveRoleId = config[`${otherType}_give_role_id`];
+    if (!otherGiveRoleId) continue;
+
+    const otherGiveRole = guild.roles.cache.get(otherGiveRoleId);
+    if (!otherGiveRole || !member.roles.cache.has(otherGiveRole.id)) continue;
+
+    if (botMember.roles.highest.position > otherGiveRole.position) {
+      await member.roles.remove(otherGiveRole);
+      result.crossRemovals.push({ type: otherType, role: otherGiveRole, removed: true });
+    } else {
+      result.crossRemovals.push({ type: otherType, role: otherGiveRole, blocked: true });
+    }
+  }
+
+  // Sub-only: if configured, make sure the member holds at least one of the admin's
+  // sub roles, backfilling the configured default if they hold none of them.
+  if (type === 'sub') {
+    const status = await assignDefaultSubRoleIfMissing(guild, member);
+    result.subRole = { status };
+    if (status === 'assigned') {
+      result.subRole.defaultRole = guild.roles.cache.get(config.default_sub_role_id) || null;
+    }
+  }
+
+  // Post the verification report to the configured channel (if any).
+  if (config.report_channel_id) {
+    const reportChannel = guild.channels.cache.get(config.report_channel_id);
+    if (!reportChannel) {
+      result.report = { channelMissing: true };
+    } else {
+      const canSend = botMember && reportChannel.permissionsFor(botMember)?.has(PermissionFlagsBits.SendMessages);
+      if (!canSend) {
+        result.report = { noPermission: true, channel: reportChannel };
+      } else {
+        // If this user already has a report (from a previous verification), delete
+        // the old message and DB row first, so they end up with just one report.
+        const existingReport = await getLastReportForUser(guild.id, member.id);
+        let oldReportDeleted = false;
+        if (existingReport) {
+          const oldChannel = guild.channels.cache.get(existingReport.channel_id);
+          if (oldChannel) {
+            const oldMessage = await oldChannel.messages.fetch(existingReport.message_id).catch(() => null);
+            if (oldMessage) {
+              await oldMessage.delete().catch(() => null);
+              oldReportDeleted = true;
+            }
+          }
+          await deleteReport(existingReport.id);
+        }
+
+        const reportEmbed = buildReportEmbed({
+          color: TYPE_COLORS[type],
+          userMention: `${member.user}`,
+          userAvatarURL: member.user.displayAvatarURL(),
+          userId: member.id,
+          verification,
+          social,
+          verifiedAtSeconds,
+          moderatorMention,
+        });
+
+        const reportMessage = await reportChannel.send({ content: `${member.user}`, embeds: [reportEmbed] });
+
+        await recordReport({
+          guild_id: guild.id,
+          user_id: member.id,
+          type,
+          channel_id: reportChannel.id,
+          message_id: reportMessage.id,
+          verification,
+          social,
+          verified_at: verifiedAtSeconds,
+          moderator_id: moderatorId,
+        });
+
+        result.report = { posted: true, channel: reportChannel, message: reportMessage, oldReportDeleted };
+      }
+    }
+  }
+
+  return result;
+}
+
+// Updates one field of an existing report and keeps the live Discord embed in sync —
+// shared by /verify edit's modal submit and the dashboard's report edit form. Returns
+// { found: false } if the report no longer exists (row was deleted); otherwise
+// { found: true, messageUpdated, report } — messageUpdated is false if the original
+// message/channel could no longer be found (still saved to the DB either way).
+async function updateReportAndSync(guild, reportId, field, value) {
+  const report = await getReportById(reportId);
+  if (!report) {
+    return { found: false };
+  }
+
+  await updateReportField(reportId, field, value);
+
+  const channel = guild.channels.cache.get(report.channel_id);
+  const message = channel ? await channel.messages.fetch(report.message_id).catch(() => null) : null;
+
+  if (!message) {
+    return { found: true, messageUpdated: false, report };
+  }
+
+  const targetUser = await guild.client.users.fetch(report.user_id).catch(() => null);
+  const moderator = report.moderator_id ? await guild.client.users.fetch(report.moderator_id).catch(() => null) : null;
+
+  const updatedEmbed = buildReportEmbed({
+    color: TYPE_COLORS[report.type],
+    userMention: targetUser ? `${targetUser}` : `<@${report.user_id}>`,
+    userAvatarURL: targetUser ? targetUser.displayAvatarURL() : null,
+    userId: report.user_id,
+    verification: field === 'verification' ? value : report.verification,
+    social: field === 'social' ? value : report.social,
+    verifiedAtSeconds: report.verified_at,
+    moderatorMention: moderator ? `${moderator}` : report.moderator_id ? `<@${report.moderator_id}>` : 'Unknown',
+  });
+
+  await message.edit({ embeds: [updatedEmbed] });
+
+  return { found: true, messageUpdated: true, report };
+}
+
 module.exports = {
   ValidationError,
   TYPES,
@@ -158,4 +350,7 @@ module.exports = {
   getReportById,
   updateReportField,
   deleteReport,
+  getAllReportsInGuild,
+  performVerification,
+  updateReportAndSync,
 };
