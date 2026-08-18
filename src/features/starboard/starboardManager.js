@@ -14,11 +14,12 @@ const EMBED_COLOR = 0xffd166;
 // image/GIF/video content (attachments or link embeds), regardless of caption text.
 const CONTENT_TYPES = {
   any: 'Any message',
-  text_only: 'Text only (no image/GIF/video)',
+  text_only: 'Text only (no image/GIF/video/link)',
   image: 'Images only',
   gif: 'GIFs only',
   video: 'Videos only',
-  media: 'Any media (image, GIF or video)',
+  link: 'Links only (e.g. Twitter/X)',
+  media: 'Any media (image, GIF, video or link)',
   text_and_media: 'Text + media (needs both)',
 };
 const DEFAULT_CONTENT_TYPE = 'any';
@@ -241,8 +242,11 @@ async function getNamesList(guildId) {
 }
 
 // --- Content-type classification ---
-// Looks at attachments (uploaded files) and embeds (link previews, e.g. a pasted
-// Tenor/YouTube link) to figure out what kind of content a message carries.
+// Looks at attachments (uploaded files), embeds (link previews, e.g. a pasted
+// Tenor/YouTube link) and raw message text (plain URLs) to figure out what kind of
+// content a message carries.
+const URL_PATTERN = /https?:\/\/\S+/i;
+
 function classifyMessage(message) {
   const hasText = !!(message.content && message.content.trim().length > 0);
 
@@ -258,13 +262,20 @@ function classifyMessage(message) {
   const hasVideoEmbed = embeds.some((e) => !!e.video);
   const hasImageEmbed = embeds.some((e) => !!e.image && !isGifEmbedUrl(e.image.url));
 
+  // A plain URL in the message text (e.g. a Twitter/X post link), or any link embed
+  // Discord generated for it — independent of whether that link also happens to carry
+  // an image/GIF/video (a tweet with a photo counts as both hasLink and hasImage).
+  const hasLinkInText = URL_PATTERN.test(message.content || '');
+  const hasLinkEmbed = embeds.some((e) => !!e.url);
+
   return {
     hasText,
     hasImage: hasImageAttachment || hasImageEmbed,
     hasGif: hasGifAttachment || hasGifEmbed,
     hasVideo: hasVideoAttachment || hasVideoEmbed,
+    hasLink: hasLinkInText || hasLinkEmbed,
     get hasMedia() {
-      return this.hasImage || this.hasGif || this.hasVideo;
+      return this.hasImage || this.hasGif || this.hasVideo || this.hasLink;
     },
   };
 }
@@ -280,6 +291,8 @@ function matchesContentType(message, contentType) {
       return c.hasGif;
     case 'video':
       return c.hasVideo;
+    case 'link':
+      return c.hasLink;
     case 'media':
       return c.hasMedia;
     case 'text_and_media':
