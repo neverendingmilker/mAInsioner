@@ -11,7 +11,7 @@ async function handleCreateSelf(interaction) {
     const activeOwn = await inviteTrackerManager.getActiveOwnInvite(interaction.guild, interaction.user.id);
     if (activeOwn) {
       throw new inviteTrackerManager.ValidationError(
-        `You already have your own invite — **https://discord.gg/${activeOwn}**. Revoke it with \`/invites revoke\` before making another.`
+        `You already have your own invite — **https://discord.gg/${activeOwn}**. Ask a Mod to revoke it with \`/invites revoke\` before making another.`
       );
     }
 

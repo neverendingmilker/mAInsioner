@@ -1,16 +1,15 @@
 const inviteTrackerManager = require('../../../features/invitetracker/inviteTrackerManager');
 const { isMod } = require('../../../utils/modRole');
 
+// Mod-only, full stop — including for your own self-made invite (create_self's error
+// message points people at a Mod for that, rather than at this command themselves).
 async function handleRevoke(interaction) {
-  const code = interaction.options.getString('code');
-
   if (!(await isMod(interaction.member))) {
-    const assignedUserId = await inviteTrackerManager.getAssignedUser(interaction.guildId, code);
-    if (assignedUserId !== interaction.user.id) {
-      await interaction.reply({ content: "❌ You can only revoke your own invite — ask a Mod/Admin for anyone else's.", ephemeral: true });
-      return;
-    }
+    await interaction.reply({ content: '❌ You need to be a Mod or Admin to revoke an invite.', ephemeral: true });
+    return;
   }
+
+  const code = interaction.options.getString('code');
 
   await interaction.deferReply({ ephemeral: true });
   await inviteTrackerManager.revokeAssignedInvite(interaction.guild, code);

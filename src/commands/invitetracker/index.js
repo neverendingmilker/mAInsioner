@@ -69,7 +69,7 @@ const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName('revoke')
-      .setDescription('Deletes an assigned invite — Mods: any; everyone else: only their own')
+      .setDescription('[Mod] Deletes an assigned invite, including someone\'s self-made one')
       .addStringOption((opt) =>
         opt.setName('code').setDescription('Which assigned invite to revoke (start typing to see active ones)').setRequired(true).setAutocomplete(true)
       )
@@ -109,19 +109,19 @@ async function execute(interaction) {
 }
 
 // Powers the "code" option's autocomplete on /invites revoke: only shows invites that
-// were assigned via /invites create, not every invite in the server.
+// were assigned via /invites create. revoke is Mod-only now, so a non-Mod gets no
+// suggestions at all here — same as they'd get rejected on submit either way.
 async function autocomplete(interaction) {
   const focused = interaction.options.getFocused(true);
-  if (focused.name !== 'code') {
+  if (focused.name !== 'code' || !(await isMod(interaction.member))) {
     await interaction.respond([]);
     return;
   }
 
   const allAssigned = await inviteTrackerManager.getAllAssignedInvites(interaction.guildId);
-  const assigned = (await isMod(interaction.member)) ? allAssigned : allAssigned.filter((a) => a.assignedUserId === interaction.user.id);
   const query = focused.value.toLowerCase();
 
-  const choices = assigned
+  const choices = allAssigned
     .map((a) => {
       const member = interaction.guild.members.cache.get(a.assignedUserId);
       const who = member ? member.user.tag : a.assignedUserId;
