@@ -32,6 +32,7 @@ const highlightRoutes = require('./routes/highlight');
 const starboardRoutes = require('./routes/starboard');
 const modAccessRoutes = require('./routes/modAccessRoutes');
 const featureLockRoutes = require('./routes/featureLockRoutes');
+const selfPing = require('./selfPing');
 
 // Web dashboard for the bot: Discord OAuth2 login, gated to whoever has Administrator OR
 // the server's configured Mod role in at least one server the bot is in — which one
@@ -144,6 +145,7 @@ function start(client) {
 
   app.listen(config.port, () => {
     console.log(`[dashboard] Listening on port ${config.port}`);
+    selfPing.start();
   });
 }
 
