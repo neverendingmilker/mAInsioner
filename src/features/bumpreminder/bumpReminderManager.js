@@ -79,7 +79,7 @@ async function postReminder(client, guildId, cfg) {
 
   const rolePing = cfg.role_id ? `<@&${cfg.role_id}> ` : '';
   await channel.send({
-    content: `${rolePing}⏰ È di nuovo ora di fare bump! Usa \`/bump\` per supportare il server.`,
+    content: `${rolePing}⏰ It's time to bump! \n Enter \`/bump\` to support the server.`,
     allowedMentions: cfg.role_id ? { roles: [cfg.role_id] } : { parse: [] },
   });
 
