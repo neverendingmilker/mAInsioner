@@ -484,8 +484,8 @@ a {
   margin-left: auto;
 }
 
-/* Segmented button-group skin for the feature-page header controls (on/off, Solo Admin,
-   Modificabile, Riordina card — partials/featureToggle.ejs), used by every feature page.
+/* Segmented button-group skin for the feature-page header controls (on/off, Admin Only,
+   Edit, Reorder card — partials/featureToggle.ejs), used by every feature page.
    Each item is still a real (hidden) checkbox underneath — active/colored state is driven
    purely by :has(input:checked), no JS or server-computed class needed. Replaced an
    earlier per-control .switch/.switch-slider look (piloted on Anime Night, then rolled
@@ -874,11 +874,11 @@ a {
   font-size: 13px;
 }
 
-/* Generic "Modifica" (pencil) + "Rimuovi" (red X) icon-button pair, the standard for every
+/* Generic "Edit" (pencil) + "Remove" (red X) icon-button pair, the standard for every
    per-item card across the dashboard (.config-card and the draggable .reorder-item) —
    always together in the card's header, right where the card's other actions are, instead
-   of a separate text link/section inside the card body. Modifica opens a small popover
-   anchored under it via <details>/<summary> (no JS needed at all); Rimuovi just submits
+   of a separate text link/section inside the card body. Edit opens a small popover
+   anchored under it via <details>/<summary> (no JS needed at all); Remove just submits
    its own one-button form immediately, same as before. */
 .card-actions {
   display: flex;
@@ -948,7 +948,7 @@ a {
   color: var(--danger);
 }
 
-/* --- Channel Permissions: canali | ruoli/membri con override | editor permessi --- */
+/* --- Channel Permissions: channels | roles/members with an override | permission editor --- */
 
 .perm-panel {
   display: flex;

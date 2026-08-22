@@ -11,9 +11,9 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="sessioni">
-      <h2>Sessioni (<%= sessions.length %>)</h2>
+      <h2>Sessions (<%= sessions.length %>)</h2>
       <% if (sessions.length === 0) { %>
-        <p class="hint">Nessuna sessione registrata.</p>
+        <p class="hint">No sessions recorded.</p>
       <% } else { %>
         <% sessions.forEach((s) => { %>
           <div class="config-card">
@@ -22,25 +22,25 @@
               <span class="config-meta"><%= s.date %> — <%= s.titles.length %> anime</span>
               <div class="card-actions">
                 <details>
-                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <summary class="btn-icon-sm" title="Edit">✎</summary>
                   <div class="card-edit-popover">
                     <form method="POST" action="/animenight/edit" class="form">
                       <input type="hidden" name="sessionDate" value="<%= s.date %>" />
                       <label>
-                        Titoli (separati da virgola o /)
+                        Titles (comma or / separated)
                         <textarea name="titles" rows="2" required><%= s.titles.join(', ') %></textarea>
                       </label>
                       <label>
-                        Data
+                        Date
                         <input type="date" name="date" value="<%= s.date %>" required />
                       </label>
-                      <button type="submit" class="btn-primary-sm">Salva</button>
+                      <button type="submit" class="btn-primary-sm">Save</button>
                     </form>
                   </div>
                 </details>
-                <form method="POST" action="/animenight/remove" onsubmit="return confirm('Rimuovere l\'intera sessione (tutti gli anime di questa data)?');">
+                <form method="POST" action="/animenight/remove" onsubmit="return confirm('Remove the entire session (all anime from this date)?');">
                   <input type="hidden" name="sessionDate" value="<%= s.date %>" />
-                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Remove">✕</button>
                 </form>
               </div>
             </div>
@@ -51,19 +51,19 @@
     </section>
 
     <section class="panel" data-card-id="aggiungi-anime">
-      <h2>Aggiungi anime</h2>
+      <h2>Add anime</h2>
       <form method="POST" action="/animenight/add" class="form">
         <label>
-          Titoli (separati da virgola o /, es. "Naruto, One Piece")
+          Titles (comma or / separated, e.g. "Naruto, One Piece")
           <textarea name="titles" rows="2" required placeholder="Naruto, One Piece"></textarea>
         </label>
         <label>
-          Data (vuoto = oggi)
+          Date (empty = today)
           <input type="date" name="date" />
         </label>
-        <button type="submit" class="btn-primary">Aggiungi anime</button>
+        <button type="submit" class="btn-primary">Add anime</button>
       </form>
-      <p class="hint">Se la data coincide con una sessione già esistente, i titoli si aggiungono a quella invece di crearne una nuova.</p>
+      <p class="hint">If the date matches an existing session, the titles are added to it instead of creating a new one.</p>
     </section>
 </div>
   </main>

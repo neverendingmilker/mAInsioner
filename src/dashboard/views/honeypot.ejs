@@ -11,60 +11,60 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="canali-trappola">
-      <h2>Canali trappola (<%= channels.length %>)</h2>
+      <h2>Trap channels (<%= channels.length %>)</h2>
       <% if (channels.length === 0) { %>
-        <p class="hint">Nessun canale configurato.</p>
+        <p class="hint">No channels configured.</p>
       <% } else { %>
         <% channels.forEach((c) => { %>
           <div class="config-card">
             <div class="config-card-header">
               <span class="config-name"><%= c.channelName %></span>
-              <span class="config-meta" title="Emoji reazione"><%= c.emoji || '—' %></span>
+              <span class="config-meta" title="Reaction emoji"><%= c.emoji || '—' %></span>
               <div class="card-actions">
                 <% if (!c.messageMissing) { %>
                   <details>
-                    <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                    <summary class="btn-icon-sm" title="Edit">✎</summary>
                     <div class="card-edit-popover">
                       <form method="POST" action="/honeypot/edit" class="form">
                         <input type="hidden" name="currentChannelId" value="<%= c.channelId %>" />
                         <label>
-                          Canale
+                          Channel
                           <select name="channelId" required>
                             <% textChannels.forEach((ch) => { %>
                               <option value="<%= ch.id %>" <%= ch.id === c.channelId ? 'selected' : '' %>><%= ch.name %></option>
                             <% }) %>
                           </select>
                         </label>
-                        <p class="hint">Cambiare canale sposta la trappola: il messaggio attuale viene eliminato e ne viene postato uno nuovo in quello scelto.</p>
+                        <p class="hint">Changing the channel moves the trap: the current message is deleted and a new one is posted in the one you pick.</p>
                         <label>
-                          Messaggio esca
+                          Bait message
                           <textarea name="message" rows="2"><%= c.messageText %></textarea>
                         </label>
                         <label>
-                          Etichetta bottone
+                          Button label
                           <input type="text" name="buttonLabel" value="<%= c.buttonLabel %>" />
                         </label>
                         <label>
-                          Emoji reazione (vuoto per rimuoverla)
+                          Reaction emoji (leave empty to remove it)
                           <div class="emoji-field">
-                            <input type="text" name="emoji" value="<%= c.emoji || '' %>" placeholder="es. 🎯" class="emoji-text-input" />
-                            <button type="button" class="emoji-picker-toggle" aria-label="Scegli emoji">😀</button>
+                            <input type="text" name="emoji" value="<%= c.emoji || '' %>" placeholder="e.g. 🎯" class="emoji-text-input" />
+                            <button type="button" class="emoji-picker-toggle" aria-label="Choose emoji">😀</button>
                             <div class="emoji-picker-panel" hidden></div>
                           </div>
                         </label>
-                        <button type="submit" class="btn-primary-sm">Salva</button>
+                        <button type="submit" class="btn-primary-sm">Save</button>
                       </form>
                     </div>
                   </details>
                 <% } %>
-                <form method="POST" action="/honeypot/remove" onsubmit="return confirm('Rimuovere la trappola da questo canale?');">
+                <form method="POST" action="/honeypot/remove" onsubmit="return confirm('Remove the trap from this channel?');">
                   <input type="hidden" name="channelId" value="<%= c.channelId %>" />
-                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Remove">✕</button>
                 </form>
               </div>
             </div>
             <% if (c.messageMissing) { %>
-              <p class="config-card-subtext">⚠️ Il messaggio esca non esiste più su Discord — rimuovi e ricrea la trappola per poterla modificare.</p>
+              <p class="config-card-subtext">⚠️ The bait message no longer exists on Discord — remove and recreate the trap to be able to edit it.</p>
             <% } %>
           </div>
         <% }) %>
@@ -72,49 +72,49 @@
     </section>
 
     <section class="panel" data-card-id="aggiungi-trappola">
-      <h2>Aggiungi trappola</h2>
+      <h2>Add trap</h2>
       <% if (textChannels.length === 0) { %>
-        <p class="hint">Nessun canale testuale disponibile.</p>
+        <p class="hint">No text channels available.</p>
       <% } else { %>
         <form method="POST" action="/honeypot/add" class="form">
           <label>
-            Canale
+            Channel
             <select name="channelId" required>
-              <option value="" disabled selected>Scegli un canale…</option>
+              <option value="" disabled selected>Choose a channel…</option>
               <% textChannels.forEach((ch) => { %>
                 <option value="<%= ch.id %>"><%= ch.name %></option>
               <% }) %>
             </select>
           </label>
           <label>
-            Messaggio esca (opzionale)
+            Bait message (optional)
             <textarea name="message" rows="2" placeholder="<%= defaultMessage %>"></textarea>
           </label>
           <label>
-            Etichetta bottone (opzionale)
+            Button label (optional)
             <input type="text" name="buttonLabel" placeholder="<%= defaultButtonLabel %>" />
           </label>
           <label>
-            Emoji reazione (opzionale)
+            Reaction emoji (optional)
             <div class="emoji-field">
-              <input type="text" name="emoji" placeholder="es. 🎯" class="emoji-text-input" />
-              <button type="button" class="emoji-picker-toggle" aria-label="Scegli emoji">😀</button>
+              <input type="text" name="emoji" placeholder="e.g. 🎯" class="emoji-text-input" />
+              <button type="button" class="emoji-picker-toggle" aria-label="Choose emoji">😀</button>
               <div class="emoji-picker-panel" hidden></div>
             </div>
           </label>
-          <button type="submit" class="btn-primary">Crea trappola</button>
+          <button type="submit" class="btn-primary">Create trap</button>
         </form>
       <% } %>
     </section>
 
     <section class="panel" data-card-id="log-kick-totali">
-      <h2>Log kick — <%= kickTotal %> totali</h2>
+      <h2>Kick log — <%= kickTotal %> total</h2>
       <% if (recentKicks.length === 0) { %>
-        <p class="hint">Nessun kick registrato.</p>
+        <p class="hint">No kicks recorded.</p>
       <% } else { %>
         <table class="table">
           <thead>
-            <tr><th>Utente</th><th>Canale</th><th>Trigger</th><th>Quando</th></tr>
+            <tr><th>User</th><th>Channel</th><th>Trigger</th><th>When</th></tr>
           </thead>
           <tbody>
             <% recentKicks.forEach((k) => { %>

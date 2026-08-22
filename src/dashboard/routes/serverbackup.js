@@ -5,13 +5,13 @@ const serverBackupManager = require('../../features/serverbackup/serverBackupMan
 const router = express.Router();
 
 function memberLabel(guild, userId) {
-  if (!userId) return '(sconosciuto)';
+  if (!userId) return '(unknown)';
   const member = guild.members.cache.get(userId);
-  return member ? member.user.tag : `(utente non più nel server: ${userId})`;
+  return member ? member.user.tag : `(user no longer in the server: ${userId})`;
 }
 
 function formatDate(ts) {
-  return new Date(ts).toLocaleString('it-IT');
+  return new Date(ts).toLocaleString('en-GB');
 }
 
 // listSnapshots() is deliberately NOT guild-scoped in the manager (a backup is meant to
@@ -35,7 +35,7 @@ async function renderServerbackupPage(req, res, guild) {
   const snapshotCards = await Promise.all(
     snapshots.map(async (s) => ({
       id: s.id,
-      label: s.label || `(senza etichetta)`,
+      label: s.label || `(no label)`,
       createdByLabel: memberLabel(guild, s.createdBy),
       createdAtLabel: formatDate(s.createdAt),
       assetCounts: await serverBackupManager.getAssetCounts(s.id),
@@ -67,7 +67,7 @@ router.post('/serverbackup/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await serverBackupManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Server Backup attivato.' : 'Server Backup disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Server Backup enabled.' : 'Server Backup disabled.' };
     res.redirect('/serverbackup');
   } catch (err) {
     next(err);
@@ -90,7 +90,7 @@ router.post('/serverbackup/create', async (req, res, next) => {
       const result = await serverBackupManager.createSnapshot(guild, label, req.session.user.id, scope);
       req.session.flash = {
         type: 'success',
-        message: `Backup #${result.id} creato: ${result.roleCount} ruoli, ${result.categoryCount} categorie, ${result.channelCount} canali, ${result.assetCounts.emoji} emoji, ${result.assetCounts.sticker} sticker, ${result.assetCounts.soundboard} suoni soundboard.`,
+        message: `Backup #${result.id} created: ${result.roleCount} roles, ${result.categoryCount} categories, ${result.channelCount} channels, ${result.assetCounts.emoji} emoji, ${result.assetCounts.sticker} stickers, ${result.assetCounts.soundboard} soundboard sounds.`,
       };
     } catch (err) {
       if (err instanceof serverBackupManager.ValidationError) {
@@ -113,7 +113,7 @@ router.post('/serverbackup/:id/sync', async (req, res, next) => {
     const id = Number(req.params.id);
     const snapshot = await findOwnSnapshot(guild, id);
     if (!snapshot) {
-      req.session.flash = { type: 'error', message: 'Backup non trovato.' };
+      req.session.flash = { type: 'error', message: 'Backup not found.' };
       res.redirect('/serverbackup');
       return;
     }
@@ -122,7 +122,7 @@ router.post('/serverbackup/:id/sync', async (req, res, next) => {
       const result = await serverBackupManager.syncMembers(guild, id, req.session.user.id);
       req.session.flash = {
         type: 'success',
-        message: `Sincronizzazione ruoli completata: ${result.members.updated.length} aggiornati, ${result.members.noChangeNeeded} già a posto, ${result.members.notYetJoined} non ancora nel server, ${result.members.failed.length} falliti.`,
+        message: `Role sync complete: ${result.members.updated.length} updated, ${result.members.noChangeNeeded} already up to date, ${result.members.notYetJoined} not yet in the server, ${result.members.failed.length} failed.`,
       };
     } catch (err) {
       if (err instanceof serverBackupManager.ValidationError) {
@@ -149,7 +149,7 @@ router.get('/serverbackup/:id/restore', async (req, res, next) => {
     const id = Number(req.params.id);
     const snapshot = await findOwnSnapshot(guild, id);
     if (!snapshot) {
-      req.session.flash = { type: 'error', message: 'Backup non trovato.' };
+      req.session.flash = { type: 'error', message: 'Backup not found.' };
       res.redirect('/serverbackup');
       return;
     }
@@ -159,7 +159,7 @@ router.get('/serverbackup/:id/restore', async (req, res, next) => {
     try {
       const preview = await serverBackupManager.previewRestore(guild, id, selectedScope);
       res.render('serverbackupRestore', {
-        title: 'Ripristina backup',
+        title: 'Restore backup',
         guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
         snapshotId: id,
         selectedScope,
@@ -190,7 +190,7 @@ router.post('/serverbackup/:id/restore', async (req, res, next) => {
     const id = Number(req.params.id);
     const snapshot = await findOwnSnapshot(guild, id);
     if (!snapshot) {
-      req.session.flash = { type: 'error', message: 'Backup non trovato.' };
+      req.session.flash = { type: 'error', message: 'Backup not found.' };
       res.redirect('/serverbackup');
       return;
     }
@@ -200,16 +200,16 @@ router.post('/serverbackup/:id/restore', async (req, res, next) => {
     try {
       const summary = await serverBackupManager.restoreSnapshot(guild, id, req.session.user.id, scope);
       const parts = [];
-      if (summary.roles) parts.push(`ruoli: ${summary.roles.created.length} creati, ${summary.roles.skipped} già presenti, ${summary.roles.failed.length} falliti`);
-      if (summary.categories) parts.push(`categorie: ${summary.categories.created.length} create, ${summary.categories.skipped} già presenti, ${summary.categories.failed.length} fallite`);
-      if (summary.channels) parts.push(`canali: ${summary.channels.created.length} creati, ${summary.channels.skipped} già presenti, ${summary.channels.failed.length} falliti`);
-      if (summary.emoji) parts.push(`emoji: ${summary.emoji.created.length} create, ${summary.emoji.skipped} già presenti, ${summary.emoji.failed.length} fallite`);
-      if (summary.stickers) parts.push(`sticker: ${summary.stickers.created.length} creati, ${summary.stickers.skipped} già presenti, ${summary.stickers.failed.length} falliti`);
-      if (summary.soundboard) parts.push(`soundboard: ${summary.soundboard.created.length} creati, ${summary.soundboard.skipped} già presenti, ${summary.soundboard.failed.length} falliti`);
-      if (summary.members) parts.push(`membri: ${summary.members.updated.length} aggiornati, ${summary.members.notYetJoined} non ancora nel server`);
+      if (summary.roles) parts.push(`roles: ${summary.roles.created.length} created, ${summary.roles.skipped} already present, ${summary.roles.failed.length} failed`);
+      if (summary.categories) parts.push(`categories: ${summary.categories.created.length} created, ${summary.categories.skipped} already present, ${summary.categories.failed.length} failed`);
+      if (summary.channels) parts.push(`channels: ${summary.channels.created.length} created, ${summary.channels.skipped} already present, ${summary.channels.failed.length} failed`);
+      if (summary.emoji) parts.push(`emoji: ${summary.emoji.created.length} created, ${summary.emoji.skipped} already present, ${summary.emoji.failed.length} failed`);
+      if (summary.stickers) parts.push(`stickers: ${summary.stickers.created.length} created, ${summary.stickers.skipped} already present, ${summary.stickers.failed.length} failed`);
+      if (summary.soundboard) parts.push(`soundboard: ${summary.soundboard.created.length} created, ${summary.soundboard.skipped} already present, ${summary.soundboard.failed.length} failed`);
+      if (summary.members) parts.push(`members: ${summary.members.updated.length} updated, ${summary.members.notYetJoined} not yet in the server`);
       if (summary.positionWarning) parts.push(`⚠️ ${summary.positionWarning}`);
 
-      req.session.flash = { type: 'success', message: `Ripristino completato — ${parts.join(' · ')}` };
+      req.session.flash = { type: 'success', message: `Restore complete — ${parts.join(' · ')}` };
     } catch (err) {
       if (err instanceof serverBackupManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };

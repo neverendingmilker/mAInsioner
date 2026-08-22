@@ -9,7 +9,7 @@ const REACTIONCODE_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnno
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);
-  return channel ? `#${channel.name}` : `(canale eliminato: ${channelId})`;
+  return channel ? `#${channel.name}` : `(deleted channel: ${channelId})`;
 }
 
 async function renderWaifuwarlrPage(req, res, guild) {
@@ -58,7 +58,7 @@ router.post('/waifuwarlr/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await waifuWarLRManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'WaifuWar LR attivato.' : 'WaifuWar LR disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'WaifuWar LR enabled.' : 'WaifuWar LR disabled.' };
     res.redirect('/waifuwarlr');
   } catch (err) {
     next(err);
@@ -72,14 +72,14 @@ router.post('/waifuwarlr/add', async (req, res, next) => {
 
     const channel = guild.channels.cache.get(req.body.channelId);
     if (!channel) {
-      req.session.flash = { type: 'error', message: 'Canale non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid channel — try again.' };
       res.redirect('/waifuwarlr');
       return;
     }
 
     try {
       await waifuWarLRManager.addChannel(guild, channel, req.session.user.id);
-      req.session.flash = { type: 'success', message: `#${channel.name} impostato per i codici a reazione.` };
+      req.session.flash = { type: 'success', message: `#${channel.name} set up for reaction codes.` };
     } catch (err) {
       if (err instanceof waifuWarLRManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -99,7 +99,7 @@ router.post('/waifuwarlr/remove', async (req, res, next) => {
     if (!guild) return;
 
     await waifuWarLRManager.removeChannel(guild.id, req.body.channelId);
-    req.session.flash = { type: 'success', message: 'Canale rimosso (comprese le mappature digit).' };
+    req.session.flash = { type: 'success', message: 'Channel removed (including its digit mappings).' };
     res.redirect('/waifuwarlr');
   } catch (err) {
     next(err);
@@ -118,7 +118,7 @@ router.post('/waifuwarlr/setdigit', async (req, res, next) => {
 
     try {
       const mappings = await waifuWarLRManager.setDigit(guild.id, channelId, req.body.digit || '', req.body.emoji || '');
-      req.session.flash = { type: 'success', message: `${mappings.length} mappatura/e salvata/e.` };
+      req.session.flash = { type: 'success', message: `${mappings.length} mapping(s) saved.` };
     } catch (err) {
       if (err instanceof waifuWarLRManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -138,7 +138,7 @@ router.post('/waifuwarlr/removedigit', async (req, res, next) => {
     if (!guild) return;
 
     await waifuWarLRManager.removeDigit(guild.id, req.body.channelId, req.body.digit);
-    req.session.flash = { type: 'success', message: 'Mappatura rimossa.' };
+    req.session.flash = { type: 'success', message: 'Mapping removed.' };
     res.redirect('/waifuwarlr');
   } catch (err) {
     next(err);

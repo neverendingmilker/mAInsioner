@@ -11,57 +11,57 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="configurazione">
-      <h2>Configurazione</h2>
+      <h2>Configuration</h2>
       <form method="POST" action="/warning/config" class="form">
         <label>
-          Ruolo 1 (primo warning)
+          Role 1 (first warning)
           <select name="role1Id">
-            <option value="">— nessuno —</option>
+            <option value="">— none —</option>
             <% roles.forEach((r) => { %>
               <option value="<%= r.id %>" <%= r.id === config.role1Id ? 'selected' : '' %>><%= r.name %></option>
             <% }) %>
           </select>
         </label>
         <label>
-          Ruolo 2 (secondo warning)
+          Role 2 (second warning)
           <select name="role2Id">
-            <option value="">— nessuno —</option>
+            <option value="">— none —</option>
             <% roles.forEach((r) => { %>
               <option value="<%= r.id %>" <%= r.id === config.role2Id ? 'selected' : '' %>><%= r.name %></option>
             <% }) %>
           </select>
         </label>
         <label>
-          Canale elenco warning
+          Warning list channel
           <select name="channelId">
-            <option value="">— nessuno —</option>
+            <option value="">— none —</option>
             <% textChannels.forEach((ch) => { %>
               <option value="<%= ch.id %>" <%= ch.id === config.channelId ? 'selected' : '' %>><%= ch.name %></option>
             <% }) %>
           </select>
         </label>
-        <button type="submit" class="btn-primary-sm">Salva</button>
+        <button type="submit" class="btn-primary-sm">Save</button>
       </form>
-      <p class="hint">I due ruoli vanno specificati insieme (o nessuno dei due). Il canale è indipendente.</p>
+      <p class="hint">The two roles must be set together (or neither). The channel is independent.</p>
     </section>
 
     <section class="panel" data-card-id="assegna-warning">
-      <h2>Assegna warning/verbale</h2>
-      <p class="hint">Warning: assegna un ruolo secondo la scala configurata, e accetta anche l'ID di chi ha lasciato il server (registrato comunque, senza ruolo). Verbale: solo una nota nel canale warning, nessun ruolo — richiede che l'utente sia ancora nel server.</p>
+      <h2>Assign warning/verbal</h2>
+      <p class="hint">Warning: assigns a role according to the configured scale, and also accepts the ID of someone who has left the server (still logged, without a role). Verbal: just a note in the warning channel, no role — requires the user to still be in the server.</p>
       <form method="POST" action="/warning/assign" class="form">
         <div>
           <label class="checkbox-label">
             <input type="radio" name="type" value="warning" checked />
-            Warning normale
+            Regular warning
           </label>
           <label class="checkbox-label">
             <input type="radio" name="type" value="verbal" />
-            Verbale
+            Verbal
           </label>
         </div>
         <label>
-          Utente (ID Discord, oppure digita il nome per cercarlo)
-          <input type="text" name="targetUserId" list="warning-members-list" pattern="\d{17,20}" required placeholder="es. 123456789012345678 o inizia a digitare il nome" />
+          User (Discord ID, or type the name to search)
+          <input type="text" name="targetUserId" list="warning-members-list" pattern="\d{17,20}" required placeholder="e.g. 123456789012345678 or start typing the name" />
           <datalist id="warning-members-list">
             <% members.forEach((m) => { %>
               <option value="<%= m.id %>"><%= m.label %></option>
@@ -69,22 +69,22 @@
           </datalist>
         </label>
         <label>
-          Motivo
+          Reason
           <textarea name="reason" rows="2" maxlength="300" required></textarea>
         </label>
         <label>
-          Data (vuoto = oggi)
+          Date (empty = today)
           <input type="date" name="date" />
         </label>
-        <button type="submit" class="btn-primary">Assegna</button>
+        <button type="submit" class="btn-primary">Assign</button>
       </form>
     </section>
 
     <section class="panel" data-card-id="i-miei-warning-verbali-modificabili">
-      <h2>I miei warning/verbali modificabili (<%= editableRows.length %>)</h2>
-      <p class="hint">Puoi modificare solo quelli che hai emesso tu.</p>
+      <h2>My editable warnings/verbals (<%= editableRows.length %>)</h2>
+      <p class="hint">You can only edit the ones you issued.</p>
       <% if (editableRows.length === 0) { %>
-        <p class="hint">Non hai ancora emesso nessun warning/verbale.</p>
+        <p class="hint">You haven't issued any warnings/verbals yet.</p>
       <% } else { %>
         <% editableRows.forEach((w) => { %>
           <div class="config-card">
@@ -92,18 +92,18 @@
               <span class="config-name"><%= w.label %></span>
               <div class="card-actions">
                 <details>
-                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <summary class="btn-icon-sm" title="Edit">✎</summary>
                   <div class="card-edit-popover">
                     <form method="POST" action="/warning/<%= w.id %>/edit" class="form">
                       <label>
-                        Motivo
+                        Reason
                         <textarea name="reason" rows="2" maxlength="300" required><%= w.reason %></textarea>
                       </label>
                       <label>
-                        Data
+                        Date
                         <input type="date" name="date" value="<%= w.dateIso %>" />
                       </label>
-                      <button type="submit" class="btn-primary-sm">Salva</button>
+                      <button type="submit" class="btn-primary-sm">Save</button>
                     </form>
                   </div>
                 </details>
@@ -115,12 +115,12 @@
     </section>
 
     <section class="panel" data-card-id="elenco-recente">
-      <h2>Elenco recente (<%= recentWarnings.length %><%= recentWarningsTruncated ? '+' : '' %>)</h2>
+      <h2>Recent list (<%= recentWarnings.length %><%= recentWarningsTruncated ? '+' : '' %>)</h2>
       <% if (recentWarnings.length === 0) { %>
-        <p class="hint">Nessun warning registrato ancora.</p>
+        <p class="hint">No warnings logged yet.</p>
       <% } else { %>
         <table class="table">
-          <thead><tr><th>Utente</th><th>Tipo</th><th>Motivo</th><th>Ruolo</th><th>Data</th><th>Emesso da</th></tr></thead>
+          <thead><tr><th>User</th><th>Type</th><th>Reason</th><th>Role</th><th>Date</th><th>Issued by</th></tr></thead>
           <tbody>
             <% recentWarnings.forEach((w) => { %>
               <tr>
@@ -135,7 +135,7 @@
           </tbody>
         </table>
         <% if (recentWarningsTruncated) { %>
-          <p class="hint">Elenco troncato ai 100 più recenti.</p>
+          <p class="hint">List truncated to the 100 most recent.</p>
         <% } %>
       <% } %>
     </section>

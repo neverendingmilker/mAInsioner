@@ -13,7 +13,7 @@ const STICKY_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnounceme
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);
-  return channel ? `#${channel.name}` : `(canale eliminato: ${channelId})`;
+  return channel ? `#${channel.name}` : `(deleted channel: ${channelId})`;
 }
 
 async function renderStickyPage(req, res, guild) {
@@ -60,7 +60,7 @@ router.post('/sticky/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await stickyManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Sticky Messages attivato.' : 'Sticky Messages disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Sticky Messages enabled.' : 'Sticky Messages disabled.' };
     res.redirect('/sticky');
   } catch (err) {
     next(err);
@@ -68,7 +68,7 @@ router.post('/sticky/toggle', async (req, res, next) => {
 });
 
 // Upsert — used both to create a new sticky and to edit an existing one from the
-// inline "Modifica" form (setSticky always replaces content/delay for the channel).
+// inline "Edit" form (setSticky always replaces content/delay for the channel).
 // Note: if the channel already had a sticky, this deletes the old message, waits a
 // ~10s gap, then posts the new one — same behavior (and same wait) as /sticky add on
 // Discord, so this request can take a few seconds to complete.
@@ -80,7 +80,7 @@ router.post('/sticky/add', async (req, res, next) => {
     const channel = guild.channels.cache.get(req.body.channelId);
     const content = req.body.content?.trim();
     if (!channel || !content) {
-      req.session.flash = { type: 'error', message: 'Canale o messaggio non validi — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid channel or message — try again.' };
       res.redirect('/sticky');
       return;
     }
@@ -99,13 +99,13 @@ router.post('/sticky/add', async (req, res, next) => {
     const botMember = guild.members.me;
     const canPost = botMember && channel.permissionsFor?.(botMember)?.has?.([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]);
     if (canPost === false) {
-      req.session.flash = { type: 'error', message: `Non ho i permessi per vedere/scrivere in #${channel.name}.` };
+      req.session.flash = { type: 'error', message: `I don't have permission to view/send messages in #${channel.name}.` };
       res.redirect('/sticky');
       return;
     }
 
     await stickyManager.setSticky(channel, content, req.session.user.id, delaySeconds);
-    req.session.flash = { type: 'success', message: `Messaggio persistente salvato in #${channel.name}.` };
+    req.session.flash = { type: 'success', message: `Persistent message saved in #${channel.name}.` };
     res.redirect('/sticky');
   } catch (err) {
     next(err);
@@ -118,7 +118,7 @@ router.post('/sticky/remove', async (req, res, next) => {
     if (!guild) return;
 
     await stickyManager.removeSticky(guild, req.body.channelId);
-    req.session.flash = { type: 'success', message: 'Messaggio persistente rimosso.' };
+    req.session.flash = { type: 'success', message: 'Persistent message removed.' };
     res.redirect('/sticky');
   } catch (err) {
     next(err);

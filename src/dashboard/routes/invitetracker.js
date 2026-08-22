@@ -9,9 +9,9 @@ const router = express.Router();
 const INVITE_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.GuildVoice, ChannelType.GuildStageVoice];
 
 function memberLabel(guild, userId) {
-  if (!userId) return '(sconosciuto)';
+  if (!userId) return '(unknown)';
   const member = guild.members.cache.get(userId);
-  return member ? member.user.tag : `(utente non più nel server: ${userId})`;
+  return member ? member.user.tag : `(user no longer in server: ${userId})`;
 }
 
 async function renderInvitetrackerPage(req, res, guild) {
@@ -35,7 +35,7 @@ async function renderInvitetrackerPage(req, res, guild) {
       active: a.active,
       uses: a.uses,
       maxUses: a.maxUses,
-      expiresLabel: a.expiresTimestamp ? new Date(a.expiresTimestamp).toLocaleString('it-IT') : null,
+      expiresLabel: a.expiresTimestamp ? new Date(a.expiresTimestamp).toLocaleString('en-GB') : null,
     }));
   } catch (err) {
     if (!(err instanceof inviteTrackerManager.ValidationError)) throw err;
@@ -81,7 +81,7 @@ router.post('/invitetracker/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await inviteTrackerManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Invite Tracker attivato.' : 'Invite Tracker disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Invite Tracker enabled.' : 'Invite Tracker disabled.' };
     res.redirect('/invitetracker');
   } catch (err) {
     next(err);
@@ -95,13 +95,13 @@ router.post('/invitetracker/channel', async (req, res, next) => {
 
     const channel = guild.channels.cache.get(req.body.channelId);
     if (!channel) {
-      req.session.flash = { type: 'error', message: 'Canale non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid channel — try again.' };
       res.redirect('/invitetracker');
       return;
     }
 
     await inviteTrackerManager.setDefaultChannel(guild.id, channel.id);
-    req.session.flash = { type: 'success', message: `Nuovi inviti apriranno in #${channel.name}.` };
+    req.session.flash = { type: 'success', message: `New invites will open in #${channel.name}.` };
     res.redirect('/invitetracker');
   } catch (err) {
     next(err);
@@ -118,7 +118,7 @@ router.post('/invitetracker/create', async (req, res, next) => {
 
     const member = guild.members.cache.get(req.body.userId);
     if (!member) {
-      req.session.flash = { type: 'error', message: 'Utente non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid user — try again.' };
       res.redirect('/invitetracker');
       return;
     }
@@ -130,18 +130,18 @@ router.post('/invitetracker/create', async (req, res, next) => {
     try {
       if (rawCode) {
         if (maxUsesRaw || expiresInHoursRaw) {
-          req.session.flash = { type: 'error', message: 'Utilizzi massimi e scadenza non si applicano quando assegni un invito già esistente.' };
+          req.session.flash = { type: 'error', message: "Max uses and expiry don't apply when you assign an existing invite." };
           res.redirect('/invitetracker');
           return;
         }
         const code = extractInviteCode(rawCode);
         await inviteTrackerManager.assignExistingInvite(guild, code, member.user, req.session.user.id);
-        req.session.flash = { type: 'success', message: `Invito "${code}" assegnato a ${member.user.tag}.` };
+        req.session.flash = { type: 'success', message: `Invite "${code}" assigned to ${member.user.tag}.` };
       } else {
         const defaultChannelId = await inviteTrackerManager.getDefaultChannel(guild.id);
         const targetChannel = defaultChannelId && guild.channels.cache.get(defaultChannelId);
         if (!targetChannel) {
-          req.session.flash = { type: 'error', message: 'Configura prima un canale predefinito per gli inviti.' };
+          req.session.flash = { type: 'error', message: 'Set a default channel for invites first.' };
           res.redirect('/invitetracker');
           return;
         }
@@ -156,7 +156,7 @@ router.post('/invitetracker/create', async (req, res, next) => {
           { maxUses, maxAgeSeconds },
           req.session.user.id
         );
-        req.session.flash = { type: 'success', message: `Invito "${invite.code}" creato per ${member.user.tag}.` };
+        req.session.flash = { type: 'success', message: `Invite "${invite.code}" created for ${member.user.tag}.` };
       }
     } catch (err) {
       if (err instanceof inviteTrackerManager.ValidationError) {
@@ -177,7 +177,7 @@ router.post('/invitetracker/revoke', async (req, res, next) => {
     if (!guild) return;
 
     await inviteTrackerManager.revokeAssignedInvite(guild, req.body.code);
-    req.session.flash = { type: 'success', message: 'Invito revocato.' };
+    req.session.flash = { type: 'success', message: 'Invite revoked.' };
     res.redirect('/invitetracker');
   } catch (err) {
     next(err);

@@ -4,7 +4,7 @@ const { FEATURE_PAGES } = require('../sidebarData');
 
 const router = express.Router();
 
-// The Admin-only switch labeled "Solo Admin" on each feature page (partials/
+// The Admin-only switch labeled "Admin Only" on each feature page (partials/
 // featureToggle.ejs). Not reachable through the sidebar — it's a plain form POST from
 // whichever feature page the switch lives on, and redirects back there. The switch's
 // checked state is the INVERSE of `allowed` (checked = solo admin = mods NOT allowed), so
@@ -13,19 +13,19 @@ const router = express.Router();
 router.post('/mod-access/:featureKey/toggle', async (req, res, next) => {
   try {
     if (req.dashboardRole !== 'admin') {
-      return res.status(403).render('403', { title: 'Accesso negato', message: 'Solo un Admin può gestire l\'accesso Mod alle feature.' });
+      return res.status(403).render('403', { title: 'Access denied', message: 'Only an Admin can manage Mod access to features.' });
     }
 
     const { featureKey } = req.params;
     if (!FEATURE_PAGES[featureKey]) {
-      return res.status(404).render('error', { title: 'Feature sconosciuta', message: 'Feature non valida.' });
+      return res.status(404).render('error', { title: 'Unknown feature', message: 'Invalid feature.' });
     }
 
     const allowed = req.body.soloAdmin !== 'true';
     await modAccess.setFeatureModAccess(req.session.guildId, featureKey, allowed);
     req.session.flash = {
       type: 'success',
-      message: allowed ? 'I Mod possono ora accedere a questa feature dalla dashboard.' : 'I Mod non possono più accedere a questa feature dalla dashboard.',
+      message: allowed ? 'Mods can now access this feature from the dashboard.' : 'Mods can no longer access this feature from the dashboard.',
     };
     // Referer is just this same feature page's own form (same-origin, no user-controlled
     // link) — falling back to the feature's canonical path if it's ever missing/stripped.

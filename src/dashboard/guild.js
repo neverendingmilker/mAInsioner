@@ -18,8 +18,8 @@ function requireGuild(req, res) {
   const guild = resolveDashboardGuild(req.client, req.session.guildId);
   if (!guild) {
     res.status(500).render('error', {
-      title: 'Server non trovato',
-      message: 'Il server selezionato non è più disponibile — esci e accedi di nuovo per sceglierne un altro.',
+      title: 'Server not found',
+      message: 'The selected server is no longer available — log out and log back in to pick another one.',
     });
     return null;
   }

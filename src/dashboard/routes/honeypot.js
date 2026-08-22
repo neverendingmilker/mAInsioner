@@ -10,7 +10,7 @@ const HONEYPOT_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnounce
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);
-  return channel ? `#${channel.name}` : `(canale eliminato: ${channelId})`;
+  return channel ? `#${channel.name}` : `(deleted channel: ${channelId})`;
 }
 
 async function renderHoneypotPage(req, res, guild) {
@@ -67,7 +67,7 @@ async function renderHoneypotPage(req, res, guild) {
       userTag: k.userTag || k.userId,
       channelName: channelLabel(guild, k.channelId),
       trigger: k.trigger,
-      when: new Date(k.kickedAt).toLocaleString('it-IT'),
+      when: new Date(k.kickedAt).toLocaleString('en-GB'),
     })),
   });
 }
@@ -88,7 +88,7 @@ router.post('/honeypot/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await honeypotManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Honeypot attivato.' : 'Honeypot disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Honeypot enabled.' : 'Honeypot disabled.' };
     res.redirect('/honeypot');
   } catch (err) {
     next(err);
@@ -102,7 +102,7 @@ router.post('/honeypot/add', async (req, res, next) => {
 
     const channel = guild.channels.cache.get(req.body.channelId);
     if (!channel) {
-      req.session.flash = { type: 'error', message: 'Canale non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid channel — try again.' };
       res.redirect('/honeypot');
       return;
     }
@@ -116,7 +116,7 @@ router.post('/honeypot/add', async (req, res, next) => {
         req.session.user.id,
         req.body.emoji?.trim() || null
       );
-      req.session.flash = { type: 'success', message: `Trappola creata in #${channel.name}.` };
+      req.session.flash = { type: 'success', message: `Trap created in #${channel.name}.` };
     } catch (err) {
       if (err instanceof honeypotManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -138,7 +138,7 @@ router.post('/honeypot/edit', async (req, res, next) => {
     const currentChannelId = req.body.currentChannelId;
     const targetChannel = guild.channels.cache.get(req.body.channelId);
     if (!targetChannel) {
-      req.session.flash = { type: 'error', message: 'Canale non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid channel — try again.' };
       res.redirect('/honeypot');
       return;
     }
@@ -153,8 +153,8 @@ router.post('/honeypot/edit', async (req, res, next) => {
       });
       req.session.flash =
         targetChannel.id === currentChannelId
-          ? { type: 'success', message: 'Trappola aggiornata — il messaggio nel canale è già cambiato.' }
-          : { type: 'success', message: `Trappola spostata in #${targetChannel.name}.` };
+          ? { type: 'success', message: 'Trap updated — the message in the channel has already changed.' }
+          : { type: 'success', message: `Trap moved to #${targetChannel.name}.` };
     } catch (err) {
       if (err instanceof honeypotManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -175,7 +175,7 @@ router.post('/honeypot/remove', async (req, res, next) => {
 
     try {
       await honeypotManager.removeChannel(guild, req.body.channelId);
-      req.session.flash = { type: 'success', message: 'Trappola rimossa.' };
+      req.session.flash = { type: 'success', message: 'Trap removed.' };
     } catch (err) {
       if (err instanceof honeypotManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };

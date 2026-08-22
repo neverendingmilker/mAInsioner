@@ -3,7 +3,7 @@
   <%- include('partials/sidebar') %>
   <main class="content">
     <div class="page-header">
-      <h1>Ruoli & Permessi</h1>
+      <h1>Roles & Permissions</h1>
     </div>
 
     <%- include('partials/flash') %>
@@ -13,20 +13,20 @@
       <form method="GET" action="/roleaudit" class="form">
         <label class="checkbox-label">
           <input type="checkbox" name="ignoreBots" value="1" <%= ignoreBots ? 'checked' : '' %> onchange="this.form.submit()" />
-          Ignora ruoli/membri bot
+          Ignore bot roles/members
         </label>
       </form>
     </section>
 
     <section class="panel" data-card-id="permessi-2fa">
-      <h2>Permessi che richiedono 2FA (<%= mfa.roleMatches.length %>)</h2>
+      <h2>Permissions that require 2FA (<%= mfa.roleMatches.length %>)</h2>
       <p class="hint">
-        Permessi che Discord blocca per un account senza 2FA attivo, se il server ha "Richiedi 2FA per le azioni di
-        moderazione" attivo (Impostazioni server → Sicurezza). Include i permessi ottenuti solo tramite un override
-        di canale, non solo dalle impostazioni base del ruolo — quelli sono i più facili da non notare.
+        Permissions Discord blocks for an account without 2FA enabled, if the server has "Require 2FA for moderator
+        actions" on (Server Settings → Safety). Includes permissions granted only through a channel override,
+        not just from the role's base settings — those are the easiest to miss.
       </p>
       <% if (mfa.roleMatches.length === 0) { %>
-        <p class="hint">✅ Nessun ruolo ha attualmente permessi che richiedono 2FA.</p>
+        <p class="hint">✅ No role currently has permissions that require 2FA.</p>
       <% } else { %>
         <% mfa.roleMatches.forEach((r) => { %>
           <div class="config-card">
@@ -34,15 +34,15 @@
               <span class="config-name">🎭 <%= r.name %></span>
             </div>
             <% if (r.isAdmin) { %>
-              <p>Administrator <em>(implica tutti gli altri permessi)</em></p>
+              <p>Administrator <em>(implies every other permission)</em></p>
             <% } else if (r.heldPermissions.length > 0) { %>
               <p><%= r.heldPermissions.join(', ') %></p>
             <% } %>
             <% if (r.overrides.length > 0) { %>
-              <p>⚠️ Override di canale:</p>
+              <p>⚠️ Channel overrides:</p>
               <ul>
                 <% r.overrides.forEach((o) => { %><li><%= o %></li><% }) %>
-                <% if (r.overridesHidden > 0) { %><li>...e altri <%= r.overridesHidden %> canali</li><% } %>
+                <% if (r.overridesHidden > 0) { %><li>...and <%= r.overridesHidden %> more channels</li><% } %>
               </ul>
             <% } %>
           </div>
@@ -51,15 +51,14 @@
     </section>
 
     <section class="panel" data-card-id="permessi-mod">
-      <h2>Permessi da moderatore (<%= mod.roleMatches.length + mod.memberMatches.length %>)</h2>
+      <h2>Moderator-level permissions (<%= mod.roleMatches.length + mod.memberMatches.length %>)</h2>
       <p class="hint">
-        Controllo più ampio del precedente — include permessi comunemente considerati "da moderatore" che il
-        requisito 2FA di Discord non copre (Audit log, Nickname, Espressioni, Timeout). Controlla anche gli override
-        concessi a una singola persona su un canale, non solo ai ruoli — quelli non emergerebbero da un controllo
-        basato solo sui ruoli.
+        A broader check than the one above — includes permissions commonly considered "moderator-level" that
+        Discord's 2FA requirement doesn't cover (Audit Log, Nicknames, Expressions, Timeout). Also checks overrides
+        granted to a single person on a channel, not just to roles — those wouldn't show up in a roles-only check.
       </p>
       <% if (mod.roleMatches.length === 0 && mod.memberMatches.length === 0) { %>
-        <p class="hint">✅ Nessun ruolo o membro ha attualmente permessi da moderatore.</p>
+        <p class="hint">✅ No role or member currently has moderator-level permissions.</p>
       <% } else { %>
         <% mod.roleMatches.forEach((r) => { %>
           <div class="config-card">
@@ -67,15 +66,15 @@
               <span class="config-name">🎭 <%= r.name %></span>
             </div>
             <% if (r.isAdmin) { %>
-              <p>Administrator <em>(implica tutti gli altri permessi)</em></p>
+              <p>Administrator <em>(implies every other permission)</em></p>
             <% } else if (r.heldPermissions.length > 0) { %>
               <p><%= r.heldPermissions.join(', ') %></p>
             <% } %>
             <% if (r.overrides.length > 0) { %>
-              <p>⚠️ Override di canale:</p>
+              <p>⚠️ Channel overrides:</p>
               <ul>
                 <% r.overrides.forEach((o) => { %><li><%= o %></li><% }) %>
-                <% if (r.overridesHidden > 0) { %><li>...e altri <%= r.overridesHidden %> canali</li><% } %>
+                <% if (r.overridesHidden > 0) { %><li>...and <%= r.overridesHidden %> more channels</li><% } %>
               </ul>
             <% } %>
           </div>
@@ -83,11 +82,11 @@
         <% mod.memberMatches.forEach((m) => { %>
           <div class="config-card">
             <div class="config-card-header">
-              <span class="config-name">👤 <%= m.displayName %> <em>(override individuale)</em></span>
+              <span class="config-name">👤 <%= m.displayName %> <em>(individual override)</em></span>
             </div>
             <ul>
               <% m.entries.forEach((e) => { %><li><%= e %></li><% }) %>
-              <% if (m.entriesHidden > 0) { %><li>...e altri <%= m.entriesHidden %> canali</li><% } %>
+              <% if (m.entriesHidden > 0) { %><li>...and <%= m.entriesHidden %> more channels</li><% } %>
             </ul>
           </div>
         <% }) %>

@@ -39,7 +39,7 @@ router.post('/animenight/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await animeNightManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Anime Night attivato.' : 'Anime Night disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Anime Night enabled.' : 'Anime Night disabled.' };
     res.redirect('/animenight');
   } catch (err) {
     next(err);
@@ -53,7 +53,7 @@ router.post('/animenight/add', async (req, res, next) => {
 
     const titlesRaw = req.body.titles?.trim();
     if (!titlesRaw) {
-      req.session.flash = { type: 'error', message: 'Inserisci almeno un titolo.' };
+      req.session.flash = { type: 'error', message: 'Enter at least one title.' };
       res.redirect('/animenight');
       return;
     }
@@ -62,7 +62,7 @@ router.post('/animenight/add', async (req, res, next) => {
 
     try {
       const result = await animeNightManager.addAnime(guild.id, titlesRaw, dateInput, req.session.user.id);
-      req.session.flash = { type: 'success', message: `Aggiunti ${result.titles.length} anime alla sessione del ${isoToDMY(result.watchedDate)}.` };
+      req.session.flash = { type: 'success', message: `Added ${result.titles.length} anime to the session on ${isoToDMY(result.watchedDate)}.` };
     } catch (err) {
       if (err instanceof animeNightManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -78,7 +78,7 @@ router.post('/animenight/add', async (req, res, next) => {
 
 // Always sends both the new title list and the new date (pre-filled with the current
 // values), so this is effectively a full replace — same UX as Birthday's/Honeypot's
-// "Modifica" forms, even though editSession itself supports a partial update too.
+// "Edit" forms, even though editSession itself supports a partial update too.
 router.post('/animenight/edit', async (req, res, next) => {
   try {
     const guild = requireGuild(req, res);
@@ -87,7 +87,7 @@ router.post('/animenight/edit', async (req, res, next) => {
     const sessionDate = req.body.sessionDate;
     const titlesRaw = req.body.titles?.trim();
     if (!sessionDate || !titlesRaw) {
-      req.session.flash = { type: 'error', message: 'Dati mancanti — riprova.' };
+      req.session.flash = { type: 'error', message: 'Missing data — try again.' };
       res.redirect('/animenight');
       return;
     }
@@ -95,7 +95,7 @@ router.post('/animenight/edit', async (req, res, next) => {
 
     try {
       await animeNightManager.editSession(guild.id, sessionDate, titlesRaw, newDateInput, req.session.user.id);
-      req.session.flash = { type: 'success', message: 'Sessione aggiornata.' };
+      req.session.flash = { type: 'success', message: 'Session updated.' };
     } catch (err) {
       if (err instanceof animeNightManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -116,7 +116,7 @@ router.post('/animenight/remove', async (req, res, next) => {
 
     try {
       await animeNightManager.removeSession(guild.id, req.body.sessionDate);
-      req.session.flash = { type: 'success', message: 'Sessione rimossa.' };
+      req.session.flash = { type: 'success', message: 'Session removed.' };
     } catch (err) {
       if (err instanceof animeNightManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };

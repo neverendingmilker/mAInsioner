@@ -73,7 +73,7 @@ router.post('/qotd/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await qotdManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Question of the Day attivato.' : 'Question of the Day disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Question of the Day enabled.' : 'Question of the Day disabled.' };
     res.redirect('/qotd');
   } catch (err) {
     next(err);
@@ -94,7 +94,7 @@ router.post('/qotd/config', async (req, res, next) => {
     if (channelId) {
       const channel = guild.channels.cache.get(channelId);
       if (!channel) {
-        errors.push('Canale non valido.');
+        errors.push('Invalid channel.');
       } else {
         try {
           await qotdManager.setChannel(guild, channel);
@@ -105,11 +105,11 @@ router.post('/qotd/config', async (req, res, next) => {
       }
     }
 
-    // Selezione vuota = rimuovi il ping (il ruolo è opzionale).
+    // Empty selection = remove the ping (the role is optional).
     const roleId = req.body.roleId || null;
     const role = roleId ? guild.roles.cache.get(roleId) : null;
     if (roleId && !role) {
-      errors.push('Ruolo non valido.');
+      errors.push('Invalid role.');
     } else {
       await qotdManager.setRole(guild.id, role);
     }
@@ -126,7 +126,7 @@ router.post('/qotd/config', async (req, res, next) => {
       else throw err;
     }
 
-    req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configurazione aggiornata.' };
+    req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configuration updated.' };
     res.redirect('/qotd');
   } catch (err) {
     next(err);
@@ -140,7 +140,7 @@ router.post('/qotd/questions/add', async (req, res, next) => {
 
     try {
       await qotdManager.addQuestion(guild.id, req.body.question);
-      req.session.flash = { type: 'success', message: 'Domanda aggiunta.' };
+      req.session.flash = { type: 'success', message: 'Question added.' };
     } catch (err) {
       if (err instanceof qotdManager.ValidationError) req.session.flash = { type: 'error', message: err.message };
       else throw err;
@@ -158,7 +158,7 @@ router.post('/qotd/questions/:id/edit', async (req, res, next) => {
 
     try {
       await qotdManager.editQuestion(guild.id, Number(req.params.id), req.body.question);
-      req.session.flash = { type: 'success', message: 'Domanda aggiornata.' };
+      req.session.flash = { type: 'success', message: 'Question updated.' };
     } catch (err) {
       if (err instanceof qotdManager.ValidationError) req.session.flash = { type: 'error', message: err.message };
       else throw err;
@@ -175,7 +175,7 @@ router.post('/qotd/questions/:id/remove', async (req, res, next) => {
     if (!guild) return;
 
     await qotdManager.removeQuestion(guild.id, Number(req.params.id));
-    req.session.flash = { type: 'success', message: 'Domanda rimossa.' };
+    req.session.flash = { type: 'success', message: 'Question removed.' };
     res.redirect('/qotd');
   } catch (err) {
     next(err);
@@ -188,7 +188,7 @@ router.post('/qotd/questions/clear', async (req, res, next) => {
     if (!guild) return;
 
     await qotdManager.clearQuestions(guild.id);
-    req.session.flash = { type: 'success', message: 'Coda svuotata — tutte le domande sono state rimosse.' };
+    req.session.flash = { type: 'success', message: 'Queue cleared — all questions have been removed.' };
     res.redirect('/qotd');
   } catch (err) {
     next(err);

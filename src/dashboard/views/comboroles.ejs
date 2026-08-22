@@ -11,14 +11,14 @@
 
     <div class="card-list" id="card-list">
     <section class="panel" data-card-id="cerca-membri">
-      <h2>Cerca membri</h2>
-      <p class="hint">Trova chi ha TUTTI i ruoli richiesti, escludendo chi ha anche uno dei ruoli "BUT". Lascia vuoti i campi che non ti servono.</p>
+      <h2>Search members</h2>
+      <p class="hint">Find who has ALL the required roles, excluding anyone who also has one of the "BUT" roles. Leave the fields you don't need empty.</p>
       <form method="GET" action="/comboroles" class="form">
         <% for (let i = 0; i < selectedRequired.length; i++) { %>
           <label>
-            Ruolo richiesto <%= i + 1 %><%= i === 0 ? '' : ' (opzionale)' %>
+            Required role <%= i + 1 %><%= i === 0 ? '' : ' (optional)' %>
             <select name="role<%= i + 1 %>" <%= i === 0 ? 'required' : '' %>>
-              <option value="">— Nessuno —</option>
+              <option value="">— None —</option>
               <% roles.forEach((r) => { %>
                 <option value="<%= r.id %>" <%= r.id === selectedRequired[i] ? 'selected' : '' %>><%= r.name %></option>
               <% }) %>
@@ -27,29 +27,29 @@
         <% } %>
         <% for (let i = 0; i < selectedExcluded.length; i++) { %>
           <label>
-            BUT: escludi chi ha anche… (opzionale)
+            BUT: exclude anyone who also has… (optional)
             <select name="but<%= i + 1 %>">
-              <option value="">— Nessuno —</option>
+              <option value="">— None —</option>
               <% roles.forEach((r) => { %>
                 <option value="<%= r.id %>" <%= r.id === selectedExcluded[i] ? 'selected' : '' %>><%= r.name %></option>
               <% }) %>
             </select>
           </label>
         <% } %>
-        <button type="submit" class="btn-primary">Cerca</button>
+        <button type="submit" class="btn-primary">Search</button>
       </form>
-      <p class="hint">Per più di <%= selectedRequired.length %> ruoli richiesti o <%= selectedExcluded.length %> esclusioni, usa <code>/comboroles search</code> su Discord.</p>
+      <p class="hint">For more than <%= selectedRequired.length %> required roles or <%= selectedExcluded.length %> exclusions, use <code>/comboroles search</code> on Discord.</p>
     </section>
 
     <% if (results) { %>
       <section class="panel" data-card-id="risultati">
-        <h2>Risultati (<%= results.total %>)</h2>
+        <h2>Results (<%= results.total %>)</h2>
         <% if (results.total === 0) { %>
-          <p class="hint">Nessun membro corrisponde ai criteri scelti.</p>
+          <p class="hint">No members match the chosen criteria.</p>
         <% } else { %>
           <table class="table">
             <thead>
-              <tr><th>Utente</th></tr>
+              <tr><th>User</th></tr>
             </thead>
             <tbody>
               <% results.shown.forEach((m) => { %>
@@ -58,7 +58,7 @@
             </tbody>
           </table>
           <% if (results.truncated) { %>
-            <p class="hint">Mostrati i primi <%= maxResultsShown %> su <%= results.total %> risultati.</p>
+            <p class="hint">Showing the first <%= maxResultsShown %> of <%= results.total %> results.</p>
           <% } %>
         <% } %>
       </section>

@@ -1,4 +1,4 @@
-// Every "Modifica" (✎) popover across the dashboard is a plain <details>/<summary> — no JS
+// Every "Edit" (✎) popover across the dashboard is a plain <details>/<summary> — no JS
 // needed to open/close one on its own, the browser already does that. What it doesn't do on
 // its own: close OTHER open ones when you open a new one, so clicking a second edit button
 // while a first popover is still open used to leave both open at once, stacked on top of

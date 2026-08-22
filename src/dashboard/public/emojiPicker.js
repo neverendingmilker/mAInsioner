@@ -9,14 +9,14 @@
   // search box. Not exhaustive (there are 3000+ unicode emoji) — this covers the
   // categories people actually reach for for a honeypot bait reaction.
   var DEFAULT_EMOJI = {
-    'Faccine': ['😀', '😄', '😂', '🤣', '😊', '🙂', '😉', '😍', '😘', '😜', '🤔', '😐', '😴', '🤯', '🥳', '😭', '😱', '😡', '🤬', '🥶', '🥵', '😎', '🤫', '🤐', '🙄', '😇', '🤡', '👻', '💀', '☠️'],
-    'Gesti e persone': ['👍', '👎', '👏', '🙌', '🙏', '👋', '✌️', '🤞', '🤙', '💪', '👀', '🧠', '🗣️', '👤', '🕵️', '🧑‍💻'],
-    'Animali': ['🐶', '🐱', '🦊', '🐻', '🐼', '🐨', '🐸', '🐵', '🦁', '🐯', '🦄', '🐍', '🐢', '🦇', '🦉', '🐺', '🐔', '🐙', '🦈', '🐝'],
-    'Cibo': ['🍕', '🍔', '🍟', '🌭', '🍿', '🍩', '🍪', '🎂', '🍫', '🍭', '🍎', '🍌', '🍉', '🍇', '🥑', '☕', '🍺', '🍷', '🧃'],
-    'Attività': ['⚽', '🏀', '🎮', '🎲', '🎯', '🎸', '🎧', '🎤', '🎨', '🧩', '🏆', '🥇', '🎳', '🏹'],
-    'Viaggi': ['🚗', '🚕', '🚀', '✈️', '🚁', '⛵', '🚲', '🏝️', '🗺️', '🧭', '🌍', '🏔️', '🌋', '🏰'],
-    'Oggetti': ['💻', '📱', '📷', '🔦', '🔑', '🔒', '🔓', '💣', '⚙️', '🧰', '📦', '💰', '💎', '🕹️', '📌', '📎', '✏️', '📝', '🔍'],
-    'Simboli e allarmi': ['⚠️', '⛔', '🚫', '❌', '✅', '❗', '❓', '💯', '🔥', '⭐', '✨', '💥', '⚡', '🎯', '🚨', '☢️', '☣️', '♻️', '🆘', '🔞'],
+    'Smileys': ['😀', '😄', '😂', '🤣', '😊', '🙂', '😉', '😍', '😘', '😜', '🤔', '😐', '😴', '🤯', '🥳', '😭', '😱', '😡', '🤬', '🥶', '🥵', '😎', '🤫', '🤐', '🙄', '😇', '🤡', '👻', '💀', '☠️'],
+    'Gestures & people': ['👍', '👎', '👏', '🙌', '🙏', '👋', '✌️', '🤞', '🤙', '💪', '👀', '🧠', '🗣️', '👤', '🕵️', '🧑‍💻'],
+    'Animals': ['🐶', '🐱', '🦊', '🐻', '🐼', '🐨', '🐸', '🐵', '🦁', '🐯', '🦄', '🐍', '🐢', '🦇', '🦉', '🐺', '🐔', '🐙', '🦈', '🐝'],
+    'Food': ['🍕', '🍔', '🍟', '🌭', '🍿', '🍩', '🍪', '🎂', '🍫', '🍭', '🍎', '🍌', '🍉', '🍇', '🥑', '☕', '🍺', '🍷', '🧃'],
+    'Activities': ['⚽', '🏀', '🎮', '🎲', '🎯', '🎸', '🎧', '🎤', '🎨', '🧩', '🏆', '🥇', '🎳', '🏹'],
+    'Travel': ['🚗', '🚕', '🚀', '✈️', '🚁', '⛵', '🚲', '🏝️', '🗺️', '🧭', '🌍', '🏔️', '🌋', '🏰'],
+    'Objects': ['💻', '📱', '📷', '🔦', '🔑', '🔒', '🔓', '💣', '⚙️', '🧰', '📦', '💰', '💎', '🕹️', '📌', '📎', '✏️', '📝', '🔍'],
+    'Symbols & alerts': ['⚠️', '⛔', '🚫', '❌', '✅', '❗', '❓', '💯', '🔥', '⭐', '✨', '💥', '⚡', '🎯', '🚨', '☢️', '☣️', '♻️', '🆘', '🔞'],
   };
 
   var GUILD_EMOJI_SCRIPT_ID = 'honeypot-guild-emojis';
@@ -41,7 +41,7 @@
     var search = document.createElement('input');
     search.type = 'text';
     search.className = 'emoji-picker-search';
-    search.placeholder = 'Cerca emoji…';
+    search.placeholder = 'Search emoji…';
     panel.appendChild(search);
 
     var grid = document.createElement('div');
@@ -69,7 +69,7 @@
     if (guildEmojis.length > 0) {
       var heading = document.createElement('div');
       heading.className = 'emoji-picker-heading';
-      heading.textContent = 'Emoji del server';
+      heading.textContent = 'Server emoji';
       grid.appendChild(heading);
       guildEmojis.forEach(function (e) {
         addButton(e.mention, e.url, e.name, true);

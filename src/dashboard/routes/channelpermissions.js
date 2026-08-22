@@ -14,58 +14,58 @@ const router = express.Router();
 // testo/voce (solo per il tipo di canale pertinente), moderazione (sempre — Discord
 // permette di impostare come override anche permessi come Espelli/Banna).
 const GENERAL_PERMISSIONS = [
-  { key: 'ViewChannel', label: 'Visualizza canale' },
-  { key: 'ManageChannels', label: 'Gestisci canale' },
-  { key: 'ManageRoles', label: 'Gestisci permessi' },
-  { key: 'ManageWebhooks', label: 'Gestisci webhook' },
-  { key: 'CreateInstantInvite', label: 'Crea invito' },
+  { key: 'ViewChannel', label: 'View Channel' },
+  { key: 'ManageChannels', label: 'Manage Channel' },
+  { key: 'ManageRoles', label: 'Manage Permissions' },
+  { key: 'ManageWebhooks', label: 'Manage Webhooks' },
+  { key: 'CreateInstantInvite', label: 'Create Invite' },
 ];
 
 const TEXT_PERMISSIONS = [
-  { key: 'SendMessages', label: 'Invia messaggi' },
-  { key: 'SendMessagesInThreads', label: 'Invia messaggi nei thread' },
-  { key: 'CreatePublicThreads', label: 'Crea thread pubblici' },
-  { key: 'CreatePrivateThreads', label: 'Crea thread privati' },
-  { key: 'ManageThreads', label: 'Gestisci thread' },
-  { key: 'EmbedLinks', label: 'Incorpora link' },
-  { key: 'AttachFiles', label: 'Allega file' },
-  { key: 'AddReactions', label: 'Aggiungi reazioni' },
-  { key: 'UseExternalEmojis', label: 'Usa emoji esterne' },
-  { key: 'UseExternalStickers', label: 'Usa sticker esterni' },
-  { key: 'MentionEveryone', label: 'Menziona @everyone, @here e tutti i ruoli' },
-  { key: 'ManageMessages', label: 'Gestisci messaggi' },
-  { key: 'PinMessages', label: 'Fissa messaggi' },
-  { key: 'ReadMessageHistory', label: 'Leggi cronologia messaggi' },
-  { key: 'SendTTSMessages', label: 'Invia messaggi TTS' },
-  { key: 'SendVoiceMessages', label: 'Invia messaggi vocali' },
-  { key: 'SendPolls', label: 'Crea sondaggi' },
-  { key: 'UseApplicationCommands', label: 'Usa comandi applicazione' },
-  { key: 'BypassSlowmode', label: 'Ignora lo slowmode' },
+  { key: 'SendMessages', label: 'Send Messages' },
+  { key: 'SendMessagesInThreads', label: 'Send Messages in Threads' },
+  { key: 'CreatePublicThreads', label: 'Create Public Threads' },
+  { key: 'CreatePrivateThreads', label: 'Create Private Threads' },
+  { key: 'ManageThreads', label: 'Manage Threads' },
+  { key: 'EmbedLinks', label: 'Embed Links' },
+  { key: 'AttachFiles', label: 'Attach Files' },
+  { key: 'AddReactions', label: 'Add Reactions' },
+  { key: 'UseExternalEmojis', label: 'Use External Emojis' },
+  { key: 'UseExternalStickers', label: 'Use External Stickers' },
+  { key: 'MentionEveryone', label: 'Mention @everyone, @here, and All Roles' },
+  { key: 'ManageMessages', label: 'Manage Messages' },
+  { key: 'PinMessages', label: 'Pin Messages' },
+  { key: 'ReadMessageHistory', label: 'Read Message History' },
+  { key: 'SendTTSMessages', label: 'Send Text-to-Speech Messages' },
+  { key: 'SendVoiceMessages', label: 'Send Voice Messages' },
+  { key: 'SendPolls', label: 'Create Polls' },
+  { key: 'UseApplicationCommands', label: 'Use Application Commands' },
+  { key: 'BypassSlowmode', label: 'Bypass Slowmode' },
 ];
 
 const VOICE_PERMISSIONS = [
-  { key: 'Connect', label: 'Connetti' },
-  { key: 'Speak', label: 'Parla' },
-  { key: 'Stream', label: 'Trasmetti video' },
-  { key: 'UseVAD', label: 'Usa rilevamento vocale' },
-  { key: 'PrioritySpeaker', label: 'Priorità del parlante' },
-  { key: 'RequestToSpeak', label: 'Richiedi di parlare' },
-  { key: 'MuteMembers', label: 'Disattiva audio membri' },
-  { key: 'DeafenMembers', label: 'Disattiva audio in entrata membri' },
-  { key: 'MoveMembers', label: 'Sposta membri' },
-  { key: 'UseEmbeddedActivities', label: 'Usa attività' },
-  { key: 'UseSoundboard', label: 'Usa soundboard' },
-  { key: 'UseExternalSounds', label: 'Usa suoni esterni' },
-  { key: 'SetVoiceChannelStatus', label: 'Imposta stato del canale' },
+  { key: 'Connect', label: 'Connect' },
+  { key: 'Speak', label: 'Speak' },
+  { key: 'Stream', label: 'Video' },
+  { key: 'UseVAD', label: 'Use Voice Activity' },
+  { key: 'PrioritySpeaker', label: 'Priority Speaker' },
+  { key: 'RequestToSpeak', label: 'Request to Speak' },
+  { key: 'MuteMembers', label: 'Mute Members' },
+  { key: 'DeafenMembers', label: 'Deafen Members' },
+  { key: 'MoveMembers', label: 'Move Members' },
+  { key: 'UseEmbeddedActivities', label: 'Use Activities' },
+  { key: 'UseSoundboard', label: 'Use Soundboard' },
+  { key: 'UseExternalSounds', label: 'Use External Sounds' },
+  { key: 'SetVoiceChannelStatus', label: 'Set Voice Channel Status' },
 ];
 
 const MOD_PERMISSIONS = [
-  { key: 'KickMembers', label: 'Espelli membri' },
-  { key: 'BanMembers', label: 'Banna membri' },
-  { key: 'ManageNicknames', label: 'Gestisci nickname' },
-  { key: 'ModerateMembers', label: 'Silenzia membri (timeout)' },
-  { key: 'ViewAuditLog', label: 'Visualizza registro controllo' },
-  { key: 'ManageGuildExpressions', label: 'Gestisci espressioni (emoji/sticker/suoni)' },
+  { key: 'KickMembers', label: 'Kick Members' },
+  { key: 'BanMembers', label: 'Ban Members' },
+  { key: 'ManageNicknames', label: 'Manage Nicknames' },
+  { key: 'ModerateMembers', label: 'Timeout Members' },
+  { key: 'ViewAuditLog', label: 'View Audit Log' },
+  { key: 'ManageGuildExpressions', label: 'Manage Expressions (emoji/stickers/sounds)' },
 ];
 
 const TEXT_KIND_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.GuildForum, ChannelType.GuildMedia];
@@ -88,10 +88,10 @@ function channelIcon(channel) {
 
 function groupsForChannel(channel) {
   const kind = channelKind(channel);
-  const groups = [{ key: 'general', title: 'Generali', permissions: GENERAL_PERMISSIONS }];
-  if (kind === 'text') groups.push({ key: 'text', title: 'Testo', permissions: TEXT_PERMISSIONS });
-  if (kind === 'voice') groups.push({ key: 'voice', title: 'Voce', permissions: VOICE_PERMISSIONS });
-  groups.push({ key: 'mod', title: 'Moderazione', permissions: MOD_PERMISSIONS });
+  const groups = [{ key: 'general', title: 'General', permissions: GENERAL_PERMISSIONS }];
+  if (kind === 'text') groups.push({ key: 'text', title: 'Text', permissions: TEXT_PERMISSIONS });
+  if (kind === 'voice') groups.push({ key: 'voice', title: 'Voice', permissions: VOICE_PERMISSIONS });
+  groups.push({ key: 'mod', title: 'Moderation', permissions: MOD_PERMISSIONS });
   return groups;
 }
 
@@ -188,7 +188,7 @@ router.get('/channelpermissions', async (req, res, next) => {
     }
 
     res.render('channelpermissions', {
-      title: 'Permessi per canale',
+      title: 'Channel Permissions',
       guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
       channelGroups,
       selectedChannelId: channel ? channel.id : null,
@@ -217,7 +217,7 @@ router.post('/channelpermissions/:channelId/:overwriteId/save', async (req, res,
 
     const channel = guild.channels.cache.get(req.params.channelId);
     if (!channel || !LISTED_CHANNEL_TYPES.includes(channel.type)) {
-      req.session.flash = { type: 'error', message: 'Canale non trovato.' };
+      req.session.flash = { type: 'error', message: 'Channel not found.' };
       res.redirect('/channelpermissions');
       return;
     }
@@ -225,7 +225,7 @@ router.post('/channelpermissions/:channelId/:overwriteId/save', async (req, res,
     const { overwriteId } = req.params;
     const target = guild.roles.cache.get(overwriteId) || guild.members.cache.get(overwriteId);
     if (!target) {
-      req.session.flash = { type: 'error', message: 'Ruolo o membro non valido.' };
+      req.session.flash = { type: 'error', message: 'Invalid role or member.' };
       res.redirect(`/channelpermissions?channelId=${channel.id}`);
       return;
     }
@@ -256,14 +256,14 @@ router.post('/channelpermissions/:channelId/:overwriteId/save', async (req, res,
     if (grantedNotHeld.length > 0) {
       req.session.flash = {
         type: 'error',
-        message: `Il bot non ha questi permessi su questo canale, quindi non può concederli: ${grantedNotHeld.join(', ')}.`,
+        message: `The bot doesn't have these permissions on this channel, so it can't grant them: ${grantedNotHeld.join(', ')}.`,
       };
       res.redirect(`/channelpermissions?channelId=${channel.id}&overwriteId=${overwriteId}`);
       return;
     }
 
     await channel.permissionOverwrites.edit(overwriteId, options);
-    req.session.flash = { type: 'success', message: 'Permessi aggiornati.' };
+    req.session.flash = { type: 'success', message: 'Permissions updated.' };
     res.redirect(`/channelpermissions?channelId=${channel.id}&overwriteId=${overwriteId}`);
   } catch (err) {
     next(err);
@@ -277,13 +277,13 @@ router.post('/channelpermissions/:channelId/:overwriteId/remove', async (req, re
 
     const channel = guild.channels.cache.get(req.params.channelId);
     if (!channel || !LISTED_CHANNEL_TYPES.includes(channel.type)) {
-      req.session.flash = { type: 'error', message: 'Canale non trovato.' };
+      req.session.flash = { type: 'error', message: 'Channel not found.' };
       res.redirect('/channelpermissions');
       return;
     }
 
     await channel.permissionOverwrites.delete(req.params.overwriteId);
-    req.session.flash = { type: 'success', message: 'Override rimosso.' };
+    req.session.flash = { type: 'success', message: 'Override removed.' };
     res.redirect(`/channelpermissions?channelId=${channel.id}`);
   } catch (err) {
     next(err);

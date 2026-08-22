@@ -11,9 +11,9 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="collegamenti">
-      <h2>Collegamenti (<%= links.length %>)</h2>
+      <h2>Links (<%= links.length %>)</h2>
       <% if (links.length === 0) { %>
-        <p class="hint">Nessun collegamento configurato.</p>
+        <p class="hint">No links configured.</p>
       <% } else { %>
         <% links.forEach((l) => { %>
           <div class="config-card">
@@ -21,13 +21,13 @@
               <span class="config-name"><%= l.roleAName %> <%= l.bidirectional ? '↔' : '→' %> <%= l.roleBName %></span>
               <div class="card-actions">
                 <details>
-                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <summary class="btn-icon-sm" title="Edit">✎</summary>
                   <div class="card-edit-popover">
                     <form method="POST" action="/rolelink/edit" class="form">
                       <input type="hidden" name="currentRoleAId" value="<%= l.roleAId %>" />
                       <input type="hidden" name="currentRoleBId" value="<%= l.roleBId %>" />
                       <label>
-                        Ruolo 1 (quando viene tolto…)
+                        Role 1 (when removed…)
                         <select name="roleAId" required>
                           <% roles.forEach((r) => { %>
                             <option value="<%= r.id %>" <%= r.id === l.roleAId ? 'selected' : '' %>><%= r.name %></option>
@@ -35,7 +35,7 @@
                         </select>
                       </label>
                       <label>
-                        …viene tolto anche Ruolo 2
+                        …Role 2 is removed too
                         <select name="roleBId" required>
                           <% roles.forEach((r) => { %>
                             <option value="<%= r.id %>" <%= r.id === l.roleBId ? 'selected' : '' %>><%= r.name %></option>
@@ -44,16 +44,16 @@
                       </label>
                       <label class="checkbox-label">
                         <input type="checkbox" name="bidirectional" <%= l.bidirectional ? 'checked' : '' %> />
-                        Vale anche al contrario (perdere Ruolo 2 toglie anche Ruolo 1)
+                        Also applies the other way around (losing Role 2 removes Role 1 too)
                       </label>
-                      <button type="submit" class="btn-primary-sm">Salva</button>
+                      <button type="submit" class="btn-primary-sm">Save</button>
                     </form>
                   </div>
                 </details>
-                <form method="POST" action="/rolelink/remove" onsubmit="return confirm('Rimuovere questo collegamento?');">
+                <form method="POST" action="/rolelink/remove" onsubmit="return confirm('Remove this link?');">
                   <input type="hidden" name="roleAId" value="<%= l.roleAId %>" />
                   <input type="hidden" name="roleBId" value="<%= l.roleBId %>" />
-                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Remove">✕</button>
                 </form>
               </div>
             </div>
@@ -63,24 +63,24 @@
     </section>
 
     <section class="panel" data-card-id="aggiungi-collegamento">
-      <h2>Aggiungi collegamento</h2>
+      <h2>Add link</h2>
       <% if (roles.length < 2) { %>
-        <p class="hint">Servono almeno due ruoli assegnabili nel server per creare un collegamento.</p>
+        <p class="hint">You need at least two assignable roles in the server to create a link.</p>
       <% } else { %>
         <form method="POST" action="/rolelink/add" class="form">
           <label>
-            Ruolo 1 (quando viene tolto…)
+            Role 1 (when removed…)
             <select name="roleAId" required>
-              <option value="" disabled selected>Scegli un ruolo…</option>
+              <option value="" disabled selected>Choose a role…</option>
               <% roles.forEach((r) => { %>
                 <option value="<%= r.id %>"><%= r.name %></option>
               <% }) %>
             </select>
           </label>
           <label>
-            …viene tolto anche Ruolo 2
+            …Role 2 is removed too
             <select name="roleBId" required>
-              <option value="" disabled selected>Scegli un ruolo…</option>
+              <option value="" disabled selected>Choose a role…</option>
               <% roles.forEach((r) => { %>
                 <option value="<%= r.id %>"><%= r.name %></option>
               <% }) %>
@@ -88,11 +88,11 @@
           </label>
           <label class="checkbox-label">
             <input type="checkbox" name="bidirectional" />
-            Vale anche al contrario (perdere Ruolo 2 toglie anche Ruolo 1)
+            Also applies the other way around (losing Role 2 removes Role 1 too)
           </label>
-          <button type="submit" class="btn-primary">Crea collegamento</button>
+          <button type="submit" class="btn-primary">Create link</button>
         </form>
-        <p class="hint">Per collegare Ruolo 1 a più ruoli in un colpo solo, usa <code>/rolelink add</code> su Discord.</p>
+        <p class="hint">To link Role 1 to multiple roles at once, use <code>/rolelink add</code> on Discord.</p>
       <% } %>
     </section>
 </div>

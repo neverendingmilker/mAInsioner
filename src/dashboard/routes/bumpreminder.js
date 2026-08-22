@@ -39,8 +39,8 @@ async function renderBumpReminderPage(req, res, guild) {
       channelId: config.channel_id,
       roleId: config.role_id,
     },
-    channelName: config.channel_id ? (channel ? `#${channel.name}` : `(canale eliminato: ${config.channel_id})`) : null,
-    roleName: config.role_id ? (role ? role.name : `(ruolo eliminato: ${config.role_id})`) : null,
+    channelName: config.channel_id ? (channel ? `#${channel.name}` : `(deleted channel: ${config.channel_id})`) : null,
+    roleName: config.role_id ? (role ? role.name : `(deleted role: ${config.role_id})`) : null,
     nextReminderAt: config.next_reminder_at,
     lastBumpedBy: config.last_bumped_by ? memberLabel(guild, config.last_bumped_by) : null,
     textChannels,
@@ -64,7 +64,7 @@ router.post('/bumpreminder/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await bumpReminderManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Bump Reminder attivato.' : 'Bump Reminder disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Bump Reminder enabled.' : 'Bump Reminder disabled.' };
     res.redirect('/bumpreminder');
   } catch (err) {
     next(err);
@@ -84,7 +84,7 @@ router.post('/bumpreminder/config', async (req, res, next) => {
     if (channelId) {
       const channel = guild.channels.cache.get(channelId);
       if (!channel) {
-        errors.push('Canale non valido.');
+        errors.push('Invalid channel.');
       } else {
         try {
           await bumpReminderManager.setChannel(guild, channel);
@@ -99,12 +99,12 @@ router.post('/bumpreminder/config', async (req, res, next) => {
     const roleId = req.body.roleId || null;
     const role = roleId ? guild.roles.cache.get(roleId) : null;
     if (roleId && !role) {
-      errors.push('Ruolo non valido.');
+      errors.push('Invalid role.');
     } else {
       await bumpReminderManager.setRole(guild.id, role);
     }
 
-    req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configurazione aggiornata.' };
+    req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configuration updated.' };
     res.redirect('/bumpreminder');
   } catch (err) {
     next(err);

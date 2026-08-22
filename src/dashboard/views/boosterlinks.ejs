@@ -11,9 +11,9 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="ruoli-collegati">
-      <h2>Ruoli collegati (<%= links.length %>)</h2>
+      <h2>Linked roles (<%= links.length %>)</h2>
       <% if (links.length === 0) { %>
-        <p class="hint">Nessun ruolo personalizzato collegato a un booster.</p>
+        <p class="hint">No custom role linked to a booster.</p>
       <% } else { %>
         <% links.forEach((l) => { %>
           <div class="config-card">
@@ -22,41 +22,41 @@
                 <%= l.userLabel %>
                 <% if (l.isMod) { %><span class="pill badge pill-accent">Mod</span><% } %>
                 <% if (l.isOgFren) { %><span class="pill badge pill-success">OG/Fren</span><% } %>
-                <% if (l.isPaused) { %><span class="pill badge pill-muted">In pausa</span><% } %>
+                <% if (l.isPaused) { %><span class="pill badge pill-muted">Paused</span><% } %>
               </span>
               <span class="config-meta">
                 <%= l.roleLabel %>
                 <% if (l.isPaused) { %>
-                   — non sta più boostando, ruolo rimosso (torna automaticamente se ricomincia)
+                   — no longer boosting, role removed (comes back automatically if they start again)
                 <% } else if (!l.isBooster) { %>
-                   — non risulta più boostare
+                   — doesn't appear to be boosting anymore
                 <% } %>
               </span>
               <div class="card-actions">
                 <% if (roles.length > 0) { %>
                   <details>
-                    <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                    <summary class="btn-icon-sm" title="Edit">✎</summary>
                     <div class="card-edit-popover">
                       <form method="POST" action="/boosterlinks/edit" class="form">
                         <input type="hidden" name="userId" value="<%= l.userId %>" />
                         <input type="hidden" name="oldRoleId" value="<%= l.roleId %>" />
                         <label>
-                          Nuovo ruolo da tracciare al posto di quello attuale
+                          New role to track instead of the current one
                           <select name="newRoleId" required>
                             <% roles.forEach((r) => { %>
                               <option value="<%= r.id %>" <%= r.id === l.roleId ? 'selected' : '' %>><%= r.name %></option>
                             <% }) %>
                           </select>
                         </label>
-                        <button type="submit" class="btn-primary-sm">Salva</button>
+                        <button type="submit" class="btn-primary-sm">Save</button>
                       </form>
                     </div>
                   </details>
                 <% } %>
-                <form method="POST" action="/boosterlinks/remove" onsubmit="return confirm('Smettere di tracciare questo ruolo? Il ruolo non verrà rimosso dall\'utente.');">
+                <form method="POST" action="/boosterlinks/remove" onsubmit="return confirm('Stop tracking this role? The role won\'t be removed from the user.');">
                   <input type="hidden" name="userId" value="<%= l.userId %>" />
                   <input type="hidden" name="roleId" value="<%= l.roleId %>" />
-                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Remove">✕</button>
                 </form>
               </div>
             </div>
@@ -66,18 +66,18 @@
     </section>
 
     <section class="panel" data-card-id="ruoli-esenti">
-      <h2>Ruoli esenti (<%= exemptRoles.length %>)</h2>
-      <p class="hint">I membri con uno qualsiasi di questi ruoli non vengono mai toccati dalla rimozione automatica, indipendentemente dal boost.</p>
+      <h2>Exempt roles (<%= exemptRoles.length %>)</h2>
+      <p class="hint">Members with any of these roles are never touched by automatic removal, regardless of boost status.</p>
       <% if (exemptRoles.length === 0) { %>
-        <p class="hint">Nessun ruolo esente configurato.</p>
+        <p class="hint">No exempt roles configured.</p>
       <% } else { %>
         <% exemptRoles.forEach((r) => { %>
           <div class="config-card">
             <div class="config-card-header">
               <span class="config-name"><%= r.name %></span>
-              <form method="POST" action="/boosterlinks/exempt/remove" onsubmit="return confirm('Rimuovere questo ruolo dagli esenti?');" class="card-actions">
+              <form method="POST" action="/boosterlinks/exempt/remove" onsubmit="return confirm('Remove this role from the exempt list?');" class="card-actions">
                 <input type="hidden" name="roleId" value="<%= r.id %>" />
-                <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                <button type="submit" class="btn-icon-sm btn-icon-danger" title="Remove">✕</button>
               </form>
             </div>
           </div>
@@ -86,15 +86,15 @@
       <% if (allRoles.length > 0) { %>
         <form method="POST" action="/boosterlinks/exempt/add" class="form">
           <label>
-            Aggiungi ruoli esenti
+            Add exempt roles
             <select name="roleIds" multiple required size="<%= Math.min(allRoles.length, 8) %>">
               <% allRoles.forEach((r) => { %>
                 <option value="<%= r.id %>"><%= r.name %></option>
               <% }) %>
             </select>
           </label>
-          <p class="hint">Tieni premuto Ctrl (o ⌘ su Mac) per selezionarne più di uno.</p>
-          <button type="submit" class="btn-primary">Aggiungi ruoli esenti</button>
+          <p class="hint">Hold Ctrl (or ⌘ on Mac) to select more than one.</p>
+          <button type="submit" class="btn-primary">Add exempt roles</button>
         </form>
       <% } %>
     </section>

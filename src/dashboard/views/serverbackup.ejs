@@ -11,23 +11,23 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="backup-di-questo-server">
-      <h2>Backup di questo server (<%= snapshots.length %>)</h2>
-      <p class="hint">Un backup può essere ripristinato più volte senza rischi: non cancella né sovrascrive nulla di già esistente, crea solo quello che manca (abbinato per nome).</p>
+      <h2>Backups of this server (<%= snapshots.length %>)</h2>
+      <p class="hint">A backup can be restored more than once without risk: it never deletes or overwrites anything that already exists, it only creates what's missing (matched by name).</p>
       <% if (snapshots.length === 0) { %>
-        <p class="hint">Nessun backup ancora creato.</p>
+        <p class="hint">No backups created yet.</p>
       <% } else { %>
         <% snapshots.forEach((s) => { %>
           <div class="config-card">
             <div class="config-card-header">
               <span class="config-name">#<%= s.id %> — <%= s.label %></span>
               <span class="config-meta">
-                creato da <%= s.createdByLabel %> il <%= s.createdAtLabel %> —
-                <%= s.assetCounts.emoji %> emoji, <%= s.assetCounts.sticker %> sticker, <%= s.assetCounts.soundboard %> suoni
+                created by <%= s.createdByLabel %> on <%= s.createdAtLabel %> —
+                <%= s.assetCounts.emoji %> emoji, <%= s.assetCounts.sticker %> stickers, <%= s.assetCounts.soundboard %> sounds
               </span>
-              <form method="POST" action="/serverbackup/<%= s.id %>/sync" onsubmit="return confirm('Riassegnare (solo in aggiunta) i ruoli salvati a chi è già nel server?');">
-                <button type="submit" class="btn-secondary-sm">Sincronizza ruoli</button>
+              <form method="POST" action="/serverbackup/<%= s.id %>/sync" onsubmit="return confirm('Reassign (additively only) the saved roles to members already in the server?');">
+                <button type="submit" class="btn-secondary-sm">Sync roles</button>
               </form>
-              <a href="/serverbackup/<%= s.id %>/restore" class="btn-primary-sm" style="text-decoration:none; display:inline-block;">Ripristina…</a>
+              <a href="/serverbackup/<%= s.id %>/restore" class="btn-primary-sm" style="text-decoration:none; display:inline-block;">Restore…</a>
             </div>
           </div>
         <% }) %>
@@ -35,23 +35,23 @@
     </section>
 
     <section class="panel" data-card-id="crea-nuovo-backup">
-      <h2>Crea nuovo backup</h2>
+      <h2>Create new backup</h2>
       <form method="POST" action="/serverbackup/create" class="form">
         <label>
-          Etichetta (opzionale)
-          <input type="text" name="label" maxlength="100" placeholder="es. prima della ristrutturazione" />
+          Label (optional)
+          <input type="text" name="label" maxlength="100" placeholder="e.g. before the restructuring" />
         </label>
         <label>
-          Cosa includere
+          What to include
           <select name="scope" required>
             <% scopes.forEach((s) => { %>
               <option value="<%= s %>" <%= s === 'all' ? 'selected' : '' %>><%= s %></option>
             <% }) %>
           </select>
         </label>
-        <button type="submit" class="btn-primary">Crea backup</button>
+        <button type="submit" class="btn-primary">Create backup</button>
       </form>
-      <p class="hint">"all" = tutto (ruoli, canali, ruoli membri, emoji/sticker/soundboard). Con "assets" può richiedere un po' di tempo se il server ne ha molti — scarica ogni file uno alla volta.</p>
+      <p class="hint">"all" = everything (roles, channels, member roles, emoji/stickers/soundboard). With "assets" this can take a while if the server has a lot of them — it downloads each file one at a time.</p>
     </section>
 </div>
   </main>

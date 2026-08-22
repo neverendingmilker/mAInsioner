@@ -13,7 +13,7 @@ const SLOWMODE_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnounce
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);
-  return channel ? `#${channel.name}` : `(canale eliminato: ${channelId})`;
+  return channel ? `#${channel.name}` : `(deleted channel: ${channelId})`;
 }
 
 async function renderSlowmodePage(req, res, guild) {
@@ -61,7 +61,7 @@ router.post('/slowmode/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await slowModeManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Slowmode attivato.' : 'Slowmode disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Slowmode enabled.' : 'Slowmode disabled.' };
     res.redirect('/slowmode');
   } catch (err) {
     next(err);
@@ -69,7 +69,7 @@ router.post('/slowmode/toggle', async (req, res, next) => {
 });
 
 // Upsert — used both to add a brand-new limit and to edit an existing one from the
-// inline "Modifica" form (setLimit is ON CONFLICT DO UPDATE, so both cases are the
+// inline "Edit" form (setLimit is ON CONFLICT DO UPDATE, so both cases are the
 // same call).
 router.post('/slowmode/add', async (req, res, next) => {
   try {
@@ -78,7 +78,7 @@ router.post('/slowmode/add', async (req, res, next) => {
 
     const channel = guild.channels.cache.get(req.body.channelId);
     if (!channel) {
-      req.session.flash = { type: 'error', message: 'Canale non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid channel — try again.' };
       res.redirect('/slowmode');
       return;
     }
@@ -87,7 +87,7 @@ router.post('/slowmode/add', async (req, res, next) => {
       const { cooldownSeconds } = await slowModeManager.setLimit(guild.id, channel, req.body.duration?.trim(), req.session.user.id);
       req.session.flash = {
         type: 'success',
-        message: `#${channel.name}: un messaggio ogni ${formatSeconds(cooldownSeconds)}.`,
+        message: `#${channel.name}: one message every ${formatSeconds(cooldownSeconds)}.`,
       };
     } catch (err) {
       if (err instanceof slowModeManager.ValidationError) {
@@ -108,7 +108,7 @@ router.post('/slowmode/remove', async (req, res, next) => {
     if (!guild) return;
 
     await slowModeManager.removeLimit(guild.id, req.body.channelId);
-    req.session.flash = { type: 'success', message: 'Limite rimosso.' };
+    req.session.flash = { type: 'success', message: 'Limit removed.' };
     res.redirect('/slowmode');
   } catch (err) {
     next(err);

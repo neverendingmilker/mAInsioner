@@ -27,7 +27,7 @@ const MOD_PERMISSIONS = [
   ...MFA_PERMISSIONS,
   { flag: PermissionFlagsBits.ViewAuditLog, label: 'View Audit Log' },
   { flag: PermissionFlagsBits.ManageNicknames, label: 'Manage Nicknames' },
-  { flag: PermissionFlagsBits.ManageGuildExpressions, label: 'Manage Expressions (emoji/sticker/suoni)' },
+  { flag: PermissionFlagsBits.ManageGuildExpressions, label: 'Manage Expressions (emoji/sticker/sounds)' },
   { flag: PermissionFlagsBits.ModerateMembers, label: 'Timeout Members' },
 ];
 
@@ -110,7 +110,7 @@ router.get('/roleaudit', async (req, res, next) => {
     const mod = auditRoles(guild, MOD_PERMISSIONS, { ignoreBots, includeMemberOverrides: true });
 
     res.render('roleaudit', {
-      title: 'Ruoli & Permessi',
+      title: 'Roles & Permissions',
       guild: { name: guild.name, iconURL: guild.iconURL({ size: 64 }) },
       ignoreBots,
       mfa,

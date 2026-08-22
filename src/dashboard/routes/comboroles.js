@@ -62,7 +62,7 @@ router.post('/comboroles/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await comboRolesManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Combined Role Search attivato.' : 'Combined Role Search disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Combined Role Search enabled.' : 'Combined Role Search disabled.' };
     res.redirect('/comboroles');
   } catch (err) {
     next(err);

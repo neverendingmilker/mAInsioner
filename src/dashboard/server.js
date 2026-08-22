@@ -142,7 +142,7 @@ function start(client) {
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     console.error('[dashboard] Unhandled error:', err);
-    res.status(500).render('error', { title: 'Errore', message: 'Qualcosa è andato storto.' });
+    res.status(500).render('error', { title: 'Error', message: 'Something went wrong.' });
   });
 
   app.listen(config.port, () => {

@@ -24,12 +24,12 @@
 
     if (stats.status === 'running') {
       textEl.textContent =
-        '🔍 Scansione in corso… ' + stats.scanned + ' messaggi controllati, ' + stats.qualified + ' aggiunti finora (' + stats.channelsScanned + ' canali).';
+        '🔍 Scan in progress… ' + stats.scanned + ' messages checked, ' + stats.qualified + ' added so far (' + stats.channelsScanned + ' channels).';
     } else if (stats.status === 'done') {
-      var errNote = stats.errors > 0 ? ' (' + stats.errors + ' con errore)' : '';
-      textEl.textContent = '✅ Scansione completata: ' + stats.scanned + ' messaggi controllati, ' + stats.qualified + ' aggiunti alla starboard' + errNote + '.';
+      var errNote = stats.errors > 0 ? ' (' + stats.errors + ' with errors)' : '';
+      textEl.textContent = '✅ Scan complete: ' + stats.scanned + ' messages checked, ' + stats.qualified + ' added to the starboard' + errNote + '.';
     } else if (stats.status === 'error') {
-      textEl.textContent = '⚠️ Scansione interrotta: ' + (stats.errorMessage || 'errore sconosciuto');
+      textEl.textContent = '⚠️ Scan interrupted: ' + (stats.errorMessage || 'unknown error');
     }
   }
 

@@ -11,27 +11,27 @@
 
     <% if (exhausted) { %>
       <div class="flash flash-error">
-        La lista di temi è esaurita — sono già stati postati tutti. Il posting è in pausa finché non aggiungi altri temi.
+        The theme list is exhausted — all of them have already been posted. Posting is paused until you add more themes.
       </div>
     <% } %>
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="configurazione">
-      <h2>Configurazione</h2>
+      <h2>Configuration</h2>
       <form method="POST" action="/themes/config" class="form">
         <label>
-          Canale
+          Channel
           <select name="channelId">
-            <option value="">Nessuno</option>
+            <option value="">None</option>
             <% textChannels.forEach((c) => { %>
               <option value="<%= c.id %>" <%= config.channelId === c.id ? 'selected' : '' %>><%= c.name %></option>
             <% }) %>
           </select>
         </label>
         <label>
-          Ruolo da pingare (opzionale)
+          Role to ping (optional)
           <select name="roleId">
-            <option value="">Nessuno</option>
+            <option value="">None</option>
             <% roles.forEach((r) => { %>
               <option value="<%= r.id %>" <%= config.roleId === r.id ? 'selected' : '' %>><%= r.name %></option>
             <% }) %>
@@ -41,70 +41,70 @@
         <div>
           <label class="checkbox-label">
             <input type="radio" name="scheduleMode" value="daily" id="themes-mode-daily" <%= config.scheduleMode === 'daily' ? 'checked' : '' %> onchange="document.getElementById('themes-daily-field').style.display='flex';document.getElementById('themes-interval-field').style.display='none';" />
-            A un orario fisso ogni giorno
+            At a fixed time every day
           </label>
           <label class="checkbox-label">
             <input type="radio" name="scheduleMode" value="interval" id="themes-mode-interval" <%= config.scheduleMode === 'interval' ? 'checked' : '' %> onchange="document.getElementById('themes-daily-field').style.display='none';document.getElementById('themes-interval-field').style.display='flex';" />
-            Ogni tot ore
+            Every N hours
           </label>
         </div>
 
         <div class="schedule-mode-fields" id="themes-daily-field" style="<%= config.scheduleMode === 'daily' ? '' : 'display:none;' %>">
           <label>
-            Orario (fuso orario del server del bot)
+            Time (bot server's timezone)
             <input type="time" name="dailyTime" value="<%= config.dailyTime %>" />
           </label>
         </div>
 
         <div class="schedule-mode-fields" id="themes-interval-field" style="<%= config.scheduleMode === 'interval' ? '' : 'display:none;' %>">
           <label>
-            Ogni quante ore
+            Every how many hours
             <input type="number" name="intervalHours" min="1" max="720" value="<%= config.intervalHours %>" />
           </label>
         </div>
 
-        <button type="submit" class="btn-primary-sm">Salva configurazione</button>
+        <button type="submit" class="btn-primary-sm">Save configuration</button>
       </form>
     </section>
 
     <section class="panel" data-card-id="temi-in-coda-da-postare">
       <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-        <h2>Temi in coda (<%= totalThemes %>, <%= remaining %> da postare)</h2>
+        <h2>Themes in queue (<%= totalThemes %>, <%= remaining %> to post)</h2>
         <% if (themeRows.length > 0) { %>
-          <form method="POST" action="/themes/items/clear" onsubmit="return confirm('Svuotare tutta la coda? Verranno rimossi tutti i <%= totalThemes %> temi, azione non reversibile.');">
-            <button type="submit" class="btn-danger-sm">Svuota coda</button>
+          <form method="POST" action="/themes/items/clear" onsubmit="return confirm('Clear the whole queue? All <%= totalThemes %> themes will be removed — this can\'t be undone.');">
+            <button type="submit" class="btn-danger-sm">Clear queue</button>
           </form>
         <% } %>
       </div>
-      <p class="hint">Trascina un tema per cambiarne l'ordine — l'ordine è anche l'ordine di posting.</p>
+      <p class="hint">Drag a theme to change its order — the order is also the posting order.</p>
 
       <% if (themeRows.length === 0) { %>
-        <p class="hint">Nessun tema ancora — aggiungine uno qui sotto.</p>
+        <p class="hint">No themes yet — add one below.</p>
       <% } else { %>
         <div id="themes-item-list">
           <% themeRows.forEach((t) => { %>
             <div class="reorder-item" data-id="<%= t.id %>">
-              <span class="reorder-drag-handle" title="Trascina per riordinare">⣿</span>
+              <span class="reorder-drag-handle" title="Drag to reorder">⣿</span>
               <div class="reorder-item-body">
-                <% if (t.isNext) { %><span class="pill next-badge pill-purple">Prossimo</span><br /><% } %>
+                <% if (t.isNext) { %><span class="pill next-badge pill-purple">Next</span><br /><% } %>
                 <span class="reorder-item-text"><%= t.theme %></span>
-                <% if (t.source === 'sheet') { %> <span class="reorder-source-badge">(da Google Sheet)</span><% } %>
+                <% if (t.source === 'sheet') { %> <span class="reorder-source-badge">(from Google Sheet)</span><% } %>
               </div>
               <div class="card-actions">
                 <details>
-                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <summary class="btn-icon-sm" title="Edit">✎</summary>
                   <div class="card-edit-popover">
                     <form method="POST" action="/themes/items/<%= t.id %>/edit" class="form">
                       <label>
-                        Testo
+                        Text
                         <textarea name="theme" rows="3" required><%= t.theme %></textarea>
                       </label>
-                      <button type="submit" class="btn-primary-sm">Salva</button>
+                      <button type="submit" class="btn-primary-sm">Save</button>
                     </form>
                   </div>
                 </details>
-                <form method="POST" action="/themes/items/<%= t.id %>/remove" onsubmit="return confirm('Rimuovere questo tema?');">
-                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                <form method="POST" action="/themes/items/<%= t.id %>/remove" onsubmit="return confirm('Remove this theme?');">
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Remove">✕</button>
                 </form>
               </div>
             </div>
@@ -118,13 +118,13 @@
     </section>
 
     <section class="panel" data-card-id="aggiungi-tema-manualmente">
-      <h2>Aggiungi tema manualmente</h2>
+      <h2>Add theme manually</h2>
       <form method="POST" action="/themes/items/add" class="form">
         <label>
-          Testo del tema
+          Theme text
           <textarea name="theme" rows="3" required maxlength="500"></textarea>
         </label>
-        <button type="submit" class="btn-primary">Aggiungi tema</button>
+        <button type="submit" class="btn-primary">Add theme</button>
       </form>
     </section>
 </div>

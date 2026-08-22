@@ -2,7 +2,7 @@
 <div class="login-page">
   <div class="login-card login-card-wide">
     <div class="brand">mAInsioner</div>
-    <p>Sei Admin o Mod in più server dove il bot è presente — scegli quale gestire.</p>
+    <p>You're an Admin or Mod on more than one server the bot is in — choose which one to manage.</p>
     <div class="server-list">
       <% guilds.forEach((g) => { %>
         <form method="POST" action="/select-server" class="server-list-item">
@@ -15,7 +15,7 @@
         </form>
       <% }) %>
     </div>
-    <a class="logout" href="/logout">Esci</a>
+    <a class="logout" href="/logout">Log out</a>
   </div>
 </div>
 <%- include('partials/footer') %>

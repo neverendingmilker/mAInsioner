@@ -419,7 +419,7 @@
       if (card.querySelector('.card-drag-handle')) return;
       var handle = document.createElement('span');
       handle.className = 'card-drag-handle';
-      handle.title = 'Trascina per spostare in un’altra cella';
+      handle.title = 'Drag to move to another cell';
       handle.textContent = '⣿';
       handle.addEventListener('mousedown', function (e) {
         e.preventDefault();
@@ -529,7 +529,7 @@
       if (card.querySelector('.card-resize-grip')) return;
       var grip = document.createElement('span');
       grip.className = 'card-resize-grip';
-      grip.title = 'Trascina per ridimensionare (larghezza a step, altezza libera — non puoi crescere sopra un’altra card)';
+      grip.title = 'Drag to resize (width in steps, free height — can\'t grow over another card)';
       grip.addEventListener('mousedown', function (e) {
         e.preventDefault();
         e.stopPropagation();

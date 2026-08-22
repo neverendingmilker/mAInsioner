@@ -37,7 +37,7 @@ router.post('/highlight/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await highlightManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Highlight attivato.' : 'Highlight disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Highlight enabled.' : 'Highlight disabled.' };
     res.redirect('/highlight');
   } catch (err) {
     next(err);

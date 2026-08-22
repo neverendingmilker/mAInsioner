@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get('/login', (req, res) => {
   if (req.session.user) return res.redirect('/');
-  res.render('login', { title: 'Accedi' });
+  res.render('login', { title: 'Log in' });
 });
 
 router.get('/auth/discord', (req, res) => {
@@ -17,7 +17,7 @@ router.get('/auth/discord', (req, res) => {
 router.get('/auth/discord/callback', async (req, res) => {
   const { code, error } = req.query;
   if (error || !code) {
-    res.render('login', { title: 'Accedi', error: 'Accesso annullato.' });
+    res.render('login', { title: 'Log in', error: 'Login cancelled.' });
     return;
   }
 
@@ -59,7 +59,7 @@ router.get('/auth/discord/callback', async (req, res) => {
     req.session.guildAccess = guildAccess;
 
     if (guildAccess.length === 0) {
-      res.status(403).render('403', { title: 'Accesso negato' });
+      res.status(403).render('403', { title: 'Access denied' });
       return;
     }
 
@@ -79,7 +79,7 @@ router.get('/auth/discord/callback', async (req, res) => {
     res.redirect('/select-server');
   } catch (err) {
     console.error('[dashboard] OAuth callback failed:', err.message);
-    res.render('login', { title: 'Accedi', error: 'Errore durante il login — riprova.' });
+    res.render('login', { title: 'Log in', error: 'Error during login — try again.' });
   }
 });
 
@@ -87,10 +87,10 @@ router.get('/select-server', (req, res) => {
   if (!req.session.user) return res.redirect('/login');
   const guildAccess = req.session.guildAccess || [];
   if (guildAccess.length === 0) {
-    res.status(403).render('403', { title: 'Accesso negato' });
+    res.status(403).render('403', { title: 'Access denied' });
     return;
   }
-  res.render('selectServer', { title: 'Scegli server', guilds: guildAccess });
+  res.render('selectServer', { title: 'Choose server', guilds: guildAccess });
 });
 
 router.post('/select-server', (req, res) => {
@@ -98,7 +98,7 @@ router.post('/select-server', (req, res) => {
   const guildAccess = req.session.guildAccess || [];
   const chosen = guildAccess.find((g) => g.id === req.body.guildId);
   if (!chosen) {
-    res.status(403).render('403', { title: 'Accesso negato' });
+    res.status(403).render('403', { title: 'Access denied' });
     return;
   }
   req.session.guildId = chosen.id;

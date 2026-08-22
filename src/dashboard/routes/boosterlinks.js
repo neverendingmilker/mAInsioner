@@ -8,12 +8,12 @@ const router = express.Router();
 
 function memberLabel(guild, userId) {
   const member = guild.members.cache.get(userId);
-  return member ? member.user.tag : `(utente non più nel server: ${userId})`;
+  return member ? member.user.tag : `(user no longer in the server: ${userId})`;
 }
 
 function roleLabel(guild, roleId) {
   const role = guild.roles.cache.get(roleId);
-  return role ? role.name : `(ruolo eliminato: ${roleId})`;
+  return role ? role.name : `(deleted role: ${roleId})`;
 }
 
 async function renderBoosterlinksPage(req, res, guild) {
@@ -93,7 +93,7 @@ router.post('/boosterlinks/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await boosterLinkManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Booster Links attivato.' : 'Booster Links disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Booster Links enabled.' : 'Booster Links disabled.' };
     res.redirect('/boosterlinks');
   } catch (err) {
     next(err);
@@ -111,7 +111,7 @@ router.post('/boosterlinks/og-fren-role/config', async (req, res, next) => {
 
     const roleId = req.body.ogFrenRoleId || null;
     if (roleId && !guild.roles.cache.has(roleId)) {
-      req.session.flash = { type: 'error', message: 'Ruolo non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid role — try again.' };
       res.redirect('/boosterlinks');
       return;
     }
@@ -119,7 +119,7 @@ router.post('/boosterlinks/og-fren-role/config', async (req, res, next) => {
     await boosterLinkManager.setOgFrenRoleId(guild.id, roleId);
     req.session.flash = {
       type: 'success',
-      message: roleId ? `Ruolo OG/Fren impostato su ${roleLabel(guild, roleId)}.` : 'Ruolo OG/Fren rimosso — il badge non comparirà più.',
+      message: roleId ? `OG/Fren role set to ${roleLabel(guild, roleId)}.` : 'OG/Fren role removed — the badge will no longer appear.',
     };
     res.redirect('/boosterlinks');
   } catch (err) {
@@ -139,7 +139,7 @@ router.post('/boosterlinks/edit', async (req, res, next) => {
     const oldRoleId = req.body.oldRoleId;
     const newRole = guild.roles.cache.get(req.body.newRoleId);
     if (!newRole) {
-      req.session.flash = { type: 'error', message: 'Ruolo non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid role — try again.' };
       res.redirect('/boosterlinks');
       return;
     }
@@ -147,7 +147,7 @@ router.post('/boosterlinks/edit', async (req, res, next) => {
     try {
       await boosterLinkManager.unlink(guild.id, userId, oldRoleId);
       await boosterLinkManager.link(guild, userId, newRole, req.session.user.id);
-      req.session.flash = { type: 'success', message: 'Collegamento aggiornato.' };
+      req.session.flash = { type: 'success', message: 'Link updated.' };
     } catch (err) {
       if (err instanceof boosterLinkManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -167,7 +167,7 @@ router.post('/boosterlinks/remove', async (req, res, next) => {
     if (!guild) return;
 
     await boosterLinkManager.unlink(guild.id, req.body.userId, req.body.roleId);
-    req.session.flash = { type: 'success', message: 'Collegamento rimosso.' };
+    req.session.flash = { type: 'success', message: 'Link removed.' };
     res.redirect('/boosterlinks');
   } catch (err) {
     next(err);
@@ -185,7 +185,7 @@ router.post('/boosterlinks/exempt/add', async (req, res, next) => {
     const roles = ids.map((id) => guild.roles.cache.get(id)).filter(Boolean);
 
     if (roles.length === 0) {
-      req.session.flash = { type: 'error', message: 'Nessun ruolo valido selezionato — riprova.' };
+      req.session.flash = { type: 'error', message: 'No valid role selected — try again.' };
       res.redirect('/boosterlinks');
       return;
     }
@@ -193,7 +193,7 @@ router.post('/boosterlinks/exempt/add', async (req, res, next) => {
     await Promise.all(roles.map((role) => boosterLinkManager.addExemptRole(guild.id, role.id, req.session.user.id)));
     req.session.flash = {
       type: 'success',
-      message: roles.length === 1 ? `${roles[0].name} è ora esente dalla rimozione automatica.` : `${roles.length} ruoli sono ora esenti dalla rimozione automatica.`,
+      message: roles.length === 1 ? `${roles[0].name} is now exempt from automatic removal.` : `${roles.length} roles are now exempt from automatic removal.`,
     };
     res.redirect('/boosterlinks');
   } catch (err) {
@@ -207,7 +207,7 @@ router.post('/boosterlinks/exempt/remove', async (req, res, next) => {
     if (!guild) return;
 
     await boosterLinkManager.removeExemptRole(guild.id, req.body.roleId);
-    req.session.flash = { type: 'success', message: 'Ruolo esente rimosso.' };
+    req.session.flash = { type: 'success', message: 'Exempt role removed.' };
     res.redirect('/boosterlinks');
   } catch (err) {
     next(err);

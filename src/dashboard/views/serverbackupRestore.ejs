@@ -3,15 +3,15 @@
   <%- include('partials/sidebar') %>
   <main class="content">
     <div class="page-header">
-      <h1>Ripristina backup #<%= snapshotId %></h1>
+      <h1>Restore backup #<%= snapshotId %></h1>
     </div>
 
     <section class="panel">
-      <h2><%= preview.label || '(senza etichetta)' %></h2>
-      <p class="hint">Originario di: <strong><%= preview.sourceGuildName %></strong></p>
+      <h2><%= preview.label || '(no label)' %></h2>
+      <p class="hint">Originally from: <strong><%= preview.sourceGuildName %></strong></p>
 
       <% if (preview.missingBots.length > 0) { %>
-        <p class="hint">⚠️ Questi ruoli gestiti da bot/integrazioni non sono ancora presenti in questo server — gli eventuali permessi canale che li riguardano verranno ignorati finché non li inviti di nuovo:</p>
+        <p class="hint">⚠️ These bot/integration-managed roles aren't in this server yet — any channel permissions that reference them will be skipped until you invite them again:</p>
         <ul>
           <% preview.missingBots.forEach((name) => { %>
             <li><%= name %></li>
@@ -19,20 +19,20 @@
         </ul>
       <% } %>
 
-      <p class="hint">Il ripristino non cancella né sovrascrive nulla — crea solo ciò che manca, abbinato per nome. Sicuro da rilanciare più volte.</p>
+      <p class="hint">Restoring doesn't delete or overwrite anything — it only creates what's missing, matched by name. Safe to run more than once.</p>
 
-      <form method="POST" action="/serverbackup/<%= snapshotId %>/restore" class="form" onsubmit="return confirm('Confermi il ripristino? Verranno creati ruoli/canali/asset reali su questo server.');">
+      <form method="POST" action="/serverbackup/<%= snapshotId %>/restore" class="form" onsubmit="return confirm('Confirm the restore? Real roles/channels/assets will be created on this server.');">
         <label>
-          Cosa ripristinare
+          What to restore
           <select name="scope" required>
             <% scopes.forEach((s) => { %>
               <option value="<%= s %>" <%= s === selectedScope ? 'selected' : '' %>><%= s %></option>
             <% }) %>
           </select>
         </label>
-        <button type="submit" class="btn-primary">Conferma ripristino</button>
+        <button type="submit" class="btn-primary">Confirm restore</button>
       </form>
-      <p class="hint"><a href="/serverbackup">← Annulla, torna alla lista</a></p>
+      <p class="hint"><a href="/serverbackup">← Cancel, back to the list</a></p>
     </section>
   </main>
 </div>

@@ -66,7 +66,7 @@ async function requireDashboardAccess(req, res, next) {
   if (featureKey && locked && req.method === 'POST' && !/\/(toggle|config|channel)$/.test(req.path)) {
     req.session.flash = {
       type: 'error',
-      message: 'Questa feature è bloccata — le modifiche alla lista sono disattivate. Un Admin può sbloccarla dalla pagina della feature.',
+      message: 'This feature is locked — changes to the list are disabled. An Admin can unlock it from the feature page.',
     };
     return res.redirect(req.get('Referer') || FEATURE_PAGES[featureKey] || '/');
   }
@@ -97,19 +97,19 @@ async function requireDashboardAccess(req, res, next) {
     res.locals.features = getSidebarFeatures(featureKey, allowedKeys);
 
     if (getToolKeyForPath(req.path)) {
-      return res.status(403).render('403', { title: 'Accesso negato', message: 'Questa sezione è riservata agli Admin.' });
+      return res.status(403).render('403', { title: 'Access denied', message: 'This section is reserved for Admins.' });
     }
 
     if (featureKey) {
       if (!allowedKeys.has(featureKey)) {
         return res
           .status(403)
-          .render('403', { title: 'Accesso negato', message: 'Non hai accesso a questa feature — chiedi a un Admin di abilitarlo dalla pagina della feature.' });
+          .render('403', { title: 'Access denied', message: "You don't have access to this feature — ask an Admin to enable it from the feature page." });
       }
       if (req.method === 'POST' && /\/(toggle|config|channel)$/.test(req.path)) {
         return res.status(403).render('403', {
-          title: 'Accesso negato',
-          message: "Solo un Admin può accendere/spegnere una feature o cambiarne la configurazione di base (canale/ruolo/programma).",
+          title: 'Access denied',
+          message: 'Only an Admin can turn a feature on/off or change its base configuration (channel/role/schedule).',
         });
       }
     }

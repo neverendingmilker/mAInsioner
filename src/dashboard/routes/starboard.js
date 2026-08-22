@@ -28,7 +28,7 @@ function lookbackKey(guildId, name) {
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);
-  return channel ? `#${channel.name}` : `(canale eliminato: ${channelId})`;
+  return channel ? `#${channel.name}` : `(deleted channel: ${channelId})`;
 }
 
 async function renderStarboardPage(req, res, guild) {
@@ -96,7 +96,7 @@ router.post('/starboard/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await starboardManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Starboard attivato.' : 'Starboard disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Starboard enabled.' : 'Starboard disabled.' };
     res.redirect('/starboard');
   } catch (err) {
     next(err);
@@ -112,7 +112,7 @@ router.post('/starboard/add', async (req, res, next) => {
       const watchChannel = guild.channels.cache.get(req.body.watchChannelId);
       const postChannel = guild.channels.cache.get(req.body.postChannelId);
       if (!watchChannel || !postChannel) {
-        throw new starboardManager.ValidationError('Scegli un canale osservato e un canale di destinazione validi.');
+        throw new starboardManager.ValidationError('Choose a valid watch channel and post channel.');
       }
 
       const threshold = parseInt(req.body.threshold, 10);
@@ -126,7 +126,7 @@ router.post('/starboard/add', async (req, res, next) => {
         req.body.contentType,
         req.session.user.id
       );
-      req.session.flash = { type: 'success', message: `Starboard "${result.name}" creata.` };
+      req.session.flash = { type: 'success', message: `Starboard "${result.name}" created.` };
     } catch (err) {
       if (err instanceof starboardManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -140,7 +140,7 @@ router.post('/starboard/add', async (req, res, next) => {
   }
 });
 
-// Every field is always sent from the pre-filled "Modifica" form, so this always does a
+// Every field is always sent from the pre-filled "Edit" form, so this always does a
 // full replace — same UX as the other feature pages' inline edit, even though the manager
 // itself supports partial updates.
 router.post('/starboard/edit', async (req, res, next) => {
@@ -153,7 +153,7 @@ router.post('/starboard/edit', async (req, res, next) => {
       const watchChannel = guild.channels.cache.get(req.body.watchChannelId);
       const postChannel = guild.channels.cache.get(req.body.postChannelId);
       if (!watchChannel || !postChannel) {
-        throw new starboardManager.ValidationError('Scegli un canale osservato e un canale di destinazione validi.');
+        throw new starboardManager.ValidationError('Choose a valid watch channel and post channel.');
       }
 
       await starboardManager.edit(guild, name, {
@@ -163,7 +163,7 @@ router.post('/starboard/edit', async (req, res, next) => {
         contentType: req.body.contentType,
         emojisInput: req.body.emojis,
       });
-      req.session.flash = { type: 'success', message: `Starboard "${name}" aggiornata.` };
+      req.session.flash = { type: 'success', message: `Starboard "${name}" updated.` };
     } catch (err) {
       if (err instanceof starboardManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -183,7 +183,7 @@ router.post('/starboard/remove', async (req, res, next) => {
     if (!guild) return;
 
     await starboardManager.remove(guild.id, req.body.name);
-    req.session.flash = { type: 'success', message: 'Starboard rimossa.' };
+    req.session.flash = { type: 'success', message: 'Starboard removed.' };
     res.redirect('/starboard');
   } catch (err) {
     next(err);
@@ -204,7 +204,7 @@ router.post('/starboard/lookback', async (req, res, next) => {
     const key = lookbackKey(guild.id, name);
     const existing = runningLookbacks.get(key);
     if (existing && existing.stats.status === 'running') {
-      req.session.flash = { type: 'error', message: `Una scansione per "${name}" è già in corso.` };
+      req.session.flash = { type: 'error', message: `A scan for "${name}" is already running.` };
       res.redirect('/starboard');
       return;
     }
@@ -239,7 +239,7 @@ router.post('/starboard/lookback', async (req, res, next) => {
         }, LOOKBACK_RESULT_RETENTION_MS);
       });
 
-      req.session.flash = { type: 'success', message: `Scansione avviata per "${name}" — l'avanzamento compare sulla card qui sotto.` };
+      req.session.flash = { type: 'success', message: `Scan started for "${name}" — progress will appear on the card below.` };
     } catch (err) {
       if (err instanceof starboardManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };

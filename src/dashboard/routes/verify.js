@@ -14,19 +14,19 @@ const REPORT_CHANNEL_TYPES = [ChannelType.GuildText];
 
 function memberLabel(guild, userId) {
   const member = guild.members.cache.get(userId);
-  return member ? member.user.tag : `(utente non più nel server: ${userId})`;
+  return member ? member.user.tag : `(user no longer in the server: ${userId})`;
 }
 
 function roleLabel(guild, roleId) {
   if (!roleId) return null;
   const role = guild.roles.cache.get(roleId);
-  return role ? role.name : `(ruolo eliminato: ${roleId})`;
+  return role ? role.name : `(deleted role: ${roleId})`;
 }
 
 function channelLabel(guild, channelId) {
   if (!channelId) return null;
   const channel = guild.channels.cache.get(channelId);
-  return channel ? `#${channel.name}` : `(canale eliminato: ${channelId})`;
+  return channel ? `#${channel.name}` : `(deleted channel: ${channelId})`;
 }
 
 async function renderVerifyPage(req, res, guild) {
@@ -60,7 +60,7 @@ async function renderVerifyPage(req, res, guild) {
     userLabel: memberLabel(guild, r.user_id),
     verification: r.verification,
     social: r.social,
-    dateLabel: new Date(Number(r.verified_at) * 1000).toLocaleDateString('it-IT'),
+    dateLabel: new Date(Number(r.verified_at) * 1000).toLocaleDateString('en-GB'),
     moderatorLabel: r.moderator_id ? memberLabel(guild, r.moderator_id) : '—',
   }));
 
@@ -103,7 +103,7 @@ router.post('/verify/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await verifyManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Verification attivata.' : 'Verification disattivata.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Verification enabled.' : 'Verification disabled.' };
     res.redirect('/verify');
   } catch (err) {
     next(err);
@@ -125,13 +125,13 @@ router.post('/verify/config', async (req, res, next) => {
       ['subGiveRoleId', 'subGive', 'Sub'],
       ['dommeGiveRoleId', 'dommeGive', 'Domme'],
       ['maledomGiveRoleId', 'maledomGive', 'Maledom'],
-      ['removeRoleId', 'remove', 'Rimozione'],
-      ['allowedRoleId', 'allowedRole', 'Ruolo abilitato'],
+      ['removeRoleId', 'remove', 'Removal'],
+      ['allowedRoleId', 'allowedRole', 'Allowed role'],
     ];
     for (const [bodyKey, updateKey, label] of roleFields) {
       const roleId = req.body[bodyKey] || null;
       if (roleId && !guild.roles.cache.has(roleId)) {
-        errors.push(`Ruolo non valido per "${label}".`);
+        errors.push(`Invalid role for "${label}".`);
       } else {
         updates[updateKey] = roleId;
       }
@@ -139,7 +139,7 @@ router.post('/verify/config', async (req, res, next) => {
 
     const channelId = req.body.reportChannelId || null;
     if (channelId && !guild.channels.cache.has(channelId)) {
-      errors.push('Canale non valido.');
+      errors.push('Invalid channel.');
     } else {
       updates.channel = channelId;
     }
@@ -148,7 +148,7 @@ router.post('/verify/config', async (req, res, next) => {
       await verifyManager.setConfig(guild.id, updates);
     }
 
-    req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configurazione aggiornata.' };
+    req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configuration updated.' };
     res.redirect('/verify');
   } catch (err) {
     next(err);
@@ -166,7 +166,7 @@ router.post('/verify/subroles/config', async (req, res, next) => {
     const defaultSubRoleId = req.body.defaultSubRoleId || null;
 
     if (defaultSubRoleId && !guild.roles.cache.has(defaultSubRoleId)) {
-      req.session.flash = { type: 'error', message: 'Ruolo di default non valido.' };
+      req.session.flash = { type: 'error', message: 'Invalid default role.' };
       res.redirect('/verify');
       return;
     }
@@ -174,7 +174,7 @@ router.post('/verify/subroles/config', async (req, res, next) => {
     await verifyManager.setSubRoles(guild.id, roleIds);
     await verifyManager.setConfig(guild.id, { defaultSubRole: defaultSubRoleId });
 
-    req.session.flash = { type: 'success', message: 'Ruoli sub aggiornati.' };
+    req.session.flash = { type: 'success', message: 'Sub roles updated.' };
     res.redirect('/verify');
   } catch (err) {
     next(err);
@@ -191,7 +191,7 @@ router.post('/verify/issue', async (req, res, next) => {
 
     const type = req.body.type;
     if (!verifyManager.TYPES.includes(type)) {
-      req.session.flash = { type: 'error', message: 'Tipo di verifica non valido.' };
+      req.session.flash = { type: 'error', message: 'Invalid verification type.' };
       res.redirect('/verify');
       return;
     }
@@ -199,14 +199,14 @@ router.post('/verify/issue', async (req, res, next) => {
     const label = verifyManager.TYPE_LABELS[type];
     const member = guild.members.cache.get(req.body.userId);
     if (!member) {
-      req.session.flash = { type: 'error', message: 'Utente non valido — deve essere ancora nel server.' };
+      req.session.flash = { type: 'error', message: 'Invalid user — they must still be in the server.' };
       res.redirect('/verify');
       return;
     }
 
     const verification = req.body.verification?.trim();
     if (!verification) {
-      req.session.flash = { type: 'error', message: 'Il campo "Verification" è obbligatorio.' };
+      req.session.flash = { type: 'error', message: 'The "Verification" field is required.' };
       res.redirect('/verify');
       return;
     }
@@ -216,21 +216,21 @@ router.post('/verify/issue', async (req, res, next) => {
     const { giveRoleId } = verifyManager.getRoleIdsForType(config, type);
 
     if (!giveRoleId) {
-      req.session.flash = { type: 'error', message: `Nessun ruolo configurato per ${label} — impostalo prima in Configurazione.` };
+      req.session.flash = { type: 'error', message: `No role configured for ${label} — set one in Configuration first.` };
       res.redirect('/verify');
       return;
     }
 
     const giveRole = guild.roles.cache.get(giveRoleId);
     if (!giveRole) {
-      req.session.flash = { type: 'error', message: `Il ruolo configurato per ${label} non esiste più — impostane uno nuovo in Configurazione.` };
+      req.session.flash = { type: 'error', message: `The role configured for ${label} no longer exists — set a new one in Configuration.` };
       res.redirect('/verify');
       return;
     }
 
     const botMember = guild.members.me;
     if (!botMember || botMember.roles.highest.position <= giveRole.position) {
-      req.session.flash = { type: 'error', message: `Non posso assegnare ${giveRole.name}: il mio ruolo deve essere più in alto nella lista dei ruoli del server.` };
+      req.session.flash = { type: 'error', message: `I can't assign ${giveRole.name}: my role needs to be higher in the server's role list.` };
       res.redirect('/verify');
       return;
     }
@@ -247,20 +247,20 @@ router.post('/verify/issue', async (req, res, next) => {
     });
 
     const notes = [];
-    notes.push(result.alreadyHadRole ? `aveva già ${giveRole.name}` : `assegnato ${giveRole.name}`);
-    if (result.removeRole?.removed) notes.push(`rimosso ${result.removeRole.role.name}`);
-    else if (result.removeRole?.blocked) notes.push(`impossibile rimuovere ${result.removeRole.role.name} (gerarchia ruoli)`);
+    notes.push(result.alreadyHadRole ? `already had ${giveRole.name}` : `assigned ${giveRole.name}`);
+    if (result.removeRole?.removed) notes.push(`removed ${result.removeRole.role.name}`);
+    else if (result.removeRole?.blocked) notes.push(`couldn't remove ${result.removeRole.role.name} (role hierarchy)`);
     for (const cr of result.crossRemovals) {
-      notes.push(cr.removed ? `rimosso ${cr.role.name} (${verifyManager.TYPE_LABELS[cr.type]})` : `impossibile rimuovere ${cr.role.name} (${verifyManager.TYPE_LABELS[cr.type]})`);
+      notes.push(cr.removed ? `removed ${cr.role.name} (${verifyManager.TYPE_LABELS[cr.type]})` : `couldn't remove ${cr.role.name} (${verifyManager.TYPE_LABELS[cr.type]})`);
     }
     if (result.subRole?.status === 'assigned') {
-      notes.push(`assegnato il ruolo sub di default${result.subRole.defaultRole ? ` (${result.subRole.defaultRole.name})` : ''}`);
+      notes.push(`assigned the default sub role${result.subRole.defaultRole ? ` (${result.subRole.defaultRole.name})` : ''}`);
     }
-    if (result.report?.posted) notes.push(`report pubblicato in #${result.report.channel.name}`);
-    else if (result.report?.noPermission) notes.push(`⚠️ impossibile pubblicare il report in #${result.report.channel.name} (permessi mancanti)`);
-    else if (result.report?.channelMissing) notes.push('⚠️ il canale report configurato non esiste più');
+    if (result.report?.posted) notes.push(`report posted in #${result.report.channel.name}`);
+    else if (result.report?.noPermission) notes.push(`⚠️ couldn't post the report in #${result.report.channel.name} (missing permissions)`);
+    else if (result.report?.channelMissing) notes.push('⚠️ the configured report channel no longer exists');
 
-    req.session.flash = { type: 'success', message: `${member.user.tag} verificato come ${label}: ${notes.join(', ')}.` };
+    req.session.flash = { type: 'success', message: `${member.user.tag} verified as ${label}: ${notes.join(', ')}.` };
     res.redirect('/verify');
   } catch (err) {
     next(err);
@@ -279,21 +279,21 @@ router.post('/verify/:id/edit', async (req, res, next) => {
     const value = req.body.value?.trim();
 
     if (!verifyManager.EDITABLE_FIELDS.includes(field) || !value) {
-      req.session.flash = { type: 'error', message: 'Dati non validi.' };
+      req.session.flash = { type: 'error', message: 'Invalid data.' };
       res.redirect('/verify');
       return;
     }
 
     const result = await verifyManager.updateReportAndSync(guild, id, field, value);
     if (!result.found) {
-      req.session.flash = { type: 'error', message: 'Questo report non esiste più.' };
+      req.session.flash = { type: 'error', message: 'This report no longer exists.' };
     } else if (!result.messageUpdated) {
       req.session.flash = {
         type: 'success',
-        message: 'Salvato, ma non ho trovato il messaggio del report originale per aggiornarlo (potrebbe essere stato eliminato).',
+        message: "Saved, but I couldn't find the original report message to update it (it may have been deleted).",
       };
     } else {
-      req.session.flash = { type: 'success', message: 'Report aggiornato.' };
+      req.session.flash = { type: 'success', message: 'Report updated.' };
     }
     res.redirect('/verify');
   } catch (err) {

@@ -7,22 +7,22 @@
     <span class="guild-name"><%= guild.name %></span>
   </div>
   <% if (typeof guildAccess !== 'undefined' && guildAccess.length > 1) { %>
-    <a class="change-server" href="/select-server">Cambia server</a>
+    <a class="change-server" href="/select-server">Switch server</a>
   <% } %>
   <% } %>
 
   <nav class="nav">
     <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'overview' ? 'active' : '' %>" href="/">Overview</a>
-    <div class="nav-section">Feature</div>
+    <div class="nav-section">Features</div>
     <% features.forEach((f) => { %>
       <% if (f.href) { %>
         <a class="nav-link <%= f.active ? 'active' : '' %>" href="<%= f.href %>"><%= f.label %></a>
       <% } else { %>
-        <div class="nav-link disabled" title="Presto disponibile"><%= f.label %></div>
+        <div class="nav-link disabled" title="Coming soon"><%= f.label %></div>
       <% } %>
     <% }) %>
     <% if (typeof tools !== 'undefined' && tools.length > 0) { %>
-      <div class="nav-section">Strumenti</div>
+      <div class="nav-section">Tools</div>
       <% tools.forEach((t) => { %>
         <a class="nav-link <%= t.active ? 'active' : '' %>" href="<%= t.href %>"><%= t.label %></a>
       <% }) %>
@@ -32,6 +32,6 @@
   <div class="sidebar-footer">
     <% if (user.avatarURL) { %><img src="<%= user.avatarURL %>" alt="" class="user-avatar" /><% } %>
     <span class="user-name"><%= user.username %></span>
-    <a class="logout" href="/logout">Esci</a>
+    <a class="logout" href="/logout">Log out</a>
   </div>
 </aside>

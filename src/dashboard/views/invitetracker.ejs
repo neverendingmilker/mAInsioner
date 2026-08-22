@@ -11,29 +11,29 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="canale-predefinito">
-      <h2>Canale predefinito</h2>
-      <p class="hint">Dove si aprono i nuovi inviti creati da qui (assegnare un codice già esistente non lo usa).</p>
+      <h2>Default channel</h2>
+      <p class="hint">Where new invites created from here open (assigning an existing code doesn't use it).</p>
       <form method="POST" action="/invitetracker/channel" class="form">
         <label>
-          Canale
+          Channel
           <select name="channelId" required>
-            <option value="" disabled <%= !defaultChannelId ? 'selected' : '' %>>Scegli un canale…</option>
+            <option value="" disabled <%= !defaultChannelId ? 'selected' : '' %>>Choose a channel…</option>
             <% textChannels.forEach((ch) => { %>
               <option value="<%= ch.id %>" <%= ch.id === defaultChannelId ? 'selected' : '' %>><%= ch.name %></option>
             <% }) %>
           </select>
         </label>
-        <button type="submit" class="btn-primary-sm">Salva</button>
+        <button type="submit" class="btn-primary-sm">Save</button>
       </form>
     </section>
 
     <section class="panel" data-card-id="classifica-top-10">
-      <h2>Classifica (top 10)</h2>
+      <h2>Leaderboard (top 10)</h2>
       <% if (leaderboard.length === 0) { %>
-        <p class="hint">Nessun invito tracciato ancora.</p>
+        <p class="hint">No invites tracked yet.</p>
       <% } else { %>
         <table class="table">
-          <thead><tr><th>Utente</th><th>Attualmente nel server</th><th>Totale</th></tr></thead>
+          <thead><tr><th>User</th><th>Currently in server</th><th>Total</th></tr></thead>
           <tbody>
             <% leaderboard.forEach((r) => { %>
               <tr><td><%= r.label %></td><td><%= r.current %></td><td><%= r.total %></td></tr>
@@ -44,20 +44,20 @@
     </section>
 
     <section class="panel" data-card-id="inviti-assegnati">
-      <h2>Inviti assegnati (<%= assignedInvites.length %>)</h2>
+      <h2>Assigned invites (<%= assignedInvites.length %>)</h2>
       <% if (assignedInvites.length === 0) { %>
-        <p class="hint">Nessun invito assegnato — oppure manca il permesso "Gestisci server" al bot.</p>
+        <p class="hint">No invites assigned — or the bot is missing the "Manage Server" permission.</p>
       <% } else { %>
         <% assignedInvites.forEach((a) => { %>
           <div class="config-card">
             <div class="config-card-header">
-              <span class="config-name"><%= a.code %><%= a.active ? '' : ' (non più attivo)' %></span>
+              <span class="config-name"><%= a.code %><%= a.active ? '' : ' (no longer active)' %></span>
               <span class="config-meta">
-                <%= a.assignedLabel %> — <%= a.uses ?? 0 %>/<%= a.maxUses ?? '∞' %> utilizzi<%= a.expiresLabel ? `, scade ${a.expiresLabel}` : '' %>
+                <%= a.assignedLabel %> — <%= a.uses ?? 0 %>/<%= a.maxUses ?? '∞' %> uses<%= a.expiresLabel ? `, expires ${a.expiresLabel}` : '' %>
               </span>
-              <form method="POST" action="/invitetracker/revoke" onsubmit="return confirm('Revocare questo invito?');" class="card-actions">
+              <form method="POST" action="/invitetracker/revoke" onsubmit="return confirm('Revoke this invite?');" class="card-actions">
                 <input type="hidden" name="code" value="<%= a.code %>" />
-                <button type="submit" class="btn-icon-sm btn-icon-danger" title="Revoca">✕</button>
+                <button type="submit" class="btn-icon-sm btn-icon-danger" title="Revoke">✕</button>
               </form>
             </div>
           </div>
@@ -66,33 +66,33 @@
     </section>
 
     <section class="panel" data-card-id="crea-o-assegna-un-invito">
-      <h2>Crea o assegna un invito</h2>
+      <h2>Create or assign an invite</h2>
       <% if (members.length === 0) { %>
-        <p class="hint">Nessun membro disponibile.</p>
+        <p class="hint">No members available.</p>
       <% } else { %>
         <form method="POST" action="/invitetracker/create" class="form">
           <label>
-            Utente da accreditare
+            User to credit
             <select name="userId" required>
-              <option value="" disabled selected>Scegli un membro…</option>
+              <option value="" disabled selected>Choose a member…</option>
               <% members.forEach((m) => { %>
                 <option value="<%= m.id %>"><%= m.label %></option>
               <% }) %>
             </select>
           </label>
           <label>
-            Codice invito già esistente (opzionale — lascia vuoto per crearne uno nuovo)
-            <input type="text" name="code" placeholder="es. abc123 oppure https://discord.gg/abc123" />
+            Existing invite code (optional — leave empty to create a new one)
+            <input type="text" name="code" placeholder="e.g. abc123 or https://discord.gg/abc123" />
           </label>
           <label>
-            Utilizzi massimi (solo per un nuovo invito, vuoto = illimitati)
+            Max uses (new invite only, empty = unlimited)
             <input type="number" name="maxUses" min="1" />
           </label>
           <label>
-            Scade tra ore (solo per un nuovo invito, vuoto = mai, max 168)
+            Expires in hours (new invite only, empty = never, max 168)
             <input type="number" name="expiresInHours" min="1" max="168" />
           </label>
-          <button type="submit" class="btn-primary">Crea/assegna invito</button>
+          <button type="submit" class="btn-primary">Create/assign invite</button>
         </form>
       <% } %>
     </section>

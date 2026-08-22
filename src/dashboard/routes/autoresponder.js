@@ -11,7 +11,7 @@ const AUTORESPONDER_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnn
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);
-  return channel ? `#${channel.name}` : `(canale eliminato: ${channelId})`;
+  return channel ? `#${channel.name}` : `(deleted channel: ${channelId})`;
 }
 
 async function renderAutoresponderPage(req, res, guild) {
@@ -62,7 +62,7 @@ router.post('/autoresponder/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await autoresponderManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Autoresponder attivato.' : 'Autoresponder disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Autoresponder enabled.' : 'Autoresponder disabled.' };
     res.redirect('/autoresponder');
   } catch (err) {
     next(err);
@@ -70,7 +70,7 @@ router.post('/autoresponder/toggle', async (req, res, next) => {
 });
 
 // Upsert — used both to add a brand-new channel config and to edit an existing one
-// from the inline "Modifica" form (setChannel is ON CONFLICT DO UPDATE).
+// from the inline "Edit" form (setChannel is ON CONFLICT DO UPDATE).
 router.post('/autoresponder/add', async (req, res, next) => {
   try {
     const guild = requireGuild(req, res);
@@ -78,7 +78,7 @@ router.post('/autoresponder/add', async (req, res, next) => {
 
     const channel = guild.channels.cache.get(req.body.channelId);
     if (!channel) {
-      req.session.flash = { type: 'error', message: 'Canale non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid channel — try again.' };
       res.redirect('/autoresponder');
       return;
     }
@@ -103,7 +103,7 @@ router.post('/autoresponder/add', async (req, res, next) => {
         Number.isNaN(redirectWindowSeconds) ? null : redirectWindowSeconds,
         req.session.user.id
       );
-      req.session.flash = { type: 'success', message: `Autoresponder salvato per #${channel.name}.` };
+      req.session.flash = { type: 'success', message: `Autoresponder saved for #${channel.name}.` };
     } catch (err) {
       if (err instanceof autoresponderManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -123,7 +123,7 @@ router.post('/autoresponder/remove', async (req, res, next) => {
     if (!guild) return;
 
     await autoresponderManager.removeChannel(guild.id, req.body.channelId);
-    req.session.flash = { type: 'success', message: 'Autoresponder rimosso.' };
+    req.session.flash = { type: 'success', message: 'Autoresponder removed.' };
     res.redirect('/autoresponder');
   } catch (err) {
     next(err);

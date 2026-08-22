@@ -6,7 +6,7 @@ const router = express.Router();
 
 function roleLabel(guild, roleId) {
   const role = guild.roles.cache.get(roleId);
-  return role ? role.name : `(ruolo eliminato: ${roleId})`;
+  return role ? role.name : `(deleted role: ${roleId})`;
 }
 
 // Same restriction as the slash command's /rolelink add: no @everyone, no
@@ -59,7 +59,7 @@ router.post('/rolelink/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await roleLinkManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Role Links attivato.' : 'Role Links disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Role Links enabled.' : 'Role Links disabled.' };
     res.redirect('/rolelink');
   } catch (err) {
     next(err);
@@ -69,10 +69,10 @@ router.post('/rolelink/toggle', async (req, res, next) => {
 function parseLinkForm(guild, body) {
   const roleA = guild.roles.cache.get(body.roleAId);
   const roleB = guild.roles.cache.get(body.roleBId);
-  if (!roleA || !roleB) return { error: 'Ruolo non valido — riprova.' };
-  if (roleA.id === roleB.id) return { error: 'Ruolo 1 e Ruolo 2 non possono essere lo stesso ruolo.' };
+  if (!roleA || !roleB) return { error: 'Invalid role — try again.' };
+  if (roleA.id === roleB.id) return { error: 'Role 1 and Role 2 can\'t be the same role.' };
   if (roleA.managed || roleA.id === guild.id || roleB.managed || roleB.id === guild.id) {
-    return { error: 'Uno dei ruoli scelti non può essere usato qui (@everyone o ruolo gestito da un\'integrazione).' };
+    return { error: 'One of the chosen roles can\'t be used here (@everyone or a role managed by an integration).' };
   }
   return { roleA, roleB, bidirectional: body.bidirectional === 'on' };
 }
@@ -91,7 +91,7 @@ router.post('/rolelink/add', async (req, res, next) => {
 
     try {
       await roleLinkManager.link(guild, parsed.roleA, parsed.roleB, parsed.bidirectional, req.session.user.id);
-      req.session.flash = { type: 'success', message: `Collegamento creato: ${parsed.roleA.name} → ${parsed.roleB.name}.` };
+      req.session.flash = { type: 'success', message: `Link created: ${parsed.roleA.name} → ${parsed.roleB.name}.` };
     } catch (err) {
       if (err instanceof roleLinkManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -129,7 +129,7 @@ router.post('/rolelink/edit', async (req, res, next) => {
     try {
       await roleLinkManager.unlink(guild.id, currentRoleAId, currentRoleBId);
       await roleLinkManager.link(guild, parsed.roleA, parsed.roleB, parsed.bidirectional, req.session.user.id);
-      req.session.flash = { type: 'success', message: `Collegamento aggiornato: ${parsed.roleA.name} → ${parsed.roleB.name}.` };
+      req.session.flash = { type: 'success', message: `Link updated: ${parsed.roleA.name} → ${parsed.roleB.name}.` };
     } catch (err) {
       if (err instanceof roleLinkManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -149,7 +149,7 @@ router.post('/rolelink/remove', async (req, res, next) => {
     if (!guild) return;
 
     await roleLinkManager.unlink(guild.id, req.body.roleAId, req.body.roleBId);
-    req.session.flash = { type: 'success', message: 'Collegamento rimosso.' };
+    req.session.flash = { type: 'success', message: 'Link removed.' };
     res.redirect('/rolelink');
   } catch (err) {
     next(err);

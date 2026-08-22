@@ -11,51 +11,51 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="stato-attuale">
-      <h2>Stato attuale</h2>
+      <h2>Current status</h2>
       <div class="cards">
         <div class="card">
-          <div class="card-label">Prossimo promemoria</div>
+          <div class="card-label">Next reminder</div>
           <div class="card-value" style="font-size: 16px;">
             <% if (nextReminderAt) { %>
-              <span class="pill pill-accent"><%= new Date(nextReminderAt).toLocaleString('it-IT') %></span>
+              <span class="pill pill-accent"><%= new Date(nextReminderAt).toLocaleString('en-GB') %></span>
             <% } else { %>
-              Nessuno — in attesa del prossimo <code>/bump</code>
+              None — waiting for the next <code>/bump</code>
             <% } %>
           </div>
         </div>
         <div class="card">
-          <div class="card-label">Ultimo bump di</div>
-          <div class="card-value" style="font-size: 16px;"><%= lastBumpedBy || 'sconosciuto' %></div>
+          <div class="card-label">Last bumped by</div>
+          <div class="card-value" style="font-size: 16px;"><%= lastBumpedBy || 'unknown' %></div>
         </div>
       </div>
-      <p class="hint">Il promemoria viene armato automaticamente ogni volta che Disboard conferma un <code>/bump</code>, e postato 2 ore dopo.</p>
+      <p class="hint">The reminder is armed automatically every time Disboard confirms a <code>/bump</code>, and posted 2 hours later.</p>
     </section>
 
     <section class="panel" data-card-id="configurazione">
-      <h2>Configurazione</h2>
+      <h2>Configuration</h2>
       <% if (textChannels.length === 0) { %>
-        <p class="hint">Nessun canale testuale disponibile.</p>
+        <p class="hint">No text channels available.</p>
       <% } else { %>
         <form method="POST" action="/bumpreminder/config" class="form">
           <label>
-            Canale
+            Channel
             <select name="channelId">
-              <option value="">Nessuno</option>
+              <option value="">None</option>
               <% textChannels.forEach((c) => { %>
                 <option value="<%= c.id %>" <%= config.channelId === c.id ? 'selected' : '' %>><%= c.name %></option>
               <% }) %>
             </select>
           </label>
           <label>
-            Ruolo da pingare (opzionale)
+            Role to ping (optional)
             <select name="roleId">
-              <option value="">Nessuno</option>
+              <option value="">None</option>
               <% roles.forEach((r) => { %>
                 <option value="<%= r.id %>" <%= config.roleId === r.id ? 'selected' : '' %>><%= r.name %></option>
               <% }) %>
             </select>
           </label>
-          <button type="submit" class="btn-primary-sm">Salva configurazione</button>
+          <button type="submit" class="btn-primary-sm">Save configuration</button>
         </form>
       <% } %>
     </section>

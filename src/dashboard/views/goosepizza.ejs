@@ -11,36 +11,36 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="trigger">
-      <h2>Trigger (<%= triggers.length %>)</h2>
+      <h2>Triggers (<%= triggers.length %>)</h2>
       <% if (triggers.length === 0) { %>
-        <p class="hint">Nessun trigger configurato.</p>
+        <p class="hint">No triggers configured.</p>
       <% } else { %>
         <% triggers.forEach((t) => { %>
           <div class="config-card">
             <div class="config-card-header">
-              <span class="config-name"><%= t.name %><%= t.enabled ? '' : ' (disattivato)' %></span>
+              <span class="config-name"><%= t.name %><%= t.enabled ? '' : ' (disabled)' %></span>
               <span class="config-meta">"<%= t.triggerText %>" → <%= t.emoji %> (<%= t.responseModeLabel %>) — <%= t.channelLabels %></span>
               <form method="POST" action="/goosepizza/trigger-toggle" style="display:inline">
                 <input type="hidden" name="name" value="<%= t.name %>" />
                 <input type="hidden" name="enabled" value="<%= t.enabled ? 'false' : 'true' %>" />
-                <button type="submit" class="btn-secondary-sm"><%= t.enabled ? 'Disattiva' : 'Attiva' %></button>
+                <button type="submit" class="btn-secondary-sm"><%= t.enabled ? 'Disable' : 'Enable' %></button>
               </form>
               <div class="card-actions">
                 <details>
-                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <summary class="btn-icon-sm" title="Edit">✎</summary>
                   <div class="card-edit-popover">
                     <form method="POST" action="/goosepizza/edit" class="form">
                       <input type="hidden" name="name" value="<%= t.name %>" />
                       <label>
-                        Testo che fa scattare il trigger
+                        Text that triggers it
                         <input type="text" name="triggerText" value="<%= t.triggerText %>" maxlength="100" required />
                       </label>
                       <label>
-                        Emoji (unicode o del server, es. 🍕 o &lt;:nome:id&gt;)
+                        Emoji (unicode or server, e.g. 🍕 or &lt;:name:id&gt;)
                         <input type="text" name="emoji" value="<%= t.emoji %>" required />
                       </label>
                       <label>
-                        Modalità
+                        Mode
                         <select name="mode" required>
                           <% Object.entries(responseModes).forEach(([value, label]) => { %>
                             <option value="<%= value %>" <%= t.responseMode === value ? 'selected' : '' %>><%= label %></option>
@@ -48,7 +48,7 @@
                         </select>
                       </label>
                       <fieldset>
-                        <legend>Canali osservati (max <%= maxChannels %>)</legend>
+                        <legend>Watched channels (max <%= maxChannels %>)</legend>
                         <% textChannels.forEach((ch) => { %>
                           <label class="checkbox-label">
                             <input type="checkbox" name="channelIds" value="<%= ch.id %>" <%= t.channelIds.includes(ch.id) ? 'checked' : '' %> />
@@ -56,13 +56,13 @@
                           </label>
                         <% }) %>
                       </fieldset>
-                      <button type="submit" class="btn-primary-sm">Salva</button>
+                      <button type="submit" class="btn-primary-sm">Save</button>
                     </form>
                   </div>
                 </details>
-                <form method="POST" action="/goosepizza/remove" onsubmit="return confirm('Rimuovere questo trigger?');">
+                <form method="POST" action="/goosepizza/remove" onsubmit="return confirm('Remove this trigger?');">
                   <input type="hidden" name="name" value="<%= t.name %>" />
-                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Remove">✕</button>
                 </form>
               </div>
             </div>
@@ -72,34 +72,34 @@
     </section>
 
     <section class="panel" data-card-id="aggiungi-trigger">
-      <h2>Aggiungi trigger</h2>
+      <h2>Add trigger</h2>
       <% if (textChannels.length === 0) { %>
-        <p class="hint">Nessun canale disponibile.</p>
+        <p class="hint">No channels available.</p>
       <% } else { %>
         <form method="POST" action="/goosepizza/add" class="form">
           <label>
-            Nome (identifica il trigger, es. "pizza")
+            Name (identifies the trigger, e.g. "pizza")
             <input type="text" name="name" required />
           </label>
           <label>
-            Testo che fa scattare il trigger
+            Text that triggers it
             <input type="text" name="triggerText" maxlength="100" required />
           </label>
           <label>
-            Emoji (unicode o del server, es. 🍕 o &lt;:nome:id&gt;)
+            Emoji (unicode or server, e.g. 🍕 or &lt;:name:id&gt;)
             <input type="text" name="emoji" required />
           </label>
           <label>
-            Modalità
+            Mode
             <select name="mode" required>
-              <option value="" disabled selected>Scegli…</option>
+              <option value="" disabled selected>Choose…</option>
               <% Object.entries(responseModes).forEach(([value, label]) => { %>
                 <option value="<%= value %>"><%= label %></option>
               <% }) %>
             </select>
           </label>
           <fieldset>
-            <legend>Canali da osservare (almeno 1, max <%= maxChannels %>)</legend>
+            <legend>Channels to watch (at least 1, max <%= maxChannels %>)</legend>
             <% textChannels.forEach((ch) => { %>
               <label class="checkbox-label">
                 <input type="checkbox" name="channelIds" value="<%= ch.id %>" />
@@ -107,7 +107,7 @@
               </label>
             <% }) %>
           </fieldset>
-          <button type="submit" class="btn-primary">Aggiungi trigger</button>
+          <button type="submit" class="btn-primary">Add trigger</button>
         </form>
       <% } %>
     </section>

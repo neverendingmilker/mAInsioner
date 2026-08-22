@@ -3,7 +3,7 @@
   <%- include('partials/sidebar') %>
   <main class="content">
     <div class="page-header">
-      <h1>Permessi per canale</h1>
+      <h1>Channel Permissions</h1>
     </div>
 
     <%- include('partials/flash') %>
@@ -12,7 +12,7 @@
     <section class="panel perm-panel" data-card-id="permessi-canale">
       <div class="perm-col perm-col-channels">
         <% if (channelGroups.length === 0) { %>
-          <p class="hint">Nessun canale.</p>
+          <p class="hint">No channels.</p>
         <% } %>
         <% channelGroups.forEach((group) => { %>
           <% if (group.category) { %>
@@ -32,10 +32,10 @@
 
       <div class="perm-col perm-col-targets">
         <% if (!selectedChannelId) { %>
-          <p class="hint">Scegli un canale a sinistra.</p>
+          <p class="hint">Choose a channel on the left.</p>
         <% } else { %>
           <% if (targets.length === 0) { %>
-            <p class="hint">Nessun override su questo canale.</p>
+            <p class="hint">No overrides on this channel.</p>
           <% } else { %>
             <% targets.forEach((t) => { %>
               <a
@@ -48,16 +48,16 @@
             <form method="GET" action="/channelpermissions" class="form" style="margin-top: 14px; max-width: none;">
               <input type="hidden" name="channelId" value="<%= selectedChannelId %>" />
               <label>
-                Aggiungi ruolo/membro
+                Add role/member
                 <select name="overwriteId" onchange="this.form.submit()">
-                  <option value="" disabled selected>Scegli…</option>
+                  <option value="" disabled selected>Choose…</option>
                   <% if (addableRoles.length > 0) { %>
-                    <optgroup label="Ruoli">
+                    <optgroup label="Roles">
                       <% addableRoles.forEach((r) => { %><option value="<%= r.id %>">🎭 <%= r.name %></option><% }) %>
                     </optgroup>
                   <% } %>
                   <% if (addableMembers.length > 0) { %>
-                    <optgroup label="Membri">
+                    <optgroup label="Members">
                       <% addableMembers.forEach((m) => { %><option value="<%= m.id %>">👤 <%= m.name %></option><% }) %>
                     </optgroup>
                   <% } %>
@@ -71,7 +71,7 @@
       <div class="perm-col perm-col-editor">
         <% if (!selectedTarget) { %>
           <p class="hint">
-            <%= selectedChannelId ? 'Seleziona un ruolo o membro per vedere/modificare i suoi permessi su questo canale.' : 'Seleziona prima un canale.' %>
+            <%= selectedChannelId ? 'Select a role or member to view/edit its permissions on this channel.' : 'Select a channel first.' %>
           </p>
         <% } else { %>
           <div class="config-card-header" style="margin-bottom: 12px;">
@@ -80,9 +80,9 @@
               <form
                 method="POST"
                 action="/channelpermissions/<%= selectedChannelId %>/<%= selectedOverwriteId %>/remove"
-                onsubmit="return confirm('Rimuovere questo override? Tutti i permessi torneranno neutri.');"
+                onsubmit="return confirm('Remove this override? All permissions will go back to neutral.');"
               >
-                <button type="submit" class="btn-danger-sm">Rimuovi override</button>
+                <button type="submit" class="btn-danger-sm">Remove override</button>
               </form>
             <% } %>
           </div>
@@ -94,15 +94,15 @@
                 <div class="perm-row">
                   <span><%= row.label %></span>
                   <div class="perm-tristate">
-                    <label class="opt-deny" title="Nega">
+                    <label class="opt-deny" title="Deny">
                       <input type="radio" name="<%= row.key %>" value="deny" <%= row.state === 'deny' ? 'checked' : '' %> />
                       <span>✕</span>
                     </label>
-                    <label class="opt-neutral" title="Neutro">
+                    <label class="opt-neutral" title="Neutral">
                       <input type="radio" name="<%= row.key %>" value="neutral" <%= row.state === 'neutral' ? 'checked' : '' %> />
                       <span>／</span>
                     </label>
-                    <label class="opt-allow" title="Consenti">
+                    <label class="opt-allow" title="Allow">
                       <input type="radio" name="<%= row.key %>" value="allow" <%= row.state === 'allow' ? 'checked' : '' %> />
                       <span>✓</span>
                     </label>
@@ -110,7 +110,7 @@
                 </div>
               <% }) %>
             <% }) %>
-            <button type="submit" class="btn-primary">Salva permessi</button>
+            <button type="submit" class="btn-primary">Save permissions</button>
           </form>
         <% } %>
       </div>

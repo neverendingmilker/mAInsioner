@@ -13,7 +13,7 @@ const GOOSEPIZZA_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnoun
 
 function channelLabel(guild, channelId) {
   const channel = guild.channels.cache.get(channelId);
-  return channel ? `#${channel.name}` : `(canale eliminato: ${channelId})`;
+  return channel ? `#${channel.name}` : `(deleted channel: ${channelId})`;
 }
 
 function pickedChannelIds(body) {
@@ -32,7 +32,7 @@ async function renderGoosepizzaPage(req, res, guild) {
       responseModeLabel: goosepizzaManager.RESPONSE_MODES[t.response_mode],
       enabled: t.enabled,
       channelIds: t.channel_ids,
-      channelLabels: t.channel_ids.length > 0 ? t.channel_ids.map((id) => channelLabel(guild, id)).join(', ') : '(nessun canale)',
+      channelLabels: t.channel_ids.length > 0 ? t.channel_ids.map((id) => channelLabel(guild, id)).join(', ') : '(no channel)',
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -68,7 +68,7 @@ router.post('/goosepizza/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await goosepizzaManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'GoosePizza attivato.' : 'GoosePizza disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'GoosePizza enabled.' : 'GoosePizza disabled.' };
     res.redirect('/goosepizza');
   } catch (err) {
     next(err);
@@ -82,7 +82,7 @@ router.post('/goosepizza/add', async (req, res, next) => {
 
     const channelIds = pickedChannelIds(req.body);
     if (channelIds.length > goosepizzaManager.MAX_CHANNELS_PER_TRIGGER) {
-      req.session.flash = { type: 'error', message: `Puoi scegliere al massimo ${goosepizzaManager.MAX_CHANNELS_PER_TRIGGER} canali.` };
+      req.session.flash = { type: 'error', message: `You can pick at most ${goosepizzaManager.MAX_CHANNELS_PER_TRIGGER} channels.` };
       res.redirect('/goosepizza');
       return;
     }
@@ -93,7 +93,7 @@ router.post('/goosepizza/add', async (req, res, next) => {
 
       const channels = channelIds.map((id) => guild.channels.cache.get(id)).filter(Boolean);
       await goosepizzaManager.finalizeCreate(guild, pending, channels);
-      req.session.flash = { type: 'success', message: `Trigger "${pending.name}" creato.` };
+      req.session.flash = { type: 'success', message: `Trigger "${pending.name}" created.` };
     } catch (err) {
       if (err instanceof goosepizzaManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -108,7 +108,7 @@ router.post('/goosepizza/add', async (req, res, next) => {
 });
 
 // Both the trigger's fields (trigger text/emoji/mode) and its channel list are always
-// sent from the pre-filled "Modifica" form, so this always does a full replace of both —
+// sent from the pre-filled "Edit" form, so this always does a full replace of both —
 // same UX as the other feature pages' inline edit, even though the manager itself
 // supports partial updates for the text fields.
 router.post('/goosepizza/edit', async (req, res, next) => {
@@ -119,7 +119,7 @@ router.post('/goosepizza/edit', async (req, res, next) => {
     const name = req.body.name;
     const channelIds = pickedChannelIds(req.body);
     if (channelIds.length > goosepizzaManager.MAX_CHANNELS_PER_TRIGGER) {
-      req.session.flash = { type: 'error', message: `Puoi scegliere al massimo ${goosepizzaManager.MAX_CHANNELS_PER_TRIGGER} canali.` };
+      req.session.flash = { type: 'error', message: `You can pick at most ${goosepizzaManager.MAX_CHANNELS_PER_TRIGGER} channels.` };
       res.redirect('/goosepizza');
       return;
     }
@@ -133,7 +133,7 @@ router.post('/goosepizza/edit', async (req, res, next) => {
 
       const channels = channelIds.map((id) => guild.channels.cache.get(id)).filter(Boolean);
       await goosepizzaManager.setChannels(guild, name, channels);
-      req.session.flash = { type: 'success', message: `Trigger "${name}" aggiornato.` };
+      req.session.flash = { type: 'success', message: `Trigger "${name}" updated.` };
     } catch (err) {
       if (err instanceof goosepizzaManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -155,7 +155,7 @@ router.post('/goosepizza/trigger-toggle', async (req, res, next) => {
     try {
       const enabled = req.body.enabled === 'true';
       await goosepizzaManager.setTriggerEnabled(guild.id, req.body.name, enabled);
-      req.session.flash = { type: 'success', message: `Trigger "${req.body.name}" ${enabled ? 'attivato' : 'disattivato'}.` };
+      req.session.flash = { type: 'success', message: `Trigger "${req.body.name}" ${enabled ? 'enabled' : 'disabled'}.` };
     } catch (err) {
       if (err instanceof goosepizzaManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -176,7 +176,7 @@ router.post('/goosepizza/remove', async (req, res, next) => {
     if (!guild) return;
 
     await goosepizzaManager.remove(guild.id, req.body.name);
-    req.session.flash = { type: 'success', message: 'Trigger rimosso.' };
+    req.session.flash = { type: 'success', message: 'Trigger removed.' };
     res.redirect('/goosepizza');
   } catch (err) {
     next(err);

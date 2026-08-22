@@ -11,38 +11,38 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="canali-con-limite">
-      <h2>Canali con limite (<%= channels.length %>)</h2>
+      <h2>Channels with a limit (<%= channels.length %>)</h2>
       <% if (channels.length === 0) { %>
-        <p class="hint">Nessun canale configurato.</p>
+        <p class="hint">No channels configured.</p>
       <% } else { %>
         <% channels.forEach((c) => { %>
           <div class="config-card">
             <div class="config-card-header">
               <span class="config-name"><%= c.channelName %></span>
               <span class="config-meta">
-                max <%= c.reactionLimit %>/thread<%= c.ignoreFirstPost ? ' (post iniziale escluso)' : '' %>
+                max <%= c.reactionLimit %>/thread<%= c.ignoreFirstPost ? ' (initial post excluded)' : '' %>
               </span>
               <div class="card-actions">
                 <details>
-                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <summary class="btn-icon-sm" title="Edit">✎</summary>
                   <div class="card-edit-popover">
                     <form method="POST" action="/reactionlimit/add" class="form">
                       <input type="hidden" name="channelId" value="<%= c.channelId %>" />
                       <label>
-                        Reazioni massime per persona, per thread
+                        Max reactions per person, per thread
                         <input type="number" name="reactionLimit" min="1" max="100" value="<%= c.reactionLimit %>" required />
                       </label>
                       <label class="checkbox-label">
                         <input type="checkbox" name="ignoreFirstPost" <%= c.ignoreFirstPost ? 'checked' : '' %> />
-                        Non contare le reazioni sul messaggio iniziale del thread
+                        Don't count reactions on the thread's initial message
                       </label>
-                      <button type="submit" class="btn-primary-sm">Salva</button>
+                      <button type="submit" class="btn-primary-sm">Save</button>
                     </form>
                   </div>
                 </details>
-                <form method="POST" action="/reactionlimit/remove" onsubmit="return confirm('Rimuovere il limite da questo canale?');">
+                <form method="POST" action="/reactionlimit/remove" onsubmit="return confirm('Remove the limit from this channel?');">
                   <input type="hidden" name="channelId" value="<%= c.channelId %>" />
-                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Remove">✕</button>
                 </form>
               </div>
             </div>
@@ -52,29 +52,29 @@
     </section>
 
     <section class="panel" data-card-id="aggiungi-limite">
-      <h2>Aggiungi limite</h2>
+      <h2>Add limit</h2>
       <% if (textChannels.length === 0) { %>
-        <p class="hint">Nessun canale disponibile.</p>
+        <p class="hint">No channels available.</p>
       <% } else { %>
         <form method="POST" action="/reactionlimit/add" class="form">
           <label>
-            Canale (i thread al suo interno erediteranno il limite)
+            Channel (threads inside it will inherit the limit)
             <select name="channelId" required>
-              <option value="" disabled selected>Scegli un canale…</option>
+              <option value="" disabled selected>Choose a channel…</option>
               <% textChannels.forEach((ch) => { %>
                 <option value="<%= ch.id %>"><%= ch.name %></option>
               <% }) %>
             </select>
           </label>
           <label>
-            Reazioni massime per persona, per thread
+            Max reactions per person, per thread
             <input type="number" name="reactionLimit" min="1" max="100" value="<%= defaultLimit %>" required />
           </label>
           <label class="checkbox-label">
             <input type="checkbox" name="ignoreFirstPost" />
-            Non contare le reazioni sul messaggio iniziale del thread
+            Don't count reactions on the thread's initial message
           </label>
-          <button type="submit" class="btn-primary">Aggiungi limite</button>
+          <button type="submit" class="btn-primary">Add limit</button>
         </form>
       <% } %>
     </section>

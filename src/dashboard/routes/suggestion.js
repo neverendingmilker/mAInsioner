@@ -10,11 +10,11 @@ const MAX_CONTENT_LENGTH = 1000;
 
 function memberLabel(guild, userId) {
   const member = guild.members.cache.get(userId);
-  return member ? member.user.tag : `(utente non più nel server: ${userId})`;
+  return member ? member.user.tag : `(user no longer in the server: ${userId})`;
 }
 
 function formatDate(ts) {
-  return new Date(Number(ts)).toLocaleString('it-IT');
+  return new Date(Number(ts)).toLocaleString('en-GB');
 }
 
 async function renderSuggestionPage(req, res, guild) {
@@ -63,7 +63,7 @@ router.post('/suggestion/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await suggestionManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Suggestions attivato.' : 'Suggestions disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Suggestions enabled.' : 'Suggestions disabled.' };
     res.redirect('/suggestion');
   } catch (err) {
     next(err);
@@ -80,14 +80,14 @@ router.post('/suggestion/channel', async (req, res, next) => {
     const channelId = req.body.channelId || null;
     if (!channelId) {
       await suggestionManager.removeChannel(guild.id);
-      req.session.flash = { type: 'success', message: 'Canale suggerimenti rimosso.' };
+      req.session.flash = { type: 'success', message: 'Suggestions channel removed.' };
       res.redirect('/suggestion');
       return;
     }
 
     const channel = guild.channels.cache.get(channelId);
     if (!channel) {
-      req.session.flash = { type: 'error', message: 'Canale non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid channel — try again.' };
       res.redirect('/suggestion');
       return;
     }
@@ -95,13 +95,13 @@ router.post('/suggestion/channel', async (req, res, next) => {
     const botMember = guild.members.me;
     const canPost = botMember && channel.permissionsFor(botMember)?.has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]);
     if (!canPost) {
-      req.session.flash = { type: 'error', message: `Non ho i permessi per vedere/scrivere in #${channel.name}.` };
+      req.session.flash = { type: 'error', message: `I don't have permission to view/send messages in #${channel.name}.` };
       res.redirect('/suggestion');
       return;
     }
 
     await suggestionManager.setChannel(guild.id, channel.id);
-    req.session.flash = { type: 'success', message: `I suggerimenti verranno postati in #${channel.name}.` };
+    req.session.flash = { type: 'success', message: `Suggestions will be posted in #${channel.name}.` };
     res.redirect('/suggestion');
   } catch (err) {
     next(err);
@@ -119,25 +119,25 @@ router.post('/suggestion/:number/edit', async (req, res, next) => {
     const number = Number(req.params.number);
     const existing = await suggestionManager.getSuggestion(guild.id, number);
     if (!existing) {
-      req.session.flash = { type: 'error', message: 'Suggerimento non trovato.' };
+      req.session.flash = { type: 'error', message: 'Suggestion not found.' };
       res.redirect('/suggestion');
       return;
     }
     if (existing.status !== 'pending') {
-      req.session.flash = { type: 'error', message: 'Questo suggerimento è già stato deciso e non può più essere modificato.' };
+      req.session.flash = { type: 'error', message: 'This suggestion has already been decided and can no longer be edited.' };
       res.redirect('/suggestion');
       return;
     }
 
     const content = req.body.content?.trim().slice(0, MAX_CONTENT_LENGTH);
     if (!content) {
-      req.session.flash = { type: 'error', message: 'Il testo non può essere vuoto.' };
+      req.session.flash = { type: 'error', message: 'Text can\'t be empty.' };
       res.redirect('/suggestion');
       return;
     }
 
     await suggestionManager.editContent(guild, number, content);
-    req.session.flash = { type: 'success', message: `Suggerimento #${number} aggiornato.` };
+    req.session.flash = { type: 'success', message: `Suggestion #${number} updated.` };
     res.redirect('/suggestion');
   } catch (err) {
     next(err);
@@ -154,26 +154,26 @@ async function decide(req, res, next, status, verbLabel) {
     const number = Number(req.params.number);
     const existing = await suggestionManager.getSuggestion(guild.id, number);
     if (!existing) {
-      req.session.flash = { type: 'error', message: 'Suggerimento non trovato.' };
+      req.session.flash = { type: 'error', message: 'Suggestion not found.' };
       res.redirect('/suggestion');
       return;
     }
     if (existing.status !== 'pending') {
-      req.session.flash = { type: 'error', message: 'Questo suggerimento è già stato deciso.' };
+      req.session.flash = { type: 'error', message: 'This suggestion has already been decided.' };
       res.redirect('/suggestion');
       return;
     }
 
     await suggestionManager.setStatus(guild, number, status, req.session.user.id);
-    req.session.flash = { type: 'success', message: `Suggerimento #${number} ${verbLabel}.` };
+    req.session.flash = { type: 'success', message: `Suggestion #${number} ${verbLabel}.` };
     res.redirect('/suggestion');
   } catch (err) {
     next(err);
   }
 }
 
-router.post('/suggestion/:number/approve', (req, res, next) => decide(req, res, next, 'approved', 'approvato'));
-router.post('/suggestion/:number/reject', (req, res, next) => decide(req, res, next, 'denied', 'rifiutato'));
+router.post('/suggestion/:number/approve', (req, res, next) => decide(req, res, next, 'approved', 'approved'));
+router.post('/suggestion/:number/reject', (req, res, next) => decide(req, res, next, 'denied', 'rejected'));
 
 router.post('/suggestion/:number/remove', async (req, res, next) => {
   try {
@@ -182,7 +182,7 @@ router.post('/suggestion/:number/remove', async (req, res, next) => {
 
     const number = Number(req.params.number);
     await suggestionManager.removeSuggestion(guild, number);
-    req.session.flash = { type: 'success', message: `Suggerimento #${number} rimosso.` };
+    req.session.flash = { type: 'success', message: `Suggestion #${number} removed.` };
     res.redirect('/suggestion');
   } catch (err) {
     next(err);

@@ -14,14 +14,14 @@ const BIRTHDAY_CHANNEL_TYPES = [ChannelType.GuildText];
 // misses someone who's left the server since their birthday was saved.
 function memberLabel(guild, userId) {
   const member = guild.members.cache.get(userId);
-  return member ? member.user.tag : `(utente non più nel server: ${userId})`;
+  return member ? member.user.tag : `(user no longer in the server: ${userId})`;
 }
 
 // Mirrors /birthday list's own formatDaysLeft.
 function daysUntilLabel(daysUntil) {
-  if (daysUntil === 0) return 'oggi! 🎉';
-  if (daysUntil === 1) return 'domani';
-  return `tra ${daysUntil} giorni`;
+  if (daysUntil === 0) return 'today! 🎉';
+  if (daysUntil === 1) return 'tomorrow';
+  return `in ${daysUntil} days`;
 }
 
 async function renderBirthdayPage(req, res, guild) {
@@ -95,7 +95,7 @@ router.post('/birthday/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await birthdayManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Birthday attivato.' : 'Birthday disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Birthday enabled.' : 'Birthday disabled.' };
     res.redirect('/birthday');
   } catch (err) {
     next(err);
@@ -141,7 +141,7 @@ router.post('/birthday/config', async (req, res, next) => {
       await celebrateDueTodayForGuild(req.client, guild.id);
     }
 
-    req.session.flash = { type: 'success', message: 'Configurazione Birthday aggiornata.' };
+    req.session.flash = { type: 'success', message: 'Birthday configuration updated.' };
     res.redirect('/birthday');
   } catch (err) {
     next(err);
@@ -156,7 +156,7 @@ router.post('/birthday/add', async (req, res, next) => {
     const userId = req.body.userId;
     const member = guild.members.cache.get(userId);
     if (!member) {
-      req.session.flash = { type: 'error', message: 'Utente non valido — riprova.' };
+      req.session.flash = { type: 'error', message: 'Invalid user — try again.' };
       res.redirect('/birthday');
       return;
     }
@@ -168,7 +168,7 @@ router.post('/birthday/add', async (req, res, next) => {
     try {
       await birthdayManager.addBirthday(guild.id, userId, day, month, year);
       await celebrateBirthdayIfDue(req.client, guild.id, userId, day, month);
-      req.session.flash = { type: 'success', message: `Compleanno salvato per ${member.user.tag}.` };
+      req.session.flash = { type: 'success', message: `Birthday saved for ${member.user.tag}.` };
     } catch (err) {
       if (err instanceof birthdayManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
@@ -188,7 +188,7 @@ router.post('/birthday/remove', async (req, res, next) => {
     if (!guild) return;
 
     await birthdayManager.removeBirthday(guild.id, req.body.userId);
-    req.session.flash = { type: 'success', message: 'Compleanno rimosso.' };
+    req.session.flash = { type: 'success', message: 'Birthday removed.' };
     res.redirect('/birthday');
   } catch (err) {
     next(err);

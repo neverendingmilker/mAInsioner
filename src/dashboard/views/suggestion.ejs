@@ -11,25 +11,25 @@
 
     <div class="card-list" id="card-list">
 <section class="panel" data-card-id="canale-suggerimenti">
-      <h2>Canale suggerimenti</h2>
+      <h2>Suggestions channel</h2>
       <form method="POST" action="/suggestion/channel" class="form">
         <label>
-          Canale (vuoto = rimuovi configurazione)
+          Channel (empty = remove configuration)
           <select name="channelId">
-            <option value="">— nessuno —</option>
+            <option value="">— none —</option>
             <% textChannels.forEach((ch) => { %>
               <option value="<%= ch.id %>" <%= ch.id === channelId ? 'selected' : '' %>><%= ch.name %></option>
             <% }) %>
           </select>
         </label>
-        <button type="submit" class="btn-primary-sm">Salva</button>
+        <button type="submit" class="btn-primary-sm">Save</button>
       </form>
     </section>
 
     <section class="panel" data-card-id="in-attesa">
-      <h2>In attesa (<%= suggestions.length %>)</h2>
+      <h2>Pending (<%= suggestions.length %>)</h2>
       <% if (suggestions.length === 0) { %>
-        <p class="hint">Nessun suggerimento in attesa.</p>
+        <p class="hint">No suggestions pending.</p>
       <% } else { %>
         <% suggestions.forEach((s) => { %>
           <div class="config-card">
@@ -37,26 +37,26 @@
               <span class="config-name">#<%= s.number %> — <%= s.authorLabel %></span>
               <span class="config-meta"><%= s.createdAtLabel %></span>
               <form method="POST" action="/suggestion/<%= s.number %>/approve">
-                <button type="submit" class="btn-primary-sm">Approva</button>
+                <button type="submit" class="btn-primary-sm">Approve</button>
               </form>
               <form method="POST" action="/suggestion/<%= s.number %>/reject">
-                <button type="submit" class="btn-secondary-sm">Rifiuta</button>
+                <button type="submit" class="btn-secondary-sm">Reject</button>
               </form>
               <div class="card-actions">
                 <details>
-                  <summary class="btn-icon-sm" title="Modifica">✎</summary>
+                  <summary class="btn-icon-sm" title="Edit">✎</summary>
                   <div class="card-edit-popover">
                     <form method="POST" action="/suggestion/<%= s.number %>/edit" class="form">
                       <label>
-                        Testo
+                        Text
                         <textarea name="content" rows="3" maxlength="<%= maxContentLength %>" required><%= s.content %></textarea>
                       </label>
-                      <button type="submit" class="btn-primary-sm">Salva</button>
+                      <button type="submit" class="btn-primary-sm">Save</button>
                     </form>
                   </div>
                 </details>
-                <form method="POST" action="/suggestion/<%= s.number %>/remove" onsubmit="return confirm('Rimuovere questo suggerimento? Verrà cancellato anche il messaggio su Discord.');">
-                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Rimuovi">✕</button>
+                <form method="POST" action="/suggestion/<%= s.number %>/remove" onsubmit="return confirm('Remove this suggestion? The message on Discord will also be deleted.');">
+                  <button type="submit" class="btn-icon-sm btn-icon-danger" title="Remove">✕</button>
                 </form>
               </div>
             </div>

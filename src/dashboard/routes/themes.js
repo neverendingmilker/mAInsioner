@@ -73,7 +73,7 @@ router.post('/themes/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await themesManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Themes attivato.' : 'Themes disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Themes enabled.' : 'Themes disabled.' };
     res.redirect('/themes');
   } catch (err) {
     next(err);
@@ -94,7 +94,7 @@ router.post('/themes/config', async (req, res, next) => {
     if (channelId) {
       const channel = guild.channels.cache.get(channelId);
       if (!channel) {
-        errors.push('Canale non valido.');
+        errors.push('Invalid channel.');
       } else {
         try {
           await themesManager.setChannel(guild, channel);
@@ -105,11 +105,11 @@ router.post('/themes/config', async (req, res, next) => {
       }
     }
 
-    // Selezione vuota = rimuovi il ping (il ruolo è opzionale).
+    // Empty selection = remove the ping (the role is optional).
     const roleId = req.body.roleId || null;
     const role = roleId ? guild.roles.cache.get(roleId) : null;
     if (roleId && !role) {
-      errors.push('Ruolo non valido.');
+      errors.push('Invalid role.');
     } else {
       await themesManager.setRole(guild.id, role);
     }
@@ -126,7 +126,7 @@ router.post('/themes/config', async (req, res, next) => {
       else throw err;
     }
 
-    req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configurazione aggiornata.' };
+    req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configuration updated.' };
     res.redirect('/themes');
   } catch (err) {
     next(err);
@@ -140,7 +140,7 @@ router.post('/themes/items/add', async (req, res, next) => {
 
     try {
       await themesManager.addTheme(guild.id, req.body.theme);
-      req.session.flash = { type: 'success', message: 'Tema aggiunto.' };
+      req.session.flash = { type: 'success', message: 'Theme added.' };
     } catch (err) {
       if (err instanceof themesManager.ValidationError) req.session.flash = { type: 'error', message: err.message };
       else throw err;
@@ -158,7 +158,7 @@ router.post('/themes/items/:id/edit', async (req, res, next) => {
 
     try {
       await themesManager.editTheme(guild.id, Number(req.params.id), req.body.theme);
-      req.session.flash = { type: 'success', message: 'Tema aggiornato.' };
+      req.session.flash = { type: 'success', message: 'Theme updated.' };
     } catch (err) {
       if (err instanceof themesManager.ValidationError) req.session.flash = { type: 'error', message: err.message };
       else throw err;
@@ -175,7 +175,7 @@ router.post('/themes/items/:id/remove', async (req, res, next) => {
     if (!guild) return;
 
     await themesManager.removeTheme(guild.id, Number(req.params.id));
-    req.session.flash = { type: 'success', message: 'Tema rimosso.' };
+    req.session.flash = { type: 'success', message: 'Theme removed.' };
     res.redirect('/themes');
   } catch (err) {
     next(err);
@@ -188,7 +188,7 @@ router.post('/themes/items/clear', async (req, res, next) => {
     if (!guild) return;
 
     await themesManager.clearThemes(guild.id);
-    req.session.flash = { type: 'success', message: 'Coda svuotata — tutti i temi sono stati rimossi.' };
+    req.session.flash = { type: 'success', message: 'Queue cleared — all themes have been removed.' };
     res.redirect('/themes');
   } catch (err) {
     next(err);

@@ -66,8 +66,8 @@ function getFeatureKeyForPath(path) {
 // logic as their slash-command equivalents, e.g. /2faroles, /modroles). Shown in the
 // sidebar as their own "Strumenti" section, separate from the toggleable feature list.
 const TOOL_PAGES = [
-  { key: 'channelpermissions', label: 'Permessi per canale', href: '/channelpermissions' },
-  { key: 'roleaudit', label: 'Ruoli & Permessi', href: '/roleaudit' },
+  { key: 'channelpermissions', label: 'Channel Permissions', href: '/channelpermissions' },
+  { key: 'roleaudit', label: 'Roles & Permissions', href: '/roleaudit' },
 ];
 
 function getSidebarTools(activeKey) {

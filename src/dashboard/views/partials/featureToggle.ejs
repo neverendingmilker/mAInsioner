@@ -1,5 +1,5 @@
-<%# Shared controls for a feature page's header: on/off, plus (Admin-only) Solo Admin,
-    Modificabile, and Riordina card — rendered as one connected segmented button group,
+<%# Shared controls for a feature page's header: on/off, plus (Admin-only) Admin Only,
+    Editable, and Reorder card — rendered as one connected segmented button group,
     active state colored (accent), inactive using the default muted button color. Started
     as an experiment on Anime Night only (partials/featureToggleGrouped.ejs); once the user
     liked it, it became the standard here so every current AND future feature page gets it
@@ -20,7 +20,7 @@
     <form method="POST" action="<%= toggleAction %>" class="btn-group-form">
       <label class="btn-group-item">
         <input type="checkbox" name="enabled" value="true" <%= enabled ? 'checked' : '' %> onchange="this.form.submit()" />
-        <span>Attivo</span>
+        <span>Active</span>
       </label>
     </form>
 
@@ -38,7 +38,7 @@
       <form method="POST" action="/mod-access/<%= currentFeatureKey %>/toggle" class="btn-group-form">
         <label class="btn-group-item">
           <input type="checkbox" name="soloAdmin" value="true" <%= modAccessEnabled ? '' : 'checked' %> onchange="this.form.submit()" />
-          <span>Solo Admin</span>
+          <span>Admin Only</span>
         </label>
       </form>
     <% } %>
@@ -60,13 +60,13 @@
       <form method="POST" action="/feature-lock/<%= currentFeatureKey %>/toggle" class="btn-group-form">
         <label class="btn-group-item">
           <input type="checkbox" name="editable" value="true" <%= typeof featureLocked !== 'undefined' && featureLocked ? '' : 'checked' %> onchange="this.form.submit()" />
-          <span>Modifica</span>
+          <span>Edit</span>
         </label>
       </form>
     <% } else if (typeof role !== 'undefined' && role === 'mod' && typeof featureLocked !== 'undefined') { %>
-      <label class="btn-group-item btn-group-item-readonly" title="Solo un Admin può cambiarlo">
+      <label class="btn-group-item btn-group-item-readonly" title="Only an Admin can change this">
         <input type="checkbox" <%= featureLocked ? '' : 'checked' %> disabled />
-        <span>Modifica</span>
+        <span>Edit</span>
       </label>
     <% } %>
 
@@ -87,7 +87,7 @@
     <% if (typeof role !== 'undefined' && role === 'admin' && typeof currentFeatureKey !== 'undefined' && currentFeatureKey) { %>
       <label class="btn-group-item">
         <input type="checkbox" id="card-lock-btn" data-feature-key="<%= currentFeatureKey %>" />
-        <span>Riordina</span>
+        <span>Reorder</span>
       </label>
     <% } %>
   </div>
@@ -104,15 +104,15 @@
     <div class="btn-group" id="card-cols-group">
       <label class="btn-group-item">
         <input type="radio" name="card-cols" value="1" />
-        <span>1 Colonna</span>
+        <span>1 Column</span>
       </label>
       <label class="btn-group-item">
         <input type="radio" name="card-cols" value="2" />
-        <span>2 Colonne</span>
+        <span>2 Columns</span>
       </label>
       <label class="btn-group-item">
         <input type="radio" name="card-cols" value="3" />
-        <span>3 Colonne</span>
+        <span>3 Columns</span>
       </label>
     </div>
   <% } %>

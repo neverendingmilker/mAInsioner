@@ -17,14 +17,14 @@ function memberLabel(guild, userId) {
 function roleLabel(guild, roleId) {
   if (!roleId) return null;
   const role = guild.roles.cache.get(roleId);
-  return role ? role.name : `(ruolo eliminato: ${roleId})`;
+  return role ? role.name : `(deleted role: ${roleId})`;
 }
 
 // The DB/parseWarningDate side speaks "DD/MM/YYYY", an <input type="date"> speaks ISO —
 // see utils/dateFormat.js's isoToDMY (shared with animenight.js).
 
 function formatDate(ts) {
-  return new Date(Number(ts)).toLocaleDateString('it-IT');
+  return new Date(Number(ts)).toLocaleDateString('en-GB');
 }
 
 async function renderWarningPage(req, res, guild) {
@@ -50,7 +50,7 @@ async function renderWarningPage(req, res, guild) {
     .sort((a, b) => a.user.tag.localeCompare(b.user.tag))
     .map((m) => ({ id: m.id, label: m.user.tag }));
 
-  // Own-editable entries, pre-fetched with their current reason so the "Modifica" form
+  // Own-editable entries, pre-fetched with their current reason so the "Edit" form
   // can be pre-filled without a second lookup per row.
   const editableRows = await Promise.all(
     ownWarnings.map(async (w) => {
@@ -71,7 +71,7 @@ async function renderWarningPage(req, res, guild) {
     .slice(0, 100)
     .map((w) => ({
       userLabel: memberLabel(guild, w.user_id),
-      typeLabel: w.type === 'verbal' ? 'Verbale' : 'Warning',
+      typeLabel: w.type === 'verbal' ? 'Verbal' : 'Warning',
       reason: w.reason,
       roleLabel: roleLabel(guild, w.role_id),
       dateLabel: formatDate(w.created_at),
@@ -112,7 +112,7 @@ router.post('/warning/toggle', async (req, res, next) => {
 
     const enabled = req.body.enabled === 'true';
     await warningManager.setEnabled(guild.id, enabled);
-    req.session.flash = { type: 'success', message: enabled ? 'Warnings attivato.' : 'Warnings disattivato.' };
+    req.session.flash = { type: 'success', message: enabled ? 'Warnings enabled.' : 'Warnings disabled.' };
     res.redirect('/warning');
   } catch (err) {
     next(err);
@@ -132,7 +132,7 @@ router.post('/warning/config', async (req, res, next) => {
     const channelId = req.body.channelId || null;
 
     if ((role1Id && !role2Id) || (!role1Id && role2Id)) {
-      req.session.flash = { type: 'error', message: 'Specifica entrambi i ruoli, oppure nessuno dei due.' };
+      req.session.flash = { type: 'error', message: 'Specify both roles, or neither.' };
       res.redirect('/warning');
       return;
     }
@@ -143,7 +143,7 @@ router.post('/warning/config', async (req, res, next) => {
       const role1 = guild.roles.cache.get(role1Id);
       const role2 = guild.roles.cache.get(role2Id);
       if (!role1 || !role2) {
-        errors.push('Ruolo non valido.');
+        errors.push('Invalid role.');
       } else {
         try {
           await warningManager.setRoles(guild, role1, role2);
@@ -157,7 +157,7 @@ router.post('/warning/config', async (req, res, next) => {
     if (channelId) {
       const channel = guild.channels.cache.get(channelId);
       if (!channel) {
-        errors.push('Canale non valido.');
+        errors.push('Invalid channel.');
       } else {
         try {
           await warningManager.setChannel(guild, channel);
@@ -168,7 +168,7 @@ router.post('/warning/config', async (req, res, next) => {
       }
     }
 
-    req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configurazione aggiornata.' };
+    req.session.flash = errors.length > 0 ? { type: 'error', message: errors.join(' ') } : { type: 'success', message: 'Configuration updated.' };
     res.redirect('/warning');
   } catch (err) {
     next(err);
@@ -189,7 +189,7 @@ router.post('/warning/assign', async (req, res, next) => {
     const type = req.body.type === 'verbal' ? 'verbal' : 'warning';
     const targetUserId = req.body.targetUserId?.trim();
     if (!targetUserId || !USER_ID_RE.test(targetUserId)) {
-      req.session.flash = { type: 'error', message: 'Utente non valido — digita il nome per cercarlo nell\'elenco, oppure incolla un ID Discord.' };
+      req.session.flash = { type: 'error', message: 'Invalid user — type the name to search the list, or paste a Discord ID.' };
       res.redirect('/warning');
       return;
     }
@@ -200,21 +200,21 @@ router.post('/warning/assign', async (req, res, next) => {
       if (type === 'verbal') {
         const member = guild.members.cache.get(targetUserId);
         if (!member) {
-          req.session.flash = { type: 'error', message: 'Utente non valido per un verbale — deve essere ancora nel server (un warning normale funziona anche con l\'ID di chi è uscito).' };
+          req.session.flash = { type: 'error', message: 'Invalid user for a verbal — they must still be in the server (a regular warning also works with the ID of someone who has left).' };
           res.redirect('/warning');
           return;
         }
         await warningManager.giveVerbal(guild, member.id, req.body.reason, req.session.user.id, dateInput);
-        req.session.flash = { type: 'success', message: `Verbale registrato per ${member.user.tag}.` };
+        req.session.flash = { type: 'success', message: `Verbal logged for ${member.user.tag}.` };
       } else {
         const result = await warningManager.warnUser(guild, targetUserId, req.body.reason, req.session.user.id, dateInput);
         const outcomeLabel =
           result.outcome === 'assigned'
-            ? `assegnato il ruolo ${result.assignedRole?.name}.`
+            ? `assigned the role ${result.assignedRole?.name}.`
             : result.outcome === 'alreadyMaxed'
-              ? 'ha già entrambi i ruoli — valutare un ban.'
-              : 'non è più nel server, il warning è stato comunque registrato.';
-        req.session.flash = { type: 'success', message: `Warning registrato — ${outcomeLabel}` };
+              ? 'already has both roles — consider a ban.'
+              : 'is no longer in the server — the warning was logged anyway.';
+        req.session.flash = { type: 'success', message: `Warning logged — ${outcomeLabel}` };
       }
     } catch (err) {
       if (err instanceof warningManager.ValidationError) {
@@ -245,7 +245,7 @@ router.post('/warning/:id/edit', async (req, res, next) => {
         reason: reason || undefined,
         dateInput,
       });
-      req.session.flash = { type: 'success', message: 'Warning aggiornato.' };
+      req.session.flash = { type: 'success', message: 'Warning updated.' };
     } catch (err) {
       if (err instanceof warningManager.ValidationError) {
         req.session.flash = { type: 'error', message: err.message };
