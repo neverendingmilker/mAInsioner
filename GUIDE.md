@@ -211,7 +211,7 @@ Per-person posting cooldown per channel, beyond Discord's own 6h slowmode cap. M
 
 ## ⭐ Starboard (`/starboard`)
 
-Reposts messages that collect enough reactions to a dedicated channel. A server can run several independent starboards.
+Reposts messages that collect enough reactions to a dedicated channel. A server can run several independent starboards. Counting isn't limited to the configured emoji(s): once someone reacts, a reaction from someone ELSE with a *different* emoji still adds to the total, as long as that person isn't already counted — dedup is by user, across every emoji on the original message and on the starboard repost. The configured emoji(s) only decide what's shown on the starboard post itself.
 
 - **`/starboard add`** `Admin` — Name, watch channel, post channel, threshold, emoji(s), optional content-type filter.
 - **`/starboard edit`** `Admin` — Changes any setting for an existing board (autocomplete shows current values).

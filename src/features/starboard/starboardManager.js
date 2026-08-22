@@ -96,10 +96,6 @@ function emojiKeyFromToken(token) {
   return customMatch ? customMatch[1] : token;
 }
 
-function emojiKeyFromReactionEmoji(emoji) {
-  return emoji.id ?? emoji.name;
-}
-
 function formatEmojisForDisplay(tokens) {
   if (tokens.length === 1 && tokens[0] === ANY_EMOJI) return 'Any emoji';
   return tokens.join(' ');
@@ -397,90 +393,87 @@ async function syncStarboardPost(guild, board, message, count) {
   }
 }
 
-// Counts distinct (non-bot, non-author) users who reacted to the ORIGINAL message with
-// any of the board's configured emojis. Doesn't touch the starboard post — just a count.
-// `minNeeded` is how much THIS function's result alone needs to reach for the message's
-// overall total to qualify (board.threshold minus any repost boost already known) — lets
-// the caller skip the expensive part entirely when it's not needed:
-//   - minNeeded <= 0: the repost boost alone already meets the threshold, no need to
-//     look at the original reactions at all.
-//   - otherwise, the raw (pre-dedup) reaction counts Discord already includes on the
-//     message are a guaranteed UPPER BOUND on the true qualifying count (dedup/exclusion
-//     can only ever reduce it) — if even that can't reach minNeeded, there's no need to
-//     fetch the actual list of who reacted, which is one Discord API call per matching
-//     reaction and by far the most expensive part of checking each message.
-async function countOriginalReactions(board, message, minNeeded = board.threshold) {
-  if (!matchesContentType(message, board.content_type)) return 0;
-  if (minNeeded <= 0) return 0;
-
-  const emojiTokens = JSON.parse(board.emojis);
-  const matchingReactions =
-    emojiTokens[0] === ANY_EMOJI
-      ? [...message.reactions.cache.values()]
-      : [...message.reactions.cache.values()].filter((r) =>
-          emojiTokens.map(emojiKeyFromToken).includes(emojiKeyFromReactionEmoji(r.emoji))
-        );
-
-  const upperBound = matchingReactions.reduce((sum, r) => sum + r.count, 0);
-  if (upperBound < minNeeded) return 0;
-
+// Fetches the full user list for each of `reactions` and returns the set of distinct
+// user IDs who reacted, skipping bots and (if given) `excludeUserId`. Shared by the
+// original-message count (excludes its author: no self-starring) and the repost count
+// (nothing to exclude there — the repost's "author" is the bot itself).
+async function collectReactorIds(reactions, excludeUserId) {
   const userIds = new Set();
-  for (const reaction of matchingReactions) {
+  for (const reaction of reactions) {
     const users = await reaction.users.fetch().catch(() => null);
     if (!users) continue;
     for (const user of users.values()) {
       if (user.bot) continue;
-      if (message.author && user.id === message.author.id) continue; // no self-starring
+      if (excludeUserId && user.id === excludeUserId) continue;
       userIds.add(user.id);
     }
   }
-
-  return userIds.size;
+  return userIds;
 }
 
-// Counts distinct non-bot users who reacted with the star emoji on the starboard's OWN
-// repost of a message — this is the "keep starring it from the starboard channel"
-// boost. Excluding bots naturally excludes the bot's own seed reaction, without relying
-// on a fragile "-1" assumption.
-async function countRepostBoost(repostMessage) {
-  const starReaction = repostMessage.reactions.cache.find(
-    (r) => emojiKeyFromReactionEmoji(r.emoji) === REPOST_AUTO_STAR_EMOJI
-  );
-  if (!starReaction) return 0;
+// Counts distinct (non-bot, non-author) users who reacted to the ORIGINAL message — with
+// ANY emoji, not just the board's configured one(s): once someone has reacted with the
+// board's own emoji, a reaction from someone ELSE with a different emoji on the same
+// message still adds to the total, as long as that person isn't already part of the
+// count (dedup is by user, across every emoji on the message — see collectReactorIds and
+// how its result gets merged with the repost's in computeFullCount below). The
+// configured emojis are only used for display (formatStarLine) and validation, not as a
+// filter here. Doesn't touch the starboard post — just returns a set of user IDs.
+// `minNeeded` is how many distinct users THIS function alone still needs to find for the
+// message's overall total to qualify (board.threshold minus the repost's user count,
+// already known) — lets the caller skip the expensive part entirely when it's not
+// needed:
+//   - minNeeded <= 0: the repost alone already meets the threshold, no need to look at
+//     the original reactions at all.
+//   - otherwise, the raw (pre-dedup) reaction counts Discord already includes on the
+//     message are a guaranteed UPPER BOUND on the true qualifying count (dedup/exclusion
+//     can only ever reduce it) — if even that can't reach minNeeded, there's no need to
+//     fetch the actual list of who reacted, which is one Discord API call per reaction
+//     and by far the most expensive part of checking each message.
+async function countOriginalReactions(board, message, minNeeded = board.threshold) {
+  if (!matchesContentType(message, board.content_type)) return new Set();
+  if (minNeeded <= 0) return new Set();
 
-  const users = await starReaction.users.fetch().catch(() => null);
-  if (!users) return 0;
+  const reactions = [...message.reactions.cache.values()];
+  const upperBound = reactions.reduce((sum, r) => sum + r.count, 0);
+  if (upperBound < minNeeded) return new Set();
 
-  let count = 0;
-  for (const user of users.values()) {
-    if (user.bot) continue;
-    count++;
-  }
-  return count;
+  return collectReactorIds(reactions, message.author?.id);
 }
 
-// Computes a message's full current count (reactions on the original + any boost from
-// people re-starring its already-posted repost) without touching the DB/starboard post —
-// shared by the normal live-sync path and the lookback "top N" selection, which needs to
-// know every candidate's count before deciding who actually gets posted.
+// Counts distinct non-bot users who reacted to the starboard's OWN repost of a
+// message — with ANY emoji, not just the auto-star (REPOST_AUTO_STAR_EMOJI) it seeds the
+// post with, so people can keep boosting a message from the starboard channel with
+// whatever reaction they like, not only the star. Excluding bots naturally excludes the
+// bot's own seed reaction, without relying on a fragile "-1" assumption.
+async function countRepostReactorIds(repostMessage) {
+  return collectReactorIds([...repostMessage.reactions.cache.values()], null);
+}
+
+// Computes a message's full current count — distinct users across every reaction on the
+// original message AND every reaction on its already-posted repost (a person who reacted
+// on both only counts once) — without touching the DB/starboard post. Shared by the
+// normal live-sync path and the lookback "top N" selection, which needs to know every
+// candidate's count before deciding who actually gets posted.
 async function computeFullCount(guild, board, message) {
-  // Repost boost is checked FIRST (a single cheap DB lookup, versus one Discord API call
-  // per matching reaction below) so countOriginalReactions can know exactly how much it
-  // still needs to find, and skip fetching reaction users entirely for messages that
-  // obviously can't reach that regardless — this is the single biggest cost in a lookback
-  // scan across a large channel, where the vast majority of messages don't qualify.
+  // The repost is checked FIRST (a single cheap DB lookup, versus one Discord API call
+  // per reaction below) so countOriginalReactions can know exactly how many more distinct
+  // users it still needs to find, and skip fetching reaction users entirely for messages
+  // that obviously can't reach that regardless — this is the single biggest cost in a
+  // lookback scan across a large channel, where the vast majority of messages don't
+  // qualify.
   const existingPost = await repo.getPost(board.id, message.id);
-  let repostBoost = 0;
+  let repostUserIds = new Set();
   if (existingPost) {
     const postChannel = await guild.channels.fetch(board.post_channel_id).catch(() => null);
     const repostMessage = postChannel
       ? await postChannel.messages.fetch(existingPost.starboard_message_id).catch(() => null)
       : null;
-    if (repostMessage) repostBoost = await countRepostBoost(repostMessage);
+    if (repostMessage) repostUserIds = await countRepostReactorIds(repostMessage);
   }
 
-  const originalCount = await countOriginalReactions(board, message, board.threshold - repostBoost);
-  return originalCount + repostBoost;
+  const originalUserIds = await countOriginalReactions(board, message, board.threshold - repostUserIds.size);
+  return new Set([...originalUserIds, ...repostUserIds]).size;
 }
 
 async function countAndSync(guild, board, message) {

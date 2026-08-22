@@ -255,7 +255,7 @@ Per-person posting cooldown per channel, beyond Discord's own 6h cap. Mods/Admin
 - `disable` `Admin` — turns the feature on/off.
 
 ### Starboard (`/starboard`)
-Reposts messages that collect enough reactions to a dedicated channel — several independent boards per server.
+Reposts messages that collect enough reactions to a dedicated channel — several independent boards per server. Counting isn't limited to the configured emoji(s): a reaction with any other emoji also adds to the total, as long as that person isn't already counted (dedup is by user, across every emoji on the message and on the starboard repost) — the configured emoji(s) only decide what's shown on the post itself.
 - `add name:<...> watch_channel:<#channel> post_channel:<#channel> threshold:<...> emojis:<...> [content_type]` `Admin` — creates a board.
 - `edit name:<...> [...]` `Admin` — changes any setting (autocomplete shows current values).
 - `remove name:<...>` `Admin` — deletes a board.

@@ -52,7 +52,7 @@ const data = new SlashCommandBuilder()
       .addStringOption((opt) =>
         opt
           .setName('emojis')
-          .setDescription('Emoji(s) to count, space/comma separated (e.g. "⭐" or "⭐ 🔥"), or "any" for any emoji')
+          .setDescription('Emoji(s) shown on the post (any emoji counts) — space/comma separated, or "any"')
           .setRequired(true)
       )
       .addStringOption((opt) =>
@@ -91,7 +91,7 @@ const data = new SlashCommandBuilder()
       .addStringOption((opt) =>
         opt
           .setName('emojis')
-          .setDescription('New emoji list, replaces the old one entirely (space/comma separated, or "any")')
+          .setDescription('New emoji(s) shown on the post, replaces the old ones (space/comma separated, or "any")')
           .setRequired(false)
       )
       .addStringOption((opt) =>
@@ -144,7 +144,7 @@ const data = new SlashCommandBuilder()
           .setRequired(false)
       )
       .addStringOption((opt) =>
-        opt.setName('emojis').setDescription("Only count these emoji(s) for this scan (default: the starboard's own)").setRequired(false)
+        opt.setName('emojis').setDescription("Emoji(s) shown for this scan (default: the starboard's own) — any emoji counts").setRequired(false)
       )
       .addIntegerOption((opt) =>
         opt
